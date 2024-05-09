@@ -1,0 +1,8 @@
+node_modules
+dist
+tsconfig.tsbuildinfo
+tsconfig.build.tsbuildinfo
+tsconfig.test.tsbuildinfo
+.DS_Store
+target/
+vector-tile-spec/

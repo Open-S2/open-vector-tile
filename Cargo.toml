@@ -1,0 +1,33 @@
+[package]
+name = "open-vector-tile"
+version = "0.1.0"
+edition = "2021"
+authors = ["Craig O'Connor <oconnorct1@gmail.com>"]
+description = "This library reads/writes The Open Vector Tiles 1.0 Specification"
+documentation = "https://docs.rs/pbf"
+homepage = "https://github.com/OpenS2/pbf"
+repository = "https://github.com/OpenS2/pbf"
+readme = "README.md"
+categories = ["encoding", "decoding", "parsing", "no-std"]
+keywords = ["pbf", "vector", "minimal", "low-cost-code", "map", "tile", "spec"]
+license = "MIT"
+
+[lib]
+name = "ovtile"
+path = "ovtile/lib.rs"
+bench = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+pbf = "0.1.4"
+
+[dev-dependencies]
+# tarpaulin = "*"
+
+[features]
+default = ["std"]
+std = []
+
+[profile.bench]
+opt-level = 3

@@ -1,0 +1,72 @@
+{
+  "name": "open-vector-tile",
+  "version": "0.1.0",
+  "description": "This library reads/writes Vector Tiles 2.0",
+  "keywords": [
+    "vector",
+    "map",
+    "tile",
+    "S2",
+    "spec"
+  ],
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "typescript": {
+    "main": "lib/index.ts"
+  },
+  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./vectorTile": {
+      "types": "./dist/vectorTile.d.ts",
+      "import": "./dist/vectorTile.js"
+    },
+    "./vectorTile.spec": {
+      "types": "./dist/vectorTile.spec.d.ts",
+      "import": "./dist/vectorTile.spec.js"
+    }
+  },
+  "scripts": {
+    "lint+build+test": "bun run lint && bun run build && bun run test",
+    "lint": "eslint src test",
+    "lint:fix": "bun run lint -- --fix",
+    "prettier": "bunx prettier src test --check",
+    "prettier:fix": "bunx prettier -- --write",
+    "format": "bunx prettier:fix && bun run lint:fix",
+    "build": "rm -rf dist && mkdir dist && rm -f -- tsconfig.tsbuildinfo && tsc",
+    "build:PB": "protoc vector-tile-spec/2.0.0/vector_tile.proto --plugin=protoc-gen-protoscript=./node_modules/protoscript/compiler.js --protoscript_out=. --protoscript_opt=language=typescript",
+    "types:bundle": "bun run types:build && node scripts/types.mjs",
+    "prepublishOnly": "bun run lint+build+test",
+    "package-check": "package-check",
+    "test:dev": "bun test --watch",
+    "test": "bun test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Open-S2/open-vector-tile.git"
+  },
+  "author": "Craig OConnor",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Open-S2/open-vector-tile/issues"
+  },
+  "files": [
+    "dist",
+    "vector-tile-spec"
+  ],
+  "homepage": "https://github.com/Open-S2/open-vector-tile#readme",
+  "devDependencies": {
+    "@mapbox/vector-tile": "^1.3.1",
+    "@skypack/package-check": "^0.2.2",
+    "@types/bun": "^1.1.1",
+    "@types/node": "^20.12.11",
+    "@types/pbf": "^3.0.5",
+    "eslint": "^9.2.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
+    "pbf": "^3.2.1",
+    "prettier": "^3.2.5",
+    "typescript": "^5.4.5",
+    "typescript-eslint": "^7.8.0"
+  }
+}

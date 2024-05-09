@@ -1,0 +1,10 @@
+test
+fixtures
+proto
+tsconfig.tsbuildinfo
+TODO
+node_modules
+.eslint.config.mjs
+.gitignore
+CONTRIBUTE.md
+target/
