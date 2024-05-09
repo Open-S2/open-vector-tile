@@ -8,3 +8,6 @@ node_modules
 .gitignore
 CONTRIBUTE.md
 target/
+ovtile/
+.helix/
+vector-tile-spec/

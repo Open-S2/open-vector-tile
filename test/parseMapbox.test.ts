@@ -119,9 +119,7 @@ test("VectorFeature", () => {
 });
 
 test("https://github.com/mapbox/vector-tile-js/issues/15", () => {
-  const data = fs.readFileSync(
-    path.join(__dirname, "fixtures/lots-of-tags.vector.pbf"),
-  );
+  const data = fs.readFileSync(path.join(__dirname, "fixtures/lots-of-tags.vector.pbf"));
   const tile = new VectorTile(data);
   const feature = tile.layers["stuttgart-rails"].feature(0);
   expect(feature.id).toEqual(22);
@@ -130,17 +128,13 @@ test("https://github.com/mapbox/vector-tile-js/issues/15", () => {
 });
 
 test("https://github.com/mapbox/mapbox-gl-js/issues/1019", () => {
-  const data = fs.readFileSync(
-    path.join(__dirname, "fixtures/12-1143-1497.vector.pbf"),
-  );
+  const data = fs.readFileSync(path.join(__dirname, "fixtures/12-1143-1497.vector.pbf"));
   const tile = new VectorTile(data);
   expect(tile.layers.water.feature(1).loadGeometry()).toHaveLength(1);
 });
 
 test("https://github.com/mapbox/vector-tile-js/issues/60", () => {
-  const data = fs.readFileSync(
-    path.join(__dirname, "fixtures/multipolygon-with-closepath.pbf"),
-  );
+  const data = fs.readFileSync(path.join(__dirname, "fixtures/multipolygon-with-closepath.pbf"));
   const tile = new VectorTile(data);
   for (const id in tile.layers) {
     const layer = tile.layers[id];
@@ -151,9 +145,7 @@ test("https://github.com/mapbox/vector-tile-js/issues/60", () => {
 });
 
 describe("parsing multi polygons are the same", () => {
-  const data = fs.readFileSync(
-    path.join(__dirname, "fixtures/1-1-0.vector.pbf"),
-  ) as Uint8Array;
+  const data = fs.readFileSync(path.join(__dirname, "fixtures/1-1-0.vector.pbf")) as Uint8Array;
 
   it("should have all layers", () => {
     const mTile = new MapboxVectorTile(new MapboxProtobuf(data));

@@ -1,11 +1,6 @@
 import { describe, test, it, expect } from "bun:test";
 import Protobuf from "../src/pbf";
-import {
-  serializeS2,
-  VectorTile,
-  VectorFeature,
-  VectorLayer,
-} from "../src/index";
+import { serializeS2, VectorTile, VectorFeature, VectorLayer } from "../src/index";
 import {
   BaseVectorTile,
   BaseVectorLayer,
@@ -16,16 +11,9 @@ import {
 
 describe("serialize and parse vector tile points", () => {
   // Step 1: Create
-  const point1 = new BaseVectorPointsFeature(
-    [{ x: 3805, y: 5645 }],
-    { name: "a" },
-    1,
-  );
-  const point2 = new BaseVectorPointsFeature(
-    [{ x: 5136, y: 4700 }],
-    { name: "c" },
-    2,
-  );
+  const point1 = new BaseVectorPointsFeature([{ x: 3805, y: 5645 }], { name: "a" }, 1);
+
+  const point2 = new BaseVectorPointsFeature([{ x: 5136, y: 4700 }], { name: "c" }, 2);
   const layer = new BaseVectorLayer(5, "points", 8_192, [point1, point2]);
   const tile = new BaseVectorTile({ points: layer });
 

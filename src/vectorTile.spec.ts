@@ -12,13 +12,7 @@ export type Value = string | number | boolean | null;
 
 export type Properties = Record<string, Value>;
 
-export type OValue =
-  | string
-  | number
-  | boolean
-  | null
-  | OValue[]
-  | { [key: string]: OValue };
+export type OValue = string | number | boolean | null | OValue[] | { [key: string]: OValue };
 
 export type OProperties = Record<string, OValue>;
 

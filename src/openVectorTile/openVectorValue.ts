@@ -55,7 +55,7 @@ function writeValue (
     if (entries.length === 0) {
       // store a null
       pbf.writeTag(0, Protobuf.None)
-      return
+      return;
     }
     // write size
     pbf.writeVarint(entries.length)

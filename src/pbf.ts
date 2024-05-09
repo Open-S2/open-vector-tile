@@ -64,17 +64,13 @@ export default class Pbf {
   // 64-bit int handling is based on github.com/dpw/node-buffer-more-ints (MIT-licensed)
 
   readFixed64(): number {
-    const val =
-      readUInt32(this.buf, this.pos) +
-      readUInt32(this.buf, this.pos + 4) * SHIFT_LEFT_32;
+    const val = readUInt32(this.buf, this.pos) + readUInt32(this.buf, this.pos + 4) * SHIFT_LEFT_32;
     this.pos += 8;
     return val;
   }
 
   readSFixed64(): number {
-    const val =
-      readUInt32(this.buf, this.pos) +
-      readInt32(this.buf, this.pos + 4) * SHIFT_LEFT_32;
+    const val = readUInt32(this.buf, this.pos) + readInt32(this.buf, this.pos + 4) * SHIFT_LEFT_32;
     this.pos += 8;
     return val;
   }
@@ -615,10 +611,7 @@ function writePackedSFixed64(arr: number[], pbf: Pbf): void {
 // Buffer code below from https://github.com/feross/buffer, MIT-licensed
 
 function readUInt32(buf: Uint8Array, pos: number): number {
-  return (
-    (buf[pos] | (buf[pos + 1] << 8) | (buf[pos + 2] << 16)) +
-    buf[pos + 3] * 0x1000000
-  );
+  return (buf[pos] | (buf[pos + 1] << 8) | (buf[pos + 2] << 16)) + buf[pos + 3] * 0x1000000;
 }
 
 function writeInt32(buf: Uint8Array, val: number, pos: number): void {
@@ -629,10 +622,7 @@ function writeInt32(buf: Uint8Array, val: number, pos: number): void {
 }
 
 function readInt32(buf: Uint8Array, pos: number): number {
-  return (
-    (buf[pos] | (buf[pos + 1] << 8) | (buf[pos + 2] << 16)) +
-    (buf[pos + 3] << 24)
-  );
+  return (buf[pos] | (buf[pos + 1] << 8) | (buf[pos + 2] << 16)) + (buf[pos + 3] << 24);
 }
 
 function readUtf8(buf: Uint8Array, pos: number, end: number): string {
@@ -673,16 +663,8 @@ function readUtf8(buf: Uint8Array, pos: number, end: number): string {
       b1 = buf[i + 1];
       b2 = buf[i + 2];
       b3 = buf[i + 3];
-      if (
-        (b1 & 0xc0) === 0x80 &&
-        (b2 & 0xc0) === 0x80 &&
-        (b3 & 0xc0) === 0x80
-      ) {
-        c =
-          ((b0 & 0xf) << 0x12) |
-          ((b1 & 0x3f) << 0xc) |
-          ((b2 & 0x3f) << 0x6) |
-          (b3 & 0x3f);
+      if ((b1 & 0xc0) === 0x80 && (b2 & 0xc0) === 0x80 && (b3 & 0xc0) === 0x80) {
+        c = ((b0 & 0xf) << 0x12) | ((b1 & 0x3f) << 0xc) | ((b2 & 0x3f) << 0x6) | (b3 & 0x3f);
         if (c <= 0xffff || c >= 0x110000) {
           c = null;
         }
