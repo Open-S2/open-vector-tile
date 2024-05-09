@@ -1,8 +1,8 @@
-import { type OVectorFeature } from "./openVectorFeature.js";
+import { type OVectorFeature } from "./openVectorFeature";
 
-import type Protobuf from "../pbf.js";
-import type { ColumnCacheWriter } from "./columnCache.js";
-import type { BaseVectorLayer } from "../baseVectorTile/index.js";
+import type Protobuf from "../pbf";
+import type { ColumnCacheWriter } from "./columnCache";
+import type { BaseVectorLayer } from "../baseVectorTile/index";
 
 export default class OVectorLayer {
   name: string = "";

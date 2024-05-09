@@ -74,6 +74,8 @@ export class BaseVectorPolysFeature extends VectorFeatureBase {
   }
 }
 
+// TODO: BaseVectorPolyLinesFeature (just a collection of BaseVectorLinesFeature)
+
 export class BaseVectorPoint3DFeature extends VectorFeatureBase {
   type = 4;
   geometry: VectorPoints3D = [];
@@ -126,6 +128,8 @@ export class BaseVectorPoly3DFeature extends VectorFeatureBase {
     this.bbox = bbox;
   }
 }
+
+// TODO: BaseVectorPolyLines3DFeature
 
 export type BaseVectorFeature =
   | BaseVectorPointsFeature

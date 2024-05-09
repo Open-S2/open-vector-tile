@@ -1,5 +1,5 @@
-import Protobuf from "../pbf.js";
-import { commandEncode, zigzag } from "../util.js";
+import Protobuf from "../pbf";
+import { commandEncode, zigzag } from "../util";
 
 import type {
   OValue,
@@ -12,7 +12,7 @@ import type {
   OVectorPoly,
   OColumnName,
   OColumn,
-} from "../vectorTile.spec.js";
+} from "../vectorTile.spec";
 
 // export interface ColumnCache extends OColumn {
 //   [OColumnName.string]: [],

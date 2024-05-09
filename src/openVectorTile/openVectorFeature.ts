@@ -1,5 +1,4 @@
-import type Protobuf from "../pbf.js";
-import type OVectorLayer from "./openVectorLayer.js";
+import type Protobuf from "../pbf";
 import type {
   BBox,
   BBox3D,
@@ -14,8 +13,8 @@ import type {
   VectorMultiPoly3D,
   VectorPoints,
   VectorPoints3D,
-} from "../vectorTile.spec.js";
-import type { ColumnCacheReader } from "./columnCache.js";
+} from "../vectorTile.spec";
+import type { ColumnCacheReader } from "./columnCache";
 export interface OVectorFeatureBase {
   type: VectorFeatureType;
   id: number;
@@ -93,8 +92,7 @@ export class OVectorFeature implements OVectorFeatureBase {
   type: VectorFeatureType = 1;
   id: number; // id is required but may be 0 to reperesent null (its a u65)
   properties: OValue = {};
-  readonly #pbf: Protobuf;
-  readonly #layer: OVectorLayer;
+  readonly extent: number;
   readonly #cache: ColumnCacheReader;
   #mValues = -1;
   #bbox = -1;
@@ -106,11 +104,10 @@ export class OVectorFeature implements OVectorFeatureBase {
     pbf: Protobuf,
     end: number,
     id: number, // id is required but may be 0
-    layer: OVectorLayer,
+    extent: number,
     cache: ColumnCacheReader,
   ) {
-    this.#pbf = pbf;
-    this.#layer = layer;
+    this.extent = extent;
     this.#cache = cache;
     this.id = id;
 
