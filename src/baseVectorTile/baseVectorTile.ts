@@ -1,4 +1,4 @@
-import { VectorTile } from "../index";
+import { VectorTile } from "../";
 import BaseVectorLayer from "./baseVectorLayer";
 // TODO: parseOpenVectorTile
 // TODO: parseGeoJSON

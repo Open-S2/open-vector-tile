@@ -3,7 +3,7 @@ import path from "path";
 import { describe, test, it, expect } from "bun:test";
 import Protobuf from "../src/pbf";
 import MapboxProtobuf from "pbf";
-import { VectorTile, VectorLayer, VectorFeature } from "../src/index";
+import { VectorTile, MapboxVectorLayer, MapboxVectorFeature } from "../src";
 import { VectorTile as MapboxVectorTile } from "@mapbox/vector-tile";
 import { VectorGeometry } from "../src/vectorTile.spec";
 
@@ -84,7 +84,7 @@ describe("parsing vector tiles", () => {
 });
 
 test("VectorLayer", () => {
-  const { version, name, extent, isS2, length, features } = new VectorLayer(
+  const { version, name, extent, isS2, length, features } = new MapboxVectorLayer(
     new Protobuf(Buffer.alloc(0)),
     0,
   );
@@ -99,7 +99,7 @@ test("VectorLayer", () => {
 });
 
 test("VectorFeature", () => {
-  const { id, properties, extent, isS2, type, version } = new VectorFeature(
+  const { id, properties, extent, isS2, type, version } = new MapboxVectorFeature(
     new Protobuf(Buffer.alloc(0)),
     0,
     false,

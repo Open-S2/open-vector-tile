@@ -262,7 +262,7 @@ export default class Pbf {
     }
   }
 
-  finish(): Uint8Array {
+  commit(): Uint8Array {
     this.length = this.pos;
     this.pos = 0;
     return this.buf.subarray(0, this.length);

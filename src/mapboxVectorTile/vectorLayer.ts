@@ -3,7 +3,7 @@ import VectorFeature from "./vectorFeature";
 import type Protobuf from "../pbf";
 import type { Value } from "../vectorTile.spec";
 
-export default class VectorLayer {
+export default class MapboxVectorLayer {
   version = 5;
   name = "default";
   extent = 4_096;
@@ -17,16 +17,16 @@ export default class VectorLayer {
   constructor(pbf: Protobuf, end: number, isS2 = false) {
     this.#pbf = pbf;
     this.isS2 = isS2;
-    pbf.readFields(this.readLayer, this, end);
+    pbf.readFields(this.#readLayer, this, end);
     this.length = this.#featuresPos.length;
   }
 
-  readLayer(tag: number, layer: VectorLayer, pbf: Protobuf): void {
+  #readLayer(tag: number, layer: MapboxVectorLayer, pbf: Protobuf): void {
     if (tag === 15) layer.version = pbf.readVarint();
     else if (tag === 1) layer.name = pbf.readString();
     else if (tag === 2) layer.#featuresPos.push(pbf.pos);
     else if (tag === 3) layer.#keys.push(pbf.readString());
-    else if (tag === 4) layer.#values.push(layer.readValueMessage(pbf));
+    else if (tag === 4) layer.#values.push(layer.#readValueMessage(pbf));
     else if (tag === 5) layer.extent = pbf.readVarint();
   }
 
@@ -49,7 +49,7 @@ export default class VectorLayer {
     return vtf;
   }
 
-  readValueMessage(pbf: Protobuf): Value {
+  #readValueMessage(pbf: Protobuf): Value {
     let value: Value = null;
 
     const end = pbf.readVarint() + pbf.pos;

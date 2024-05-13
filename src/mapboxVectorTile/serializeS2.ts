@@ -1,67 +1,43 @@
 import Protobuf from "../pbf";
 import { commandEncode, zigzag } from "../util";
+import { BaseVectorPolysFeature } from "../baseVectorTile";
 
+import type { BaseVectorLayer, BaseVectorFeature, BaseVectorTile } from "../baseVectorTile";
+import type VectorTile from "../vectorTile";
+import type { MapboxVectorFeature, MapboxVectorLayer } from ".";
 import type {
-  OValue,
-  OVectorTile,
-  OVectorTileLayer,
-  OVectorTileFeature,
-  OVectorPoints,
-  OVectorMultiPoly,
-  OVectorLines,
-  OVectorPoly,
-  OColumnName,
-  OColumn,
+  Value,
+  VectorPoints,
+  VectorMultiPoly,
+  VectorLines,
+  VectorPoly,
 } from "../vectorTile.spec";
-
-// export interface ColumnCache extends OColumn {
-//   [OColumnName.string]: [],
-//   [OColumnName.unsigned]: [],
-//   [OColumnName.signed]: [],
-//   [OColumnName.double]: [],
-
-//   [OColumnName.points]: [],
-//   [OColumnName.points3D]: [],
-//   [OColumnName.lines]: [],
-//   [OColumnName.lines3D]: [],
-//   [OColumnName.indices]: [],
-//   [OColumnName.tessellation]: [],
-//   [OColumnName.tessellation3D]: [],
-//   [OColumnName.offsets]: [],
-//   [OColumnName.bbox]: [],
-//   [OColumnName.ids]: [],
-//   [OColumnName.values]: [],
-//   [OColumnName.features]: []
-// }
-
-// STEP 1: Break down a tile of features into columns and features pointing to columns via indexes
-// STEP 2: Store columns and features in pbf
 
 interface Context {
   keys: string[];
-  values: OValue[];
+  values: Value[];
   keycache: Record<string, number>;
   valuecache: Record<string, number>;
 }
 
 interface ContextWithFeature {
   context: Context;
-  feature: OVectorTileFeature;
+  feature: BaseVectorFeature | MapboxVectorFeature;
 }
 
-export default function serialize(tile: OVectorTile): Uint8Array {
+export default function serialize(tile: BaseVectorTile | VectorTile): Uint8Array {
   const out = new Protobuf();
   writeTile(tile, out);
-  return out.finish();
+  return out.commit();
 }
 
-function writeTile({ version, layers, columns }: OVectorTile, pbf: Protobuf): void {
-  pbf.writeVarintField(15, version);
-  for (const key in layers) pbf.writeMessage(3, writeLayer, layers[key]);
-  for (const key in columns) pbf.writeMessage(4, writeColumns, columns[key]);
+function writeTile(tile: BaseVectorTile | VectorTile, pbf: Protobuf): void {
+  for (const key in tile.layers) {
+    pbf.writeMessage(3, writeLayer, tile.layers[key]);
+  }
 }
 
-function writeLayer(layer: OVectorTileLayer, pbf: Protobuf): void {
+function writeLayer(layer: BaseVectorLayer | MapboxVectorLayer, pbf: Protobuf): void {
   pbf.writeVarintField(15, layer.version ?? 1);
   pbf.writeStringField(1, layer.name ?? "");
   pbf.writeVarintField(5, layer.extent ?? 4096);
@@ -74,7 +50,7 @@ function writeLayer(layer: OVectorTileLayer, pbf: Protobuf): void {
     valuecache: {},
   };
 
-  const isVectorTileLayer = layer.length !== undefined;
+  const isVectorTileLayer = "length" in layer;
 
   const ll = isVectorTileLayer ? layer.length : layer.features.length;
   for (i = 0; i < ll; i++) {
@@ -93,15 +69,16 @@ function writeLayer(layer: OVectorTileLayer, pbf: Protobuf): void {
   }
 }
 
-function writeColumns(column: OColumn, pbf: Protobuf): void {}
-
 function writeFeature(contextWF: ContextWithFeature, pbf: Protobuf): void {
   const { feature } = contextWF;
+  // fix BaseVectorPolysFeature to work with S2
+  if (feature instanceof BaseVectorPolysFeature) {
+    feature.type = 4;
+  }
   // if id write it
   if (typeof feature.id === "number") pbf.writeVarintField(1, feature.id);
   // properties
   pbf.writeMessage(2, writeProperties, contextWF);
-  // type
   pbf.writeVarintField(3, feature.type);
   // geoemtry, indices
   pbf.writeMessage(4, writeGeometry, feature);
@@ -127,7 +104,7 @@ function writeProperties(contextWF: ContextWithFeature, pbf: Protobuf): void {
     }
     pbf.writeVarint(keyIndex);
 
-    let value = properties[key];
+    let value = properties[key] as Value;
     const type = typeof value;
     if (type !== "string" && type !== "boolean" && type !== "number") {
       value = JSON.stringify(value);
@@ -166,16 +143,16 @@ function writeTesselation(geometry: number[], pbf: Protobuf): void {
   }
 }
 
-function writeGeometry(feature: VectorTileFeature | OVectorTileFeature, pbf: Protobuf): void {
+function writeGeometry(feature: BaseVectorFeature | MapboxVectorFeature, pbf: Protobuf): void {
   const { type } = feature;
   const geometry = "geometry" in feature ? feature.geometry : feature.loadGeometry();
 
-  if (type === 1) writePointGeometry(geometry as OVectorPoints, pbf);
-  else if (type === 4) writeMultiPolyGeometry(geometry as OVectorMultiPoly, pbf);
-  else writeLinesGeometry(geometry as OVectorLines | OVectorPoly, type === 3, pbf);
+  if (type === 1) writePointGeometry(geometry as VectorPoints, pbf);
+  else if (type === 4) writeMultiPolyGeometry(geometry as VectorMultiPoly, pbf);
+  else writeLinesGeometry(geometry as VectorLines | VectorPoly, type === 3, pbf);
 }
 
-function writePointGeometry(geometry: OVectorPoints, pbf: Protobuf): void {
+function writePointGeometry(geometry: VectorPoints, pbf: Protobuf): void {
   let x = 0;
   let y = 0;
 
@@ -183,8 +160,8 @@ function writePointGeometry(geometry: OVectorPoints, pbf: Protobuf): void {
     // move
     pbf.writeVarint(commandEncode(1, 1)); // moveto
     // store
-    const dx = point[0] - x;
-    const dy = point[1] - y;
+    const dx = point.x - x;
+    const dy = point.y - y;
     pbf.writeVarint(zigzag(dx));
     pbf.writeVarint(zigzag(dy));
     // update position
@@ -194,7 +171,7 @@ function writePointGeometry(geometry: OVectorPoints, pbf: Protobuf): void {
 }
 
 function writeLinesGeometry(
-  geometry: OVectorLines | OVectorPoly,
+  geometry: VectorLines | VectorPoly,
   polygon: boolean,
   pbf: Protobuf,
 ): void {
@@ -209,8 +186,8 @@ function writeLinesGeometry(
     for (let i = 0; i < lineCount; i++) {
       if (i === 1) pbf.writeVarint(commandEncode(2, lineCount - 1)); // lineto
 
-      const dx = ring[i][0] - x;
-      const dy = ring[i][1] - y;
+      const dx = ring[i].x - x;
+      const dy = ring[i].y - y;
       pbf.writeVarint(zigzag(dx));
       pbf.writeVarint(zigzag(dy));
       x += dx;
@@ -220,7 +197,7 @@ function writeLinesGeometry(
   }
 }
 
-function writeMultiPolyGeometry(geometry: OVectorMultiPoly, pbf: Protobuf): void {
+function writeMultiPolyGeometry(geometry: VectorMultiPoly, pbf: Protobuf): void {
   let x = 0;
   let y = 0;
 
@@ -233,8 +210,8 @@ function writeMultiPolyGeometry(geometry: OVectorMultiPoly, pbf: Protobuf): void
       for (let i = 0; i < lineCount; i++) {
         if (i === 1) pbf.writeVarint(commandEncode(2, lineCount - 1)); // lineto
 
-        const dx = ring[i][0] - x;
-        const dy = ring[i][1] - y;
+        const dx = ring[i].x - x;
+        const dy = ring[i].y - y;
         pbf.writeVarint(zigzag(dx));
         pbf.writeVarint(zigzag(dy));
         x += dx;

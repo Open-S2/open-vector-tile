@@ -1,21 +1,32 @@
-// import { weaveAndDeltaEncodeArray } from "../util";
+import {
+  weaveAndDeltaEncodeArray,
+  weaveAndDeltaEncode3DArray,
+  unweaveAndDeltaDecodeArray,
+  unweaveAndDeltaDecode3DArray,
+} from "../util";
 import { deltaEncodeArray, deltaDecodeArray } from "../util";
-import { readValue } from "./openVectorValue";
+import { readValue } from "./vectorValue";
 
 import type Protobuf from "../pbf";
-import type { OValue, Point, Point3D, VectorLine, VectorLine3D } from "../vectorTile.spec";
+import type { OValue, Point, Point3D, VectorPoints, VectorPoints3D } from "../vectorTile.spec";
 
 export enum OColumnName {
   string,
-  unsigned, // IDs are stored in unsigned
+  // IDs are stored in unsigned
+  unsigned,
   signed,
-  double, // offsets and bbox values are stored in double (lines and polygons have bbox associated with them for zooming)
+  // offsets and bbox values are stored in double
+  // (lines and polygons have bbox associated with them for zooming)
+  double,
+  // points is an array of { x: number, y: number }
+  // points also stores lines.
+  // if a line is stored, note that it has an acompanying offset and potentially mValues
+  // Polygons are stored as a collection of lines.
   points,
   points3D,
-  // NOTE: everytime a line is stored, an acompanying offset is stored. so pbf writes: offset, size, data
-  lines, // tessellation is stored in lines
-  lines3D, // tessellation3D is stored in lines3D
-  indices, // tracking M-values for lines are stored in indices since each m value is just an index to values
+  // tracking M-values for lines are stored in indices since each m value is just an index to
+  // values
+  indices,
   values, // features are just values
 }
 
@@ -31,10 +42,8 @@ export type OColumnUnsigned<T = number> = ColumnValueReadSimple<T>;
 export type OColumnSigned<T = number> = ColumnValueReadSimple<T>;
 export type OColumnDouble<T = number> = ColumnValueReadSimple<T>;
 // for geometry types each column is individually weaved and delta encoded
-export type OColumnPoints<T = Point> = ColumnValueReadSimple<T>;
-export type OColumnPoints3D<T = Point3D> = ColumnValueReadSimple<T>;
-export type OColumnLines<T = VectorLine> = ColumnValueReadSimple<T>;
-export type OColumnLines3D<T = VectorLine3D> = ColumnValueReadSimple<T>;
+export type OColumnPoints<T = VectorPoints> = ColumnValueReadSimple<T>;
+export type OColumnPoints3D<T = VectorPoints3D> = ColumnValueReadSimple<T>;
 // Several ways to use the indices column
 // 1. M-Values
 // shapes are stored as records of key/values that values are stored in the values column
@@ -53,8 +62,6 @@ export class ColumnCacheReader {
   [OColumnName.double]: OColumnDouble = [];
   [OColumnName.points]: OColumnPoints = [];
   [OColumnName.points3D]: OColumnPoints3D = [];
-  [OColumnName.lines]: OColumnLines = [];
-  [OColumnName.lines3D]: OColumnLines3D = [];
   [OColumnName.indices]: OColumnIndices = [];
   [OColumnName.values]: OColumnValues = [];
   readonly #pbf: Protobuf;
@@ -74,21 +81,17 @@ export class ColumnCacheReader {
     let res: T;
     const columnValue = this[col][index];
     const hasPos = typeof columnValue === "object" && "pos" in columnValue;
-    switch (col) {
-      case OColumnName.values: {
-        if (hasPos) {
-          this[col][index] = { data: this.#getColumnData(col) };
-        }
-        res = (this[col][index] as { data: T }).data;
-        break;
+
+    if (col === OColumnName.values) {
+      if (hasPos) {
+        this[col][index] = { data: this.#getColumnData(col) };
       }
-      default: {
-        if (hasPos) {
-          this[col][index] = this.#getColumnData(col);
-        }
-        res = this[col][index] as T;
-        break;
+      res = (this[col][index] as { data: T }).data;
+    } else {
+      if (hasPos) {
+        this[col][index] = this.#getColumnData(col);
       }
+      res = this[col][index] as T;
     }
 
     return res;
@@ -104,7 +107,10 @@ export class ColumnCacheReader {
         return this.#pbf.readSVarint() as T;
       case OColumnName.double:
         return this.#pbf.readDouble() as T;
-      // TODO: points, points3D, lines, lines3D
+      case OColumnName.points:
+        return unweaveAndDeltaDecodeArray(this.#pbf.readPackedVarint()) as T;
+      case OColumnName.points3D:
+        return unweaveAndDeltaDecode3DArray(this.#pbf.readPackedVarint()) as T;
       case OColumnName.indices:
         return deltaDecodeArray(this.#pbf.readPackedVarint()) as T;
       case OColumnName.values:
@@ -136,8 +142,6 @@ export type OColumnDoubleWrite<T = number> = OColumnBaseWrite<T>;
 // for geometry types each column is individually weaved and delta encoded
 export type OColumnPointsWrite<T = Point> = OColumnBaseWriteSimple<T>;
 export type OColumnPoints3DWrite<T = Point3D> = OColumnBaseWriteSimple<T>;
-export type OColumnLinesWrite<T = VectorLine> = OColumnBaseWriteSimple<T>;
-export type OColumnLines3DWrite<T = VectorLine3D> = OColumnBaseWriteSimple<T>;
 // Features should be sorted by id prior to building a column
 export type OColumnIndicesWrite<T = number> = OColumnBaseWriteSimple<T>;
 // values are stored in a manner of looking up string & number column indexes.
@@ -155,8 +159,6 @@ export class ColumnCacheWriter {
   [OColumnName.double]: OColumnDoubleWrite = [];
   [OColumnName.points]: OColumnPointsWrite = [];
   [OColumnName.points3D]: OColumnPoints3DWrite = [];
-  [OColumnName.lines]: OColumnLinesWrite = [];
-  [OColumnName.lines3D]: OColumnLines3DWrite = [];
   [OColumnName.indices]: OColumnIndicesWrite = [];
   [OColumnName.values]: OColumnValuesWrite = [];
 
@@ -215,26 +217,27 @@ export class ColumnCacheWriter {
     this.#sort();
     // for each column, encode apropriately and send to pbf
     for (const string of column[OColumnName.string]) {
-      pbf.writeStringField(1, string);
+      pbf.writeStringField(0, string);
     }
     for (const { data: unsigned } of column[OColumnName.unsigned]) {
-      pbf.writeVarintField(2, unsigned);
+      pbf.writeVarintField(1, unsigned);
     }
     for (const { data: signed } of column[OColumnName.signed]) {
-      pbf.writeSVarintField(3, signed);
+      pbf.writeSVarintField(2, signed);
     }
     for (const { data: double } of column[OColumnName.double]) {
-      pbf.writeDoubleField(4, double);
+      pbf.writeDoubleField(3, double);
     }
-    // const points = column[OColumnName.points];
-    // const weaveEncodedPoints = weaveAndDeltaEncodeArray(points);
-    // pbf.writePackedVarint(5, weaveEncodedPoints);
-    // TODO: points3D, lines, lines3D
+    // points
+    pbf.writePackedVarint(4, weaveAndDeltaEncodeArray(column[OColumnName.points]));
+    // points 3D:
+    pbf.writePackedVarint(5, weaveAndDeltaEncode3DArray(column[OColumnName.points3D]));
+    // indices
     pbf.writePackedVarint(6, deltaEncodeArray(column[OColumnName.indices]));
-
+    // values
     for (const arr of column[OColumnName.values]) {
       const packed = arr.map((v) => (typeof v === "object" ? columnEncode(v.col, v.index) : v));
-      pbf.writePackedVarint(9, packed);
+      pbf.writePackedVarint(7, packed);
     }
   }
 
@@ -249,9 +252,9 @@ export class ColumnCacheWriter {
 
 export function columnEncode(col: OColumnName, index: number): number {
   // column is never bigger then 15
-  return (index << 4) + (col & 0xf);
+  return (index << 3) + (col & 0x7);
 }
 
 export function columnDecode(col: number): { col: OColumnName; index: number } {
-  return { col: col & 0xf, index: col >> 4 };
+  return { col: col & 0x7, index: col >> 3 };
 }

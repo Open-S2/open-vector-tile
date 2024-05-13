@@ -1,6 +1,6 @@
 import { describe, it, expect, test } from "bun:test";
 import Protobuf from "../src/pbf";
-import { VectorTile, VectorFeature, VectorLayer } from "../src/index";
+import { VectorTile, MapboxVectorFeature, MapboxVectorLayer } from "../src";
 
 describe("serialize and parse vector tile points", () => {
   const data = new Uint8Array([
@@ -89,7 +89,6 @@ describe("serialize and parse vector tile lines", () => {
 
     // Geometry
     expect(line1.loadGeometry()).toEqual([
-      // [[3664, 3664], [4053, 4053], [2135, 2135], [1879, 1879]]
       [
         { x: 3664, y: 3664 },
         { x: 4053, y: 4053 },
@@ -98,8 +97,6 @@ describe("serialize and parse vector tile lines", () => {
       ],
     ]);
     expect(line2.loadGeometry()).toEqual([
-      // [[2679, 2679], [3283, 3283], [2819, 2819], [3383, 3383]],
-      // [[3613, 3613], [3882, 3882], [3469, 3469]]
       [
         { x: 2679, y: 2679 },
         { x: 3283, y: 3283 },
@@ -117,7 +114,6 @@ describe("serialize and parse vector tile lines", () => {
     layer.version = 1;
     expect(line1.loadGeometry()).toEqual([
       [
-        // [3664, 3664], [4053, 4053], [2135, 2135], [1879, 1879]
         { x: 3664, y: 3664 },
         { x: 4053, y: 4053 },
         { x: 2135, y: 2135 },
@@ -125,8 +121,6 @@ describe("serialize and parse vector tile lines", () => {
       ],
     ]);
     expect(line2.loadGeometry()).toEqual([
-      // [[2679, 2679], [3283, 3283], [2819, 2819], [3383, 3383]],
-      // [[3613, 3613], [3882, 3882], [3469, 3469]]
       [
         { x: 2679, y: 2679 },
         { x: 3283, y: 3283 },
@@ -193,11 +187,6 @@ describe("serialize and parse vector tile polygons", () => {
         { x: 2565, y: 2565 },
       ],
       [
-        // [3025, 3025],
-        // [3025, 3025],
-        // [2766, 2766],
-        // [2766, 2766],
-        // [3025, 3025]
         { x: 3025, y: 3025 },
         { x: 3025, y: 3025 },
         { x: 2766, y: 2766 },
@@ -208,7 +197,6 @@ describe("serialize and parse vector tile polygons", () => {
     expect(poly2.loadGeometry()).toEqual([
       [
         [
-          // [2614, 2614], [2614, 2614], [3110, 3110], [5299, 5299], [5299, 5299], [2614, 2614]
           { x: 2614, y: 2614 },
           { x: 2614, y: 2614 },
           { x: 3110, y: 3110 },
@@ -217,7 +205,6 @@ describe("serialize and parse vector tile polygons", () => {
           { x: 2614, y: 2614 },
         ],
         [
-          // [3497, 3497], [4603, 4603], [4603, 4603], [3497, 3497], [3497, 3497]
           { x: 3497, y: 3497 },
           { x: 4603, y: 4603 },
           { x: 4603, y: 4603 },
@@ -225,7 +212,6 @@ describe("serialize and parse vector tile polygons", () => {
           { x: 3497, y: 3497 },
         ],
         [
-          // [2978, 2978], [3329, 3329], [3329, 3329], [2978, 2978], [2978, 2978]
           { x: 2978, y: 2978 },
           { x: 3329, y: 3329 },
           { x: 3329, y: 3329 },
@@ -235,7 +221,6 @@ describe("serialize and parse vector tile polygons", () => {
       ],
       [
         [
-          // [4591, 4591], [4591, 4591], [5704, 5704], [5967, 5967], [5967, 5967], [4591, 4591]
           { x: 4591, y: 4591 },
           { x: 4591, y: 4591 },
           { x: 5704, y: 5704 },
@@ -244,7 +229,6 @@ describe("serialize and parse vector tile polygons", () => {
           { x: 4591, y: 4591 },
         ],
         [
-          // [5730, 5730], [5730, 5730], [5556, 5556], [5556, 5556], [5730, 5730]
           { x: 5730, y: 5730 },
           { x: 5730, y: 5730 },
           { x: 5556, y: 5556 },
@@ -258,11 +242,6 @@ describe("serialize and parse vector tile polygons", () => {
     layer.version = 1;
     expect(poly1.loadGeometry()).toEqual([
       [
-        // [2565, 2565],
-        // [2565, 2565],
-        // [3889, 3889],
-        // [3889, 3889],
-        // [2565, 2565]
         { x: 2565, y: 2565 },
         { x: 2565, y: 2565 },
         { x: 3889, y: 3889 },
@@ -270,11 +249,6 @@ describe("serialize and parse vector tile polygons", () => {
         { x: 2565, y: 2565 },
       ],
       [
-        // [3025, 3025],
-        // [3025, 3025],
-        // [2766, 2766],
-        // [2766, 2766],
-        // [3025, 3025]
         { x: 3025, y: 3025 },
         { x: 3025, y: 3025 },
         { x: 2766, y: 2766 },
@@ -285,12 +259,6 @@ describe("serialize and parse vector tile polygons", () => {
     expect(poly2.loadGeometry()).toEqual([
       [
         [
-          // [2614, 2614],
-          // [2614, 2614],
-          // [3110, 3110],
-          // [5299, 5299],
-          // [5299, 5299],
-          // [2614, 2614]
           { x: 2614, y: 2614 },
           { x: 2614, y: 2614 },
           { x: 3110, y: 3110 },
@@ -299,11 +267,6 @@ describe("serialize and parse vector tile polygons", () => {
           { x: 2614, y: 2614 },
         ],
         [
-          // [3497, 3497],
-          // [4603, 4603],
-          // [4603, 4603],
-          // [3497, 3497],
-          // [3497, 3497]
           { x: 3497, y: 3497 },
           { x: 4603, y: 4603 },
           { x: 4603, y: 4603 },
@@ -311,11 +274,6 @@ describe("serialize and parse vector tile polygons", () => {
           { x: 3497, y: 3497 },
         ],
         [
-          // [2978, 2978],
-          // [3329, 3329],
-          // [3329, 3329],
-          // [2978, 2978],
-          // [2978, 2978]
           { x: 2978, y: 2978 },
           { x: 3329, y: 3329 },
           { x: 3329, y: 3329 },
@@ -325,12 +283,6 @@ describe("serialize and parse vector tile polygons", () => {
       ],
       [
         [
-          // [4591, 4591],
-          // [4591, 4591],
-          // [5704, 5704],
-          // [5967, 5967],
-          // [5967, 5967],
-          // [4591, 4591]
           { x: 4591, y: 4591 },
           { x: 4591, y: 4591 },
           { x: 5704, y: 5704 },
@@ -339,11 +291,6 @@ describe("serialize and parse vector tile polygons", () => {
           { x: 4591, y: 4591 },
         ],
         [
-          // [5730, 5730],
-          // [5730, 5730],
-          // [5556, 5556],
-          // [5556, 5556],
-          // [5730, 5730]
           { x: 5730, y: 5730 },
           { x: 5730, y: 5730 },
           { x: 5556, y: 5556 },
@@ -356,7 +303,7 @@ describe("serialize and parse vector tile polygons", () => {
 });
 
 test("VectorLayer", () => {
-  const { version, name, extent, isS2, length, features } = new VectorLayer(
+  const { version, name, extent, isS2, length, features } = new MapboxVectorLayer(
     new Protobuf(Buffer.alloc(0)),
     0,
   );
@@ -371,7 +318,7 @@ test("VectorLayer", () => {
 });
 
 test("VectorFeature", () => {
-  const { id, properties, extent, isS2, type, version } = new VectorFeature(
+  const { id, properties, extent, isS2, type, version } = new MapboxVectorFeature(
     new Protobuf(Buffer.alloc(0)),
     0,
     true,

@@ -1,4 +1,3 @@
 export * from "./columnCache";
-export * from "./openVectorFeature";
-export * from "./openVectorLayer";
-export * from "./serializeOVT";
+export * from "./vectorFeature";
+export * from "./vectorLayer";

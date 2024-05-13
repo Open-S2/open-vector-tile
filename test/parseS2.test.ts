@@ -1,13 +1,13 @@
 import { describe, test, it, expect } from "bun:test";
 import Protobuf from "../src/pbf";
-import { serializeS2, VectorTile, VectorFeature, VectorLayer } from "../src/index";
+import { serializeS2, VectorTile, MapboxVectorFeature, MapboxVectorLayer } from "../src";
 import {
   BaseVectorTile,
   BaseVectorLayer,
   BaseVectorPointsFeature,
   BaseVectorLinesFeature,
   BaseVectorPolysFeature,
-} from "../src/baseVectorTile/index";
+} from "../src/baseVectorTile";
 
 describe("serialize and parse vector tile points", () => {
   // Step 1: Create
@@ -427,7 +427,7 @@ describe("serialize and parse vector tile polygons", () => {
 });
 
 test("VectorLayer", () => {
-  const { version, name, extent, isS2, length, features } = new VectorLayer(
+  const { version, name, extent, isS2, length, features } = new MapboxVectorLayer(
     new Protobuf(Buffer.alloc(0)),
     0,
   );
@@ -442,7 +442,7 @@ test("VectorLayer", () => {
 });
 
 test("VectorFeature", () => {
-  const { id, properties, extent, isS2, type, version } = new VectorFeature(
+  const { id, properties, extent, isS2, type, version } = new MapboxVectorFeature(
     new Protobuf(Buffer.alloc(0)),
     0,
     false,

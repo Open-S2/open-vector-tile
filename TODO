@@ -1,7 +1,9 @@
 # TODO
 
 [x] Migrate Old Vector spec to Points of { x, y }
-[ ] Vector Feature & Vector Value encoding/decoding with tests
+[ ] Vector Feature - encode & decode
+[ ] Vector Layer - encode & decode
+[ ] Vector Tile - encode & decode
 [ ] Setup new vector tile and new vector layer
 [ ] Port to Rust
 [ ] Readme

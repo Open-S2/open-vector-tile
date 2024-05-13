@@ -10,7 +10,7 @@ import type {
   VectorLine,
 } from "../vectorTile.spec";
 
-export default class VectorTile {
+export default class MapboxVectorFeature {
   id?: number;
   version = 5;
   properties: Properties = {};
@@ -42,7 +42,7 @@ export default class VectorTile {
     pbf.readFields(this.#readFeature, this, end);
   }
 
-  #readFeature(tag: number, feature: VectorTile, pbf: Protobuf): void {
+  #readFeature(tag: number, feature: MapboxVectorFeature, pbf: Protobuf): void {
     // old spec
     if (feature.isS2) {
       if (tag === 15) feature.id = pbf.readVarint();
@@ -61,7 +61,7 @@ export default class VectorTile {
     }
   }
 
-  #readTag(pbf: Protobuf, feature: VectorTile): void {
+  #readTag(pbf: Protobuf, feature: MapboxVectorFeature): void {
     const end = pbf.readVarint() + pbf.pos;
 
     while (pbf.pos < end) {

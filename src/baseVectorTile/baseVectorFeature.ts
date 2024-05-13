@@ -1,21 +1,20 @@
-import type { VectorFeature } from "../index";
+import type { MapboxVectorFeature } from "../";
 import type {
-  OValue,
   VectorPoints,
   VectorLines,
   VectorMultiPoly,
   VectorPoly,
   VectorPoints3D,
   VectorLines3D,
-  VectorMultiPoly3D,
   BBox,
   BBox3D,
+  OProperties,
 } from "../vectorTile.spec";
 
 export class VectorFeatureBase {
   id?: number;
-  properties: { [key: string]: OValue };
-  constructor(properties: { [key: string]: OValue } = {}, id?: number) {
+  properties: OProperties;
+  constructor(properties: OProperties = {}, id?: number) {
     this.properties = properties;
     this.id = id;
   }
@@ -25,7 +24,7 @@ export class BaseVectorPointsFeature extends VectorFeatureBase {
   type = 1;
   geometry: VectorPoints = [];
 
-  constructor(geometry: VectorPoints, properties?: { [key: string]: OValue }, id?: number) {
+  constructor(geometry: VectorPoints, properties?: OProperties, id?: number) {
     super(properties, id);
     this.geometry = geometry;
   }
@@ -36,12 +35,13 @@ export class BaseVectorLinesFeature extends VectorFeatureBase {
   geometry: VectorLines;
   bbox: BBox;
   offset: number;
+  mvalues?: OProperties[];
 
   constructor(
     geometry: VectorLines,
     bbox: BBox = [0, 0, 0, 0],
     offset: number = 0,
-    properties?: { [key: string]: OValue },
+    properties?: OProperties,
     id?: number,
   ) {
     super(properties, id);
@@ -53,17 +53,17 @@ export class BaseVectorLinesFeature extends VectorFeatureBase {
 
 export class BaseVectorPolysFeature extends VectorFeatureBase {
   type = 3;
-  geometry: VectorMultiPoly;
+  geometry: BaseVectorLinesFeature[][];
   indices: number[];
   tesselation: number[];
   bbox: BBox;
 
   constructor(
-    geometry: VectorMultiPoly,
+    geometry: BaseVectorLinesFeature[][],
     indices: number[] = [],
     tesselation: number[] = [],
     bbox: BBox = [0, 0, 0, 0],
-    properties?: { [key: string]: OValue },
+    properties?: OProperties,
     id?: number,
   ) {
     super(properties, id);
@@ -74,19 +74,17 @@ export class BaseVectorPolysFeature extends VectorFeatureBase {
   }
 }
 
-// TODO: BaseVectorPolyLinesFeature (just a collection of BaseVectorLinesFeature)
-
 export class BaseVectorPoint3DFeature extends VectorFeatureBase {
   type = 4;
   geometry: VectorPoints3D = [];
 
-  constructor(geometry: VectorPoints3D, properties?: { [key: string]: OValue }, id?: number) {
+  constructor(geometry: VectorPoints3D, properties?: OProperties, id?: number) {
     super(properties, id);
     this.geometry = geometry;
   }
 }
 
-export class BaseVectorLine3DFeature extends VectorFeatureBase {
+export class BaseVectorLines3DFeature extends VectorFeatureBase {
   type = 5;
   geometry: VectorLines3D;
   bbox: BBox3D;
@@ -96,7 +94,7 @@ export class BaseVectorLine3DFeature extends VectorFeatureBase {
     geometry: VectorLines3D,
     bbox: BBox3D = [0, 0, 0, 0, 0, 0],
     offset: number = 0,
-    properties?: { [key: string]: OValue },
+    properties?: OProperties,
     id?: number,
   ) {
     super(properties, id);
@@ -106,19 +104,19 @@ export class BaseVectorLine3DFeature extends VectorFeatureBase {
   }
 }
 
-export class BaseVectorPoly3DFeature extends VectorFeatureBase {
+export class BaseVectorPolys3DFeature extends VectorFeatureBase {
   type = 6;
-  geometry: VectorMultiPoly3D;
+  geometry: BaseVectorLines3DFeature[][];
   indices: number[];
   tesselation: number[];
   bbox: BBox3D;
 
   constructor(
-    geometry: VectorMultiPoly3D,
+    geometry: BaseVectorLines3DFeature[][],
     indices: number[] = [],
     tesselation: number[] = [],
     bbox: BBox3D = [0, 0, 0, 0, 0, 0],
-    properties?: { [key: string]: OValue },
+    properties?: OProperties,
     id?: number,
   ) {
     super(properties, id);
@@ -129,17 +127,15 @@ export class BaseVectorPoly3DFeature extends VectorFeatureBase {
   }
 }
 
-// TODO: BaseVectorPolyLines3DFeature
-
 export type BaseVectorFeature =
   | BaseVectorPointsFeature
   | BaseVectorLinesFeature
   | BaseVectorPolysFeature
   | BaseVectorPoint3DFeature
-  | BaseVectorLine3DFeature
-  | BaseVectorPoly3DFeature;
+  | BaseVectorLines3DFeature
+  | BaseVectorPolys3DFeature;
 
-export function fromVectorFeature(feature: VectorFeature): BaseVectorFeature {
+export function fromMapboxVectorFeature(feature: MapboxVectorFeature): BaseVectorFeature {
   const { id, properties } = feature;
   const geometry = feature.loadGeometry();
   const indices = feature.readIndices();
@@ -178,33 +174,3 @@ export function fromVectorFeature(feature: VectorFeature): BaseVectorFeature {
       throw new Error(`Unknown feature type: ${feature.type}`);
   }
 }
-
-// function convertVectorPointsToPoints (points: VectorPoints): VectorPoints {
-//   const geometry: VectorPoints = []
-//   for (const [x, y] of points) geometry.push({ x, y })
-//   return geometry
-// }
-
-// function convertVectorLinesToLines (lines: VectorLines): VectorLines {
-//   const geometry: VectorLines = []
-//   for (const line of lines) {
-//     const newLine: VectorLine = []
-//     for (const [x, y] of line) newLine.push({ x, y })
-//     geometry.push(newLine)
-//   }
-//   return geometry
-// }
-
-// export function convertS2VectorPolysToPolys (polys: S2VectorMultiPoly): VectorMultiPoly {
-//   const geometry: VectorMultiPoly = []
-//   for (const poly of polys) {
-//     const newPoly: VectorPoly = []
-//     for (const line of poly) {
-//       const newLine: VectorLine = []
-//       for (const [x, y] of line) newLine.push({ x, y })
-//       newPoly.push(newLine)
-//     }
-//     geometry.push(newPoly)
-//   }
-//   return geometry
-// }

@@ -12,8 +12,7 @@
 A Modified TypeScript implementation of the [Mapbox Vector Tile](https://github.com/mapbox/vector-tile-js) library. It is backwards compatible but offers a lot of new features and improvements including (but not limited to):
 
 * Proper module treeshake.
-* Indexed geometries.
-* Pre-Tessellated geometries to quickly send to the renderer.
+* Pre-Tessellated & Indexed geometries to quickly ship data to the renderer.
 * Support for 3D geometries.
 * Support for M-Values for each geometry point (used by lines and polygons).
   * M-Values are stored as "Shapes" which reuses objects only needing to do lookups on values.
@@ -41,7 +40,7 @@ cargo install ovtile
 * `SIMD encoding/decoding`:
 This is a neat feature, but Rust does not have first class citizen support, especially when using `no_std`. It's important for this library to also support embedded devices, which wont have access to stdlib but also will not have access to SIMD. These are both a solved problem for Zig, but not for Rust. I want funding so this project will be done in Typescript & Rust.
 * `cloud level filtering of features`:
-Just no. It doesn't make sense. It's like fetching a WEBP tile for rendering and being like, "yeah but I only need half of it, right?". The cost of a Vector Tile after zoom 4 is almost always less then 100kB. Let that sync in, the whole point of vector **tiles** is to already be easily parsed chunks of data. Also, by allowing for partial requests, you are applying excess pressure on the server side that also wont benefit from the cache system.
+I don't there is an ideal use case for this. It's kind of a solution looking for a problem that doesn't exist. It's like fetching a WEBP tile for rendering and being like, "yeah but I only need half of it, right?". The cost of a Vector Tile after zoom 4 is almost always less then 100kB. Let that sync in, the whole point of vector **tiles** is to already be easily parsed and small chunks of data. The time to fetch the features you want is almost always less then 60ms in JS. Also, by allowing for partial requests, you are applying excess pressure on the server side that also wont benefit from the cache system.
 
 ### Example use
 
