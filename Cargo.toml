@@ -4,18 +4,18 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Craig O'Connor <oconnorct1@gmail.com>"]
 description = "This library reads/writes The Open Vector Tiles 1.0 Specification"
-documentation = "https://docs.rs/pbf"
-homepage = "https://github.com/OpenS2/pbf"
-repository = "https://github.com/OpenS2/pbf"
+documentation = "https://docs.rs/ovtile"
+homepage = "https://github.com/OpenS2/open-vector-tile"
+repository = "https://github.com/OpenS2/open-vector-tile"
 readme = "README.md"
-categories = ["encoding", "decoding", "parsing", "no-std"]
-keywords = ["pbf", "vector", "minimal", "low-cost-code", "map", "tile", "spec"]
+categories = ["encoding", "wasm", "embedded", "no-std"]
+keywords = ["pbf", "open", "vector", "minimal", "low-cost-code", "map", "tile", "spec"]
 license = "MIT"
 
 [lib]
 name = "ovtile"
 path = "ovtile/lib.rs"
-bench = false
+bench = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
