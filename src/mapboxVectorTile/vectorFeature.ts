@@ -1,15 +1,20 @@
-import type Protobuf from "../pbf";
+import type { Pbf as Protobuf } from '../pbf';
 import type {
-  Value,
-  Properties,
-  Point,
-  VectorFeatureType,
-  VectorGeometry,
   BBox,
   BBox3D,
+  Point,
+  Properties,
+  Value,
+  VectorFeatureType,
+  VectorGeometry,
   VectorLine,
-} from "../vectorTile.spec";
+} from '../vectorTile.spec';
 
+/**
+ * Mapbox Vector Feature types are all bundled in one class
+ * to make it easier to read. Primarily contains an id, properties, and geometry.
+ * The now deprecated S2 model extends this class to include indices and tesselation data.
+ */
 export default class MapboxVectorFeature {
   id?: number;
   version = 5;
@@ -23,6 +28,15 @@ export default class MapboxVectorFeature {
   #tesselation = -1;
   #keys: string[];
   #values: Value[];
+  /**
+   * @param pbf - the pbf protocol we are reading from
+   * @param end - the position to stop at
+   * @param isS2 - whether the layer is a deprecated S2 layer or Mapbox layer.
+   * @param extent - the extent of the vector tile
+   * @param version - the version of the vector tile. S2 is 5, Mapbox is 1
+   * @param keys - the keys in the vector layer to pull from
+   * @param values - the values in the vector layer to pull from
+   */
   constructor(
     pbf: Protobuf,
     end: number,
@@ -42,6 +56,11 @@ export default class MapboxVectorFeature {
     pbf.readFields(this.#readFeature, this, end);
   }
 
+  /**
+   * @param tag - the tag to know what kind of data to read
+   * @param feature - the feature to mutate with the new data
+   * @param pbf - the Protobuf object to read from
+   */
   #readFeature(tag: number, feature: MapboxVectorFeature, pbf: Protobuf): void {
     // old spec
     if (feature.isS2) {
@@ -61,6 +80,10 @@ export default class MapboxVectorFeature {
     }
   }
 
+  /**
+   * @param pbf - the Protobuf object
+   * @param feature - the feature to mutate relative to the tag.
+   */
   #readTag(pbf: Protobuf, feature: MapboxVectorFeature): void {
     const end = pbf.readVarint() + pbf.pos;
 
@@ -72,14 +95,24 @@ export default class MapboxVectorFeature {
     }
   }
 
-  hasMvalues(): boolean {
+  /**
+   * @returns - MapboxVectorTile's do not support m-values so we return false
+   */
+  hasMValues(): boolean {
     return false;
   }
 
+  /**
+   * @returns - a default bbox. Since no bbox is present, the default is [0, 0, 0, 0]
+   * also MapboxVectorTile's do not support 3D, so we only return a 2D bbox
+   */
   bbox(): BBox | BBox3D {
     return [0, 0, 0, 0] as BBox;
   }
 
+  /**
+   * @returns - [flattened geometry & tesslation if applicable, indices]
+   */
   loadGeometryFlat(): [number[] | VectorGeometry, number[]] {
     if (!this.isS2) return [this.loadGeometry(), [] as number[]];
     this.#pbf.pos = this.#geometry;
@@ -126,6 +159,9 @@ export default class MapboxVectorFeature {
     return [geometry, indices];
   }
 
+  /**
+   * @returns - vector geometry relative to feature type.
+   */
   loadGeometry(): VectorGeometry {
     this.#pbf.pos = this.#geometry;
 
@@ -175,7 +211,7 @@ export default class MapboxVectorFeature {
         lines = [];
         input = [];
       } else {
-        throw new Error("unknown command " + String(cmd));
+        throw new Error('unknown command ' + String(cmd));
       }
     }
 
@@ -195,10 +231,16 @@ export default class MapboxVectorFeature {
   }
 
   // TODO
+  /**
+   * @returns - an array of lines. The offsets will be set to 0
+   */
   loadLines(): Array<{ offset: number; line: VectorLine }> {
     return [];
   }
 
+  /**
+   * @returns - an array of indices for the geometry
+   */
   readIndices(): number[] {
     if (this.#indices === 0) return [];
     this.#pbf.pos = this.#indices;
@@ -215,6 +257,10 @@ export default class MapboxVectorFeature {
     return indices;
   }
 
+  /**
+   * @param geometry - the geometry to add the tesselation data to
+   * @param multiplier - the multiplier to apply the extent shift
+   */
   addTesselation(geometry: number[], multiplier: number): void {
     if (this.#tesselation <= 0) return;
     this.#pbf.pos = this.#tesselation;
@@ -229,6 +275,10 @@ export default class MapboxVectorFeature {
   }
 }
 
+/**
+ * @param rings - input flattened rings that need to be classified
+ * @returns - parsed polygons
+ */
 function classifyRings(rings: Point[][]): Point[][][] {
   if (rings.length <= 1) return [rings];
 
@@ -255,6 +305,10 @@ function classifyRings(rings: Point[][]): Point[][][] {
   return polygons;
 }
 
+/**
+ * @param ring - linestring of points to check if it is ccw
+ * @returns - true if the linestring is ccw
+ */
 function signedArea(ring: Point[]): number {
   let sum = 0;
   for (let i = 0, rl = ring.length, j = rl - 1, p1, p2; i < rl; j = i++) {

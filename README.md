@@ -19,6 +19,10 @@ A Modified TypeScript implementation of the [Mapbox Vector Tile](https://github.
 * Column encoding of data to make it more compact. Better gzip and brotli compression.
 * Support nested objects in properties.
 
+## Inspiration
+
+A very talented [Markus Tremmel](https://github.com/mactrem) came up with the idea of migrating away from a row based approach to a column based approach with his [COVTiles](https://github.com/mactrem/cov-tiles). I wanted to test the idea of simplifying his approach and see if it was worth the effort. Once I saw I got better results post compression I decided to finish this project.
+
 ## Install
 
 ```bash
@@ -41,14 +45,17 @@ cargo install ovtile
 const fs = from 'fs'
 import { VectorTile } from 'open-vector-tile'
 
-const fixture = fs.readFileSync('./fixtures/14-8801-5371.vector.pbf')
-
-const tile = new VectorTile(fixture) // load the protobuf parsing it directly
+// assume you can read (.pbf | .mvt | .ovt)
+const fixture = fs.readFileSync('./x-y-z.vector.pbf')
+// load the protobuf parsing it directly
+const tile = new VectorTile(fixture)
 
 console.log(tile)
 
-let { landuse } = tile.layers // 107 features
+// example layer
+const { landuse } = tile.layers
 
+// grab the first feature
 console.log(landuse.feature(0))
 console.log(landuse.feature(0).loadGeometry())
 ```
@@ -76,6 +83,14 @@ pip install pycobertura
 To run the tests, use the following command:
 
 ```bash
+# TYPESCRIPT
+## basic test
+bun run test
+## live testing
+bun run test:dev
+
+# RUST
+## basic test
 cargo test
 # bacon
 bacon test

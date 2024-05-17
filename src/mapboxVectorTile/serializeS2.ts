@@ -1,18 +1,23 @@
-import Protobuf from "../pbf";
-import { commandEncode, zigzag } from "../util";
-import { BaseVectorPolysFeature } from "../baseVectorTile";
+import { BaseVectorPolysFeature } from '../baseVectorTile';
+import { OVectorLayer } from '../';
+import { Pbf as Protobuf } from '../pbf';
+import { commandEncode, zigzag } from '../util';
 
-import type { BaseVectorLayer, BaseVectorFeature, BaseVectorTile } from "../baseVectorTile";
-import type VectorTile from "../vectorTile";
-import type { MapboxVectorFeature, MapboxVectorLayer } from ".";
+import type { BaseVectorFeature, BaseVectorLayer, BaseVectorTile } from '../baseVectorTile';
+import type { MapboxVectorFeature, MapboxVectorLayer, VectorTile } from '../';
 import type {
   Value,
-  VectorPoints,
-  VectorMultiPoly,
   VectorLines,
+  VectorMultiPoly,
+  VectorPoints,
   VectorPoly,
-} from "../vectorTile.spec";
+} from '../vectorTile.spec';
 
+// NOTE: Deprecated tool. Rely upon `writeOVTile` for future use.
+
+/**
+ * A storage structure to manage deduplication of keys and values in each layer
+ */
 interface Context {
   keys: string[];
   values: Value[];
@@ -20,26 +25,44 @@ interface Context {
   valuecache: Record<string, number>;
 }
 
+/**
+ * A method of passing both the context and feature to a writer callback
+ */
 interface ContextWithFeature {
   context: Context;
   feature: BaseVectorFeature | MapboxVectorFeature;
 }
 
+/**
+ * @deprecated - use `writeOVTile` instead
+ * @param tile - the tile to serialize. Either a BaseVectorTile or a MapboxVectorTile
+ * @returns - a Uint8Array of the tile
+ */
 export default function serialize(tile: BaseVectorTile | VectorTile): Uint8Array {
   const out = new Protobuf();
   writeTile(tile, out);
   return out.commit();
 }
 
+/**
+ * @param tile - the tile to serialize. Either a BaseVectorTile or a MapboxVectorTile
+ * @param pbf - the Protobuf object to write to
+ */
 function writeTile(tile: BaseVectorTile | VectorTile, pbf: Protobuf): void {
   for (const key in tile.layers) {
-    pbf.writeMessage(3, writeLayer, tile.layers[key]);
+    const layer = tile.layers[key];
+    if (layer instanceof OVectorLayer) continue;
+    pbf.writeMessage(3, writeLayer, layer);
   }
 }
 
+/**
+ * @param layer - the layer to serialize. Either a BaseVectorLayer or a MapboxVectorLayer
+ * @param pbf - the Protobuf object to write to
+ */
 function writeLayer(layer: BaseVectorLayer | MapboxVectorLayer, pbf: Protobuf): void {
   pbf.writeVarintField(15, layer.version ?? 1);
-  pbf.writeStringField(1, layer.name ?? "");
+  pbf.writeStringField(1, layer.name ?? '');
   pbf.writeVarintField(5, layer.extent ?? 4096);
 
   let i;
@@ -50,7 +73,7 @@ function writeLayer(layer: BaseVectorLayer | MapboxVectorLayer, pbf: Protobuf): 
     valuecache: {},
   };
 
-  const isVectorTileLayer = "length" in layer;
+  const isVectorTileLayer = 'length' in layer;
 
   const ll = isVectorTileLayer ? layer.length : layer.features.length;
   for (i = 0; i < ll; i++) {
@@ -69,6 +92,10 @@ function writeLayer(layer: BaseVectorLayer | MapboxVectorLayer, pbf: Protobuf): 
   }
 }
 
+/**
+ * @param contextWF - the context and feature to write
+ * @param pbf - the Protobuf object to write to
+ */
 function writeFeature(contextWF: ContextWithFeature, pbf: Protobuf): void {
   const { feature } = contextWF;
   // fix BaseVectorPolysFeature to work with S2
@@ -76,20 +103,24 @@ function writeFeature(contextWF: ContextWithFeature, pbf: Protobuf): void {
     feature.type = 4;
   }
   // if id write it
-  if (typeof feature.id === "number") pbf.writeVarintField(1, feature.id);
+  if (typeof feature.id === 'number') pbf.writeVarintField(1, feature.id);
   // properties
   pbf.writeMessage(2, writeProperties, contextWF);
   pbf.writeVarintField(3, feature.type);
   // geoemtry, indices
   pbf.writeMessage(4, writeGeometry, feature);
-  if ("indices" in feature && feature.indices !== undefined) {
+  if ('indices' in feature && feature.indices !== undefined) {
     pbf.writeMessage(5, writeIndices, feature.indices);
   }
-  if ("tesselation" in feature && feature.tesselation !== undefined) {
+  if ('tesselation' in feature && feature.tesselation !== undefined) {
     pbf.writeMessage(6, writeTesselation, feature.tesselation);
   }
 }
 
+/**
+ * @param contextWF - the context and feature to write
+ * @param pbf - the Protobuf object to write to
+ */
 function writeProperties(contextWF: ContextWithFeature, pbf: Protobuf): void {
   const { feature, context } = contextWF;
   const { keys, values, keycache, valuecache } = context;
@@ -97,7 +128,7 @@ function writeProperties(contextWF: ContextWithFeature, pbf: Protobuf): void {
 
   for (const key in properties) {
     let keyIndex = keycache[key];
-    if (typeof keyIndex === "undefined") {
+    if (typeof keyIndex === 'undefined') {
       keys.push(key);
       keyIndex = keys.length - 1;
       keycache[key] = keyIndex;
@@ -106,12 +137,12 @@ function writeProperties(contextWF: ContextWithFeature, pbf: Protobuf): void {
 
     let value = properties[key] as Value;
     const type = typeof value;
-    if (type !== "string" && type !== "boolean" && type !== "number") {
+    if (type !== 'string' && type !== 'boolean' && type !== 'number') {
       value = JSON.stringify(value);
     }
-    const valueKey = type + ":" + String(value);
+    const valueKey = type + ':' + String(value);
     let valueIndex = valuecache[valueKey];
-    if (typeof valueIndex === "undefined") {
+    if (typeof valueIndex === 'undefined') {
       values.push(value);
       valueIndex = values.length - 1;
       valuecache[valueKey] = valueIndex;
@@ -120,6 +151,10 @@ function writeProperties(contextWF: ContextWithFeature, pbf: Protobuf): void {
   }
 }
 
+/**
+ * @param indices - the indices of the geometry
+ * @param pbf - the Protobuf object to write to
+ */
 function writeIndices(indices: number[], pbf: Protobuf): void {
   let curr = 0;
   for (const index of indices) {
@@ -130,6 +165,10 @@ function writeIndices(indices: number[], pbf: Protobuf): void {
 }
 
 // just an array of points that are used inside an extent x extent tile block
+/**
+ * @param geometry - the geometry to write
+ * @param pbf - the Protobuf object to write to
+ */
 function writeTesselation(geometry: number[], pbf: Protobuf): void {
   let x = 0;
   let y = 0;
@@ -143,15 +182,23 @@ function writeTesselation(geometry: number[], pbf: Protobuf): void {
   }
 }
 
+/**
+ * @param feature - the feature to use for the geometry to write
+ * @param pbf - the Protobuf object to write to
+ */
 function writeGeometry(feature: BaseVectorFeature | MapboxVectorFeature, pbf: Protobuf): void {
   const { type } = feature;
-  const geometry = "geometry" in feature ? feature.geometry : feature.loadGeometry();
+  const geometry = 'geometry' in feature ? feature.geometry : feature.loadGeometry();
 
   if (type === 1) writePointGeometry(geometry as VectorPoints, pbf);
   else if (type === 4) writeMultiPolyGeometry(geometry as VectorMultiPoly, pbf);
   else writeLinesGeometry(geometry as VectorLines | VectorPoly, type === 3, pbf);
 }
 
+/**
+ * @param geometry - the geometry to encode the points from
+ * @param pbf - the Protobuf object to write to
+ */
 function writePointGeometry(geometry: VectorPoints, pbf: Protobuf): void {
   let x = 0;
   let y = 0;
@@ -170,6 +217,11 @@ function writePointGeometry(geometry: VectorPoints, pbf: Protobuf): void {
   }
 }
 
+/**
+ * @param geometry - the geometry to encode
+ * @param polygon - true if the geometry is a polygon, otherwise its a set of lines
+ * @param pbf - the Protobuf object to write to
+ */
 function writeLinesGeometry(
   geometry: VectorLines | VectorPoly,
   polygon: boolean,
@@ -197,6 +249,10 @@ function writeLinesGeometry(
   }
 }
 
+/**
+ * @param geometry - the geometry to encode
+ * @param pbf - the Protobuf object to write to
+ */
 function writeMultiPolyGeometry(geometry: VectorMultiPoly, pbf: Protobuf): void {
   let x = 0;
   let y = 0;
@@ -223,12 +279,16 @@ function writeMultiPolyGeometry(geometry: VectorMultiPoly, pbf: Protobuf): void 
   }
 }
 
+/**
+ * @param value - the value to write (can be string, number, null, or boolean)
+ * @param pbf - the Protobuf object to write to
+ */
 function writeValue(value: Value, pbf: Protobuf): void {
-  if (typeof value === "string") {
+  if (typeof value === 'string') {
     pbf.writeStringField(1, value);
-  } else if (typeof value === "boolean") {
+  } else if (typeof value === 'boolean') {
     pbf.writeBooleanField(7, value);
-  } else if (typeof value === "number") {
+  } else if (typeof value === 'number') {
     if (value % 1 !== 0) {
       pbf.writeDoubleField(3, value);
     } else if (value < 0) {

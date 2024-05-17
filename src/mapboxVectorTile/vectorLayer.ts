@@ -1,11 +1,16 @@
-import VectorFeature from "./vectorFeature";
+import VectorFeature from './vectorFeature';
 
-import type Protobuf from "../pbf";
-import type { Value } from "../vectorTile.spec";
+import type { Pbf as Protobuf } from '../pbf';
+import type { Value } from '../vectorTile.spec';
 
+/**
+ * A MapboxVectorLayer is a storage structure for the vector tile.
+ * It may contain either the old Mapbox layers or the new S2 layers.
+ * Parses extent, keys, values, and features. Features will utilize the extent, keys, and values.
+ */
 export default class MapboxVectorLayer {
   version = 5;
-  name = "default";
+  name = 'default';
   extent = 4_096;
   length = 0;
   isS2: boolean;
@@ -14,6 +19,11 @@ export default class MapboxVectorLayer {
   #values: Value[] = [];
   #featuresPos: number[] = [];
   features: VectorFeature[] = [];
+  /**
+   * @param pbf - The Protobuf object to read from
+   * @param end - The end position of the message in the buffer
+   * @param isS2 - Whether the layer is an S2 layer or Mapbox layer
+   */
   constructor(pbf: Protobuf, end: number, isS2 = false) {
     this.#pbf = pbf;
     this.isS2 = isS2;
@@ -21,6 +31,11 @@ export default class MapboxVectorLayer {
     this.length = this.#featuresPos.length;
   }
 
+  /**
+   * @param tag - The tag of the message
+   * @param layer - The layer to mutate
+   * @param pbf - The Protobuf object to read from
+   */
   #readLayer(tag: number, layer: MapboxVectorLayer, pbf: Protobuf): void {
     if (tag === 15) layer.version = pbf.readVarint();
     else if (tag === 1) layer.name = pbf.readString();
@@ -30,8 +45,12 @@ export default class MapboxVectorLayer {
     else if (tag === 5) layer.extent = pbf.readVarint();
   }
 
+  /**
+   * @param i - The index of the feature
+   * @returns - A feature at the given index
+   */
   feature(i: number): VectorFeature {
-    if (i < 0 || i >= this.#featuresPos.length) throw new Error("feature index out of bounds");
+    if (i < 0 || i >= this.#featuresPos.length) throw new Error('feature index out of bounds');
     if (this.features[i] !== undefined) return this.features[i];
 
     this.#pbf.pos = this.#featuresPos[i];
@@ -49,6 +68,10 @@ export default class MapboxVectorLayer {
     return vtf;
   }
 
+  /**
+   * @param pbf - The Protobuffer object to read from
+   * @returns - A parsed Value
+   */
   #readValueMessage(pbf: Protobuf): Value {
     let value: Value = null;
 
@@ -57,31 +80,14 @@ export default class MapboxVectorLayer {
     while (pbf.pos < end) {
       const tag = pbf.readVarint() >> 3;
 
-      switch (tag) {
-        case 1:
-          value = pbf.readString();
-          break;
-        case 2:
-          value = pbf.readFloat();
-          break;
-        case 3:
-          value = pbf.readDouble();
-          break;
-        case 4:
-          value = pbf.readVarint64();
-          break;
-        case 5:
-          value = pbf.readVarint();
-          break;
-        case 6:
-          value = pbf.readSVarint();
-          break;
-        case 7:
-          value = pbf.readBoolean();
-          break;
-        default:
-          value = null;
-      }
+      if (tag === 1) value = pbf.readString();
+      else if (tag === 2) value = pbf.readFloat();
+      else if (tag === 3) value = pbf.readDouble();
+      else if (tag === 4) value = pbf.readVarint64();
+      else if (tag === 5) value = pbf.readVarint();
+      else if (tag === 6) value = pbf.readSVarint();
+      else if (tag === 7) value = pbf.readBoolean();
+      else value = null;
     }
 
     return value;

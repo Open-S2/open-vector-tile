@@ -11,3 +11,4 @@ target/
 ovtile/
 .helix/
 vector-tile-spec/
+docs/

@@ -6,3 +6,4 @@ tsconfig.test.tsbuildinfo
 .DS_Store
 target/
 vector-tile-spec/
+docs/

@@ -1,7 +1,10 @@
-import type { Point, Point3D } from "./vectorTile.spec";
+import type { Point, Point3D } from './vectorTile.spec';
 
 /**
  * Encode a command with the given length of the data that follows.
+ * @param cmd - the command
+ * @param len - the length
+ * @returns - the encoded command and length into a single number
  */
 export function commandEncode(cmd: number, len: number): number {
   return (len << 3) + (cmd & 0x7);
@@ -9,6 +12,8 @@ export function commandEncode(cmd: number, len: number): number {
 
 /**
  * Decode a command with the given length of the data that follows.
+ * @param cmd - the encoded command
+ * @returns - the command and length
  */
 export function commandDecode(cmd: number): { cmd: number; len: number } {
   return { cmd: cmd & 0x7, len: cmd >> 3 };
@@ -16,6 +21,8 @@ export function commandDecode(cmd: number): { cmd: number; len: number } {
 
 /**
  * Perform zigzag encoding on the input number.
+ * @param num - the input
+ * @returns - the incoded unsigned output
  */
 export function zigzag(num: number): number {
   return (num << 1) ^ (num >> 31);
@@ -23,6 +30,8 @@ export function zigzag(num: number): number {
 
 /**
  * Perform zigzag decoding on the input number.
+ * @param num - the input
+ * @returns - the decoded signed output
  */
 export function zagzig(num: number): number {
   return (num >> 1) ^ -(num & 1);
@@ -31,6 +40,9 @@ export function zagzig(num: number): number {
 /**
  * Interweave two 16-bit numbers into a 32-bit number.
  * In theory two small numbers can end up varint encoded to use less space.
+ * @param a - the first number
+ * @param b - the second number
+ * @returns - the interwoven number
  */
 export function weave2D(a: number, b: number): number {
   let result = 0;
@@ -46,6 +58,8 @@ export function weave2D(a: number, b: number): number {
 
 /**
  * Deweave a 32-bit number into two 16-bit numbers.
+ * @param num - the input
+ * @returns - the two numbers
  */
 export function unweave2D(num: number): { a: number; b: number } {
   let a = 0;
@@ -62,6 +76,10 @@ export function unweave2D(num: number): { a: number; b: number } {
 /**
  * Interweave three 16-bit numbers into a 48-bit number.
  * In theory three small numbers can end up varint encoded to use less space.
+ * @param a - the first number
+ * @param b - the second number
+ * @param c - the third number
+ * @returns - the interwoven number
  */
 export function weave3D(a: number, b: number, c: number): number {
   // return result
@@ -85,6 +103,8 @@ export function weave3D(a: number, b: number, c: number): number {
 
 /**
  * Deweave a 48-bit number into three 16-bit numbers.
+ * @param num - the input
+ * @returns - the three numbers
  */
 export function unweave3D(num: number): { a: number; b: number; c: number } {
   // let bNum = BigInt(num)
@@ -106,6 +126,8 @@ export function unweave3D(num: number): { a: number; b: number; c: number } {
 
 /**
  * Encode an array of points using interweaving and delta encoding
+ * @param array - the array of points
+ * @returns - the encoded array as interwoven numbers
  */
 export function weaveAndDeltaEncodeArray(array: Point[]): number[] {
   const res: number[] = [];
@@ -126,6 +148,8 @@ export function weaveAndDeltaEncodeArray(array: Point[]): number[] {
 
 /**
  * Decode an array of points that were encoded using interweaving and delta encoding
+ * @param array - the encoded array
+ * @returns - the decoded array of points
  */
 export function unweaveAndDeltaDecodeArray(array: number[]): Point[] {
   const res: Point[] = [];
@@ -146,6 +170,8 @@ export function unweaveAndDeltaDecodeArray(array: number[]): Point[] {
 
 /**
  * Encode an array of 3D points using interweaving and delta encoding
+ * @param array - the array of 3D points
+ * @returns - the encoded array as interwoven numbers
  */
 export function weaveAndDeltaEncode3DArray(array: Point3D[]): number[] {
   const res: number[] = [];
@@ -169,6 +195,8 @@ export function weaveAndDeltaEncode3DArray(array: Point3D[]): number[] {
 
 /**
  * Decode an array of 3D points that were encoded using interweaving and delta encoding
+ * @param array - the encoded array
+ * @returns - the decoded array of 3D points
  */
 export function unweaveAndDeltaDecode3DArray(array: number[]): Point3D[] {
   const res: Point3D[] = [];
@@ -192,6 +220,8 @@ export function unweaveAndDeltaDecode3DArray(array: number[]): Point3D[] {
 
 /**
  * Encode an array using delta encoding
+ * @param array - the array
+ * @returns - the encoded array
  */
 export function deltaEncodeArray(array: number[]): number[] {
   const res: number[] = [];
@@ -208,6 +238,8 @@ export function deltaEncodeArray(array: number[]): number[] {
 
 /**
  * Decode an array that was encoded using delta encoding
+ * @param array - the encoded array
+ * @returns - the decoded array
  */
 export function deltaDecodeArray(array: number[]): number[] {
   const res: number[] = [];
@@ -215,6 +247,42 @@ export function deltaDecodeArray(array: number[]): number[] {
   let offset = 0;
   for (let i = 0; i < array.length; i++) {
     const num = zagzig(array[i]) + offset;
+    res.push(num);
+    offset = num;
+  }
+
+  return res;
+}
+
+/**
+ * Encode a sorted array using delta encoding (doesn't require zigzag)
+ * @param array - the array
+ * @returns - the encoded array
+ */
+export function deltaEncodeSortedArray(array: number[]): number[] {
+  const res: number[] = [];
+
+  let offset = 0;
+  for (let i = 0; i < array.length; i++) {
+    const num = array[i];
+    res.push(num - offset);
+    offset = num;
+  }
+
+  return res;
+}
+
+/**
+ * Decode a sorted array that was encoded using delta encoding
+ * @param array - the encoded array
+ * @returns - the decoded array
+ */
+export function deltaDecodeSortedArray(array: number[]): number[] {
+  const res: number[] = [];
+
+  let offset = 0;
+  for (let i = 0; i < array.length; i++) {
+    const num = array[i] + offset;
     res.push(num);
     offset = num;
   }
