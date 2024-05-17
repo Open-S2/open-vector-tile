@@ -33,7 +33,7 @@
     "prettier": "bunx prettier src test --check",
     "prettier:fix": "bunx prettier -- --write",
     "format": "bunx prettier:fix && bun run lint:fix",
-    "build": "rm -rf dist && mkdir dist && rm -f -- tsconfig.tsbuildinfo && tsc",
+    "build": "rm -rf dist && mkdir dist && rm -f -- tsconfig.tsbuildinfo && tsc && bun run build.ts",
     "build:PB": "protoc vector-tile-spec/2.0.0/vector_tile.proto --plugin=protoc-gen-protoscript=./node_modules/protoscript/compiler.js --protoscript_out=. --protoscript_opt=language=typescript",
     "types:bundle": "bun run types:build && node scripts/types.mjs",
     "prepublishOnly": "bun run lint+build+test",

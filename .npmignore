@@ -12,3 +12,5 @@ ovtile/
 .helix/
 vector-tile-spec/
 docs/
+benchmarks/
+tools/
