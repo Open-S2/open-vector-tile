@@ -11,19 +11,26 @@ readme = "README.md"
 categories = ["encoding", "wasm", "embedded", "no-std"]
 keywords = ["pbf", "open", "vector", "minimal", "low-cost-code", "map", "tile", "spec"]
 license = "MIT"
+# Include only specific files and directories
+# include = ["/ovtile", "Cargo.toml", "Cargo.lock", "README.md", "LICENSE"]
+exclude = [
+    "/assets",
+    "/benchmarks",
+    "/docs",
+    "/test",
+    "/tools",
+    "/src",
+]
 
 [lib]
 name = "ovtile"
 path = "ovtile/lib.rs"
 bench = true
 
-# Include only specific files and directories
-include = ["ovtile/**", "Cargo.toml", "Cargo.lock", "README.md", "LICENSE"]
-
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-pbf = "0.1.4"
+pbf = "0.1.5"
 
 [dev-dependencies]
 # tarpaulin = "*"
