@@ -9,7 +9,7 @@ homepage = "https://github.com/OpenS2/open-vector-tile"
 repository = "https://github.com/OpenS2/open-vector-tile"
 readme = "README.md"
 categories = ["encoding", "wasm", "embedded", "no-std"]
-keywords = ["pbf", "open", "vector", "minimal", "low-cost-code", "map", "tile", "spec"]
+keywords = ["open", "vector", "tile", "gis", "low-cost-code"]
 license = "MIT"
 # Include only specific files and directories
 # include = ["/ovtile", "Cargo.toml", "Cargo.lock", "README.md", "LICENSE"]
