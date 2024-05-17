@@ -9,7 +9,7 @@
 [docs-ts-image]: https://img.shields.io/badge/docs-typescript-yellow.svg
 [docs-ts-url]: https://open-s2.github.io/open-vector-tile/
 [docs-rust-image]: https://img.shields.io/badge/docs-rust-yellow.svg
-[docs-rust-url]: https://docs.rs/ovtile
+[docs-rust-url]: https://docs.rs/open-vector-tile
 
 ## About
 
