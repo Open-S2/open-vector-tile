@@ -16,15 +16,7 @@
   },
   "main": "dist/index.js",
   "exports": {
-    ".": "./dist/index.js",
-    "./vectorTile": {
-      "types": "./dist/vectorTile.d.ts",
-      "import": "./dist/vectorTile.js"
-    },
-    "./vectorTile.spec": {
-      "types": "./dist/vectorTile.spec.d.ts",
-      "import": "./dist/vectorTile.spec.js"
-    }
+    ".": "./dist/index.js"
   },
   "scripts": {
     "lint+build+test": "bun run lint && bun run build && bun run test",
