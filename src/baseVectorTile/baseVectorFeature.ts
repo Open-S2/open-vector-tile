@@ -17,12 +17,13 @@ import type {
 } from '../';
 
 /**
- *
+ * Base Vector Feature
+ * Common variables and methods shared by all vector features
  */
 export class VectorFeatureBase {
   /**
-   * @param properties
-   * @param id
+   * @param properties - the properties of the feature
+   * @param id - the id of the feature if there is one
    */
   constructor(
     public properties: OProperties = {},
@@ -30,28 +31,29 @@ export class VectorFeatureBase {
   ) {}
 
   /**
-   *
+   * @returns true if the feature has offsets
    */
   hasOffsets(): boolean {
     return false;
   }
 
   /**
-   *
+   * @returns true if the feature has M values
    */
   hasMValues(): boolean {
     return false;
   }
 
   /**
-   *
+   * @returns true if the feature has BBox
    */
   hasBBox(): boolean {
     return false;
   }
 
   /**
-   * @param cache
+   * @param cache - the column cache to store the offsets in
+   * @returns the column values for the feature
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   addOffsetsToCache(cache: ColumnCacheWriter): ColumnValue[] {
@@ -60,14 +62,17 @@ export class VectorFeatureBase {
 }
 
 /**
- *
+ * Base Vector Points Feature
+ * Type 1
+ * Extends from @see {@link VectorFeatureBase}.
+ * Store either a single point or a list of points
  */
 export class BaseVectorPointsFeature extends VectorFeatureBase {
   type = 1;
   /**
-   * @param geometry
-   * @param properties
-   * @param id
+   * @param geometry - the geometry of the feature
+   * @param properties - the properties of the feature
+   * @param id - the id of the feature
    */
   constructor(
     public geometry: VectorPoints,
@@ -78,7 +83,8 @@ export class BaseVectorPointsFeature extends VectorFeatureBase {
   }
 
   /**
-   * @param cache
+   * @param cache - the column cache to store the geometry
+   * @returns the index in the points column where the geometry is stored
    */
   addGeometryToCache(cache: ColumnCacheWriter): number {
     return cache.addColumnData(OColumnName.points, this.geometry);
@@ -86,13 +92,14 @@ export class BaseVectorPointsFeature extends VectorFeatureBase {
 }
 
 /**
- *
+ * Base Vector Lines Feature
+ * Common variables and methods shared by all vector lines and/or polygons features
  */
 export class BaseVectorLine {
   /**
-   * @param geometry
-   * @param mvalues
-   * @param offset
+   * @param geometry - the geometry of the feature
+   * @param mvalues - the M values of the feature
+   * @param offset - the offset of the feature
    */
   constructor(
     public geometry: VectorLine,
@@ -102,15 +109,18 @@ export class BaseVectorLine {
 }
 
 /**
- *
+ * Base Vector Lines Feature
+ * Type 2
+ * Extends from @see {@link VectorFeatureBase}.
+ * Store either a single line or a list of lines.
  */
 export class BaseVectorLinesFeature extends VectorFeatureBase {
   type = 2;
   /**
-   * @param geometry
-   * @param bbox
-   * @param properties
-   * @param id
+   * @param geometry - the geometry of the feature
+   * @param bbox - the bbox of the feature if not provided will be [0, 0, 0, 0]
+   * @param properties - the properties of the feature
+   * @param id - the id of the feature if there is one
    */
   constructor(
     public geometry: BaseVectorLine[],
@@ -122,21 +132,22 @@ export class BaseVectorLinesFeature extends VectorFeatureBase {
   }
 
   /**
-   *
+   * @returns - true if the feature has offsets
    */
   hasOffsets(): boolean {
     return this.geometry.some((line) => line.offset > 0);
   }
 
   /**
-   *
+   * @returns - true if the feature has BBox
    */
   hasBBox(): boolean {
     return this.bbox.some((v) => v !== 0);
   }
 
   /**
-   * @param cache
+   * @param cache - the column cache to store the offsets
+   * @returns the indexes in the signed column where the offsets are stored
    */
   addOffsetsToCache(cache: ColumnCacheWriter): ColumnValue[] {
     return this.geometry.map((line) => {
@@ -145,7 +156,8 @@ export class BaseVectorLinesFeature extends VectorFeatureBase {
   }
 
   /**
-   * @param cache
+   * @param cache - the column cache to store the geometry
+   * @returns the indexes in the points column where the geometry is stored
    */
   addGeometryToCache(cache: ColumnCacheWriter): number[] {
     const indices: number[] = [];
@@ -158,17 +170,20 @@ export class BaseVectorLinesFeature extends VectorFeatureBase {
 }
 
 /**
- *
+ * Base Vector Polys Feature
+ * Type 3
+ * Extends from @see {@link VectorFeatureBase}.
+ * Store either a single polygon or a list of polygons
  */
 export class BaseVectorPolysFeature extends VectorFeatureBase {
   type = 3;
   /**
-   * @param geometry
-   * @param indices
-   * @param tesselation
-   * @param bbox
-   * @param properties
-   * @param id
+   * @param geometry - the geometry of the feature
+   * @param indices - the indices of the geometry
+   * @param tesselation - the tesselation of the geometry
+   * @param bbox - the bbox of the feature
+   * @param properties - the properties of the feature
+   * @param id - the id of the feature
    */
   constructor(
     public geometry: BaseVectorLine[][],
@@ -182,21 +197,22 @@ export class BaseVectorPolysFeature extends VectorFeatureBase {
   }
 
   /**
-   *
+   * @returns true if the feature has offsets
    */
   hasOffsets(): boolean {
     return this.geometry.some((poly) => poly.some((line) => line.offset > 0));
   }
 
   /**
-   *
+   * @returns true if the feature has BBox
    */
   hasBBox(): boolean {
     return this.bbox.some((v) => v !== 0);
   }
 
   /**
-   * @param cache
+   * @param cache - the column cache to store the offsets
+   * @returns the indexes in the signed column where the offsets are stored
    */
   addOffsetsToCache(cache: ColumnCacheWriter): ColumnValue[] {
     return this.geometry.flatMap((poly) => {
@@ -210,7 +226,8 @@ export class BaseVectorPolysFeature extends VectorFeatureBase {
   }
 
   /**
-   * @param cache
+   * @param cache - the column cache to store the geometry
+   * @returns the indexes in the points column where the geometry is stored
    */
   addGeometryToCache(cache: ColumnCacheWriter): number[] {
     const indices: number[] = [];
@@ -226,14 +243,14 @@ export class BaseVectorPolysFeature extends VectorFeatureBase {
 }
 
 /**
- *
+ * Base Vector Point 3D Feature
  */
 export class BaseVectorPoint3DFeature extends VectorFeatureBase {
   type = 4;
   /**
-   * @param geometry
-   * @param properties
-   * @param id
+   * @param geometry - the geometry of the feature
+   * @param properties - the properties of the feature
+   * @param id - the id of the feature
    */
   constructor(
     public geometry: VectorPoints3D,
@@ -244,7 +261,8 @@ export class BaseVectorPoint3DFeature extends VectorFeatureBase {
   }
 
   /**
-   * @param cache
+   * @param cache - the column cache to store the geometry
+   * @returns the index in the points column where the geometry is stored
    */
   addGeometryToCache(cache: ColumnCacheWriter): number {
     return cache.addColumnData(OColumnName.points3D, this.geometry);
@@ -252,13 +270,14 @@ export class BaseVectorPoint3DFeature extends VectorFeatureBase {
 }
 
 /**
- *
+ * Base Vector Line 3D
+ * Common variables and methods shared by all 3D vector lines
  */
 export class BaseVectorLine3D {
   /**
-   * @param geometry
-   * @param mvalues
-   * @param offset
+   * @param geometry - the geometry of the feature
+   * @param mvalues - the M values of the feature
+   * @param offset - the offset of the feature
    */
   constructor(
     public geometry: VectorLine3D,
@@ -268,15 +287,18 @@ export class BaseVectorLine3D {
 }
 
 /**
- *
+ * Base Vector Lines 3D Feature
+ * Type 5
+ * Extends from @see {@link VectorFeatureBase}.
+ * Store either a single 3D line or a list of 3D lines
  */
 export class BaseVectorLines3DFeature extends VectorFeatureBase {
   type = 5;
   /**
-   * @param geometry
-   * @param bbox
-   * @param properties
-   * @param id
+   * @param geometry - the geometry of the feature
+   * @param bbox - the bbox of the feature
+   * @param properties - the properties of the feature
+   * @param id - the id of the feature
    */
   constructor(
     public geometry: BaseVectorLine3D[],
@@ -288,21 +310,22 @@ export class BaseVectorLines3DFeature extends VectorFeatureBase {
   }
 
   /**
-   *
+   * @returns true if the feature has offsets
    */
   hasOffsets(): boolean {
     return this.geometry.some((line) => line.offset > 0);
   }
 
   /**
-   *
+   * @returns true if the feature has BBox
    */
   hasBBox(): boolean {
     return this.bbox.some((v) => v !== 0);
   }
 
   /**
-   * @param cache
+   * @param cache - the column cache to store the offsets
+   * @returns the indexes in the signed column where the offsets are stored
    */
   addOffsetsToCache(cache: ColumnCacheWriter): ColumnValue[] {
     return this.geometry.map((line) => {
@@ -311,7 +334,8 @@ export class BaseVectorLines3DFeature extends VectorFeatureBase {
   }
 
   /**
-   * @param cache
+   * @param cache - the column cache to store the geometry
+   * @returns the indexes in the points column where the geometry is stored
    */
   addGeometryToCache(cache: ColumnCacheWriter): number[] {
     const indices: number[] = [];
@@ -324,7 +348,10 @@ export class BaseVectorLines3DFeature extends VectorFeatureBase {
 }
 
 /**
- *
+ * Base Vector Polys 3D Feature
+ * Type 6
+ * Extends from @see {@link VectorFeatureBase}.
+ * Store either a single 3D poly or a list of 3D polys
  */
 export class BaseVectorPolys3DFeature extends VectorFeatureBase {
   type = 6;
@@ -334,12 +361,12 @@ export class BaseVectorPolys3DFeature extends VectorFeatureBase {
   bbox: BBox3D;
 
   /**
-   * @param geometry
-   * @param indices
-   * @param tesselation
-   * @param bbox
-   * @param properties
-   * @param id
+   * @param geometry - the geometry of the feature
+   * @param indices - the indices of the geometry
+   * @param tesselation - the tesselation of the geometry
+   * @param bbox - the bbox of the feature
+   * @param properties - the properties of the feature
+   * @param id - the id of the feature
    */
   constructor(
     geometry: BaseVectorLine3D[][],
@@ -357,21 +384,22 @@ export class BaseVectorPolys3DFeature extends VectorFeatureBase {
   }
 
   /**
-   *
+   * @returns true if the feature has BBox
    */
   hasBBox(): boolean {
     return this.bbox.some((v) => v !== 0);
   }
 
   /**
-   *
+   * @returns true if the feature has offsets
    */
   hasOffsets(): boolean {
     return this.geometry.some((poly) => poly.some((line) => line.offset > 0));
   }
 
   /**
-   * @param cache
+   * @param cache - the column cache to store the offsets
+   * @returns the indexes in the signed column where the offsets are stored
    */
   addOffsetsToCache(cache: ColumnCacheWriter): ColumnValue[] {
     return this.geometry.flatMap((poly) => {
@@ -385,7 +413,8 @@ export class BaseVectorPolys3DFeature extends VectorFeatureBase {
   }
 
   /**
-   * @param cache
+   * @param cache - the column cache to store the geometry
+   * @returns the indexes in the points column where the geometry is stored
    */
   addGeometryToCache(cache: ColumnCacheWriter): number[] {
     const indices: number[] = [];
@@ -404,7 +433,7 @@ export class BaseVectorPolys3DFeature extends VectorFeatureBase {
 }
 
 /**
- *
+ * A type that encompasses all vector tile feature types
  */
 export type BaseVectorFeature =
   | BaseVectorPointsFeature
@@ -421,7 +450,8 @@ export type BaseVectorFeature =
 export function fromMapboxVectorFeature(feature: MapboxVectorFeature): BaseVectorFeature {
   const { id, properties } = feature;
   const geometry = feature.loadGeometry();
-  const indices = feature.readIndices();
+  // const indices = feature.readIndices();
+  const indices: number[] = [];
   const tesselation: number[] = [];
   feature.addTesselation(tesselation, 1 / feature.extent);
   switch (feature.type) {

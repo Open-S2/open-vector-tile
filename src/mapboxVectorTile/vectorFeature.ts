@@ -7,7 +7,7 @@ import type {
   Value,
   VectorFeatureType,
   VectorGeometry,
-  VectorLine,
+  VectorLinesWithOffset,
 } from '../vectorTile.spec';
 
 /**
@@ -234,7 +234,7 @@ export default class MapboxVectorFeature {
   /**
    * @returns - an array of lines. The offsets will be set to 0
    */
-  loadLines(): Array<{ offset: number; line: VectorLine }> {
+  loadLines(): VectorLinesWithOffset {
     return [];
   }
 
@@ -258,6 +258,7 @@ export default class MapboxVectorFeature {
   }
 
   /**
+   * Add tesselation data to the geometry
    * @param geometry - the geometry to add the tesselation data to
    * @param multiplier - the multiplier to apply the extent shift
    */

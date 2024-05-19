@@ -82,6 +82,20 @@ export interface Point3D {
 }
 
 /**
+ * Built array line data with associated offset to help render dashed lines across tiles.
+ */
+export interface VectorLineWithOffset {
+  /** the offset of the line to start processing the dash position */
+  offset: number;
+  /** the line data */
+  line: VectorLine;
+}
+/**
+ * Built array line data with associated offset to help render dashed lines across tiles.
+ */
+export type VectorLinesWithOffset = VectorLineWithOffset[];
+
+/**
  * A set of points
  */
 export type VectorPoints = Point[];

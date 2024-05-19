@@ -7,21 +7,24 @@ import type { Extents } from './vectorLayer';
 import type {
   BBox,
   OProperties,
+  Point,
   VectorFeatureType,
   VectorPoints,
   VectorPoints3D,
 } from '../vectorTile.spec';
 import type { ColumnCacheReader, ColumnCacheWriter } from './columnCache';
+import { weave2D, zigzag } from 'open-vector-tile/util';
 
 /**
- *
+ * Vector Feature Base
+ * Common variables and functions shared by all vector features
  */
 export class OVectorFeatureBase {
   /**
-   * @param cache
-   * @param id
-   * @param properties
-   * @param extent
+   * @param cache - the column cache for future retrieval
+   * @param id - the id of the feature
+   * @param properties - the properties of the feature
+   * @param extent - the extent of the feature
    */
   constructor(
     readonly cache: ColumnCacheReader,
@@ -30,18 +33,21 @@ export class OVectorFeatureBase {
     public extent: Extents,
   ) {}
 }
+
 /**
- *
+ * Vector Feature Line Base
+ * Extends from @see {@link OVectorFeatureBase}.
+ * Common variables and functions shared by all line and poly vector features
  */
 export class OVectorFeatureLineBase extends OVectorFeatureBase {
   /**
-   * @param cache
-   * @param id
-   * @param properties
-   * @param extent
-   * @param geometryIndices
-   * @param bboxIndices
-   * @param mValuesIndex
+   * @param cache - the column cache for future retrieval
+   * @param id - the id of the feature
+   * @param properties - the properties of the feature
+   * @param extent - the extent of the feature
+   * @param geometryIndices - the indices of the geometry in the cache
+   * @param bboxIndices - the indices of the bbox in the cache
+   * @param mValuesIndex - the index of the mValues in the cache
    */
   constructor(
     cache: ColumnCacheReader,
@@ -56,14 +62,14 @@ export class OVectorFeatureLineBase extends OVectorFeatureBase {
   }
 
   /**
-   *
+   * @returns true if the feature has M values
    */
   hasMValues(): boolean {
     return this.mValuesIndex !== -1;
   }
 
   /**
-   *
+   * @returns the M values
    */
   mValues(): null | OProperties[] {
     if (!this.hasMValues() || !this.mValuesIndex) return null;
@@ -72,17 +78,20 @@ export class OVectorFeatureLineBase extends OVectorFeatureBase {
 }
 
 /**
- *
+ * Points Vector Feature
+ * Type 1
+ * Extends from @see {@link OVectorFeatureBase}.
+ * store either a single point or a list of points
  */
 export class OVectorPointsFeature extends OVectorFeatureBase {
   type: VectorFeatureType = 1;
   geometry?: VectorPoints;
   /**
-   * @param cache
-   * @param id
-   * @param properties
-   * @param extent
-   * @param geometryIndex
+   * @param cache - the column cache for future retrieval
+   * @param id - the id of the feature
+   * @param properties - the properties of the feature
+   * @param extent - the extent of the feature
+   * @param geometryIndex - the index of the geometry in the cache
    */
   constructor(
     cache: ColumnCacheReader,
@@ -95,7 +104,7 @@ export class OVectorPointsFeature extends OVectorFeatureBase {
   }
 
   /**
-   *
+   * @returns the geometry as an array of points
    */
   loadGeometry(): VectorPoints {
     if (!this.geometry)
@@ -105,18 +114,21 @@ export class OVectorPointsFeature extends OVectorFeatureBase {
 }
 
 /**
- *
+ * Lines Vector Feature
+ * Type 2
+ * Extends from @see {@link OVectorFeatureLineBase}.
+ * Store either a single line or a list of lines
  */
 export class OVectorLinesFeature extends OVectorFeatureLineBase {
   type: VectorFeatureType = 2;
   /**
-   * @param cache
-   * @param id
-   * @param properties
-   * @param extent
-   * @param geometryIndices
-   * @param mValuesIndex
-   * @param bboxIndices
+   * @param cache - the column cache for future retrieval
+   * @param id - the id of the feature
+   * @param properties - the properties of the feature
+   * @param extent - the extent of the feature
+   * @param geometryIndices - the indices of the geometry in the cache
+   * @param mValuesIndex - the index of the mValues in the cache
+   * @param bboxIndices - the indices of the bbox in the cache
    */
   constructor(
     cache: ColumnCacheReader,
@@ -131,7 +143,7 @@ export class OVectorLinesFeature extends OVectorFeatureLineBase {
   }
 
   /**
-   *
+   * @returns the BBox if it exists
    */
   bbox(): BBox | null {
     if (!this.bboxIndices) return null;
@@ -141,23 +153,27 @@ export class OVectorLinesFeature extends OVectorFeatureLineBase {
   }
 
   // TODO:
-  // loadLines: (withMValues?: boolean) => Array<{ offset: number; line: VectorLine }>;
+  // loadLines: (withMValues?: boolean) => VectorLinesWithOffset;
   // loadGeometry: (withMValues?: boolean) => VectorGeometry;
 }
 
 /**
- *
+ * Polys Vector Feature
+ * Type 3
+ * Extends from @see {@link OVectorFeatureLineBase}.
+ * Stores either one or multiple polygons. Polygons are an abstraction to polylines, and
+ * each polyline can contain an offset.
  */
 export class OVectorPolysFeature extends OVectorFeatureLineBase {
   type: VectorFeatureType = 3;
   /**
-   * @param cache
-   * @param id
-   * @param properties
-   * @param extent
-   * @param geometryIndices
-   * @param mValuesIndex
-   * @param bboxIndices
+   * @param cache - the column cache for future retrieval
+   * @param id - the id of the feature
+   * @param properties - the properties of the feature
+   * @param extent - the extent of the feature
+   * @param geometryIndices - the location of indices of the geometry in the cache
+   * @param mValuesIndex - the location of the M values in the cache
+   * @param bboxIndices - the location of the bbox in the cache
    */
   constructor(
     cache: ColumnCacheReader,
@@ -172,25 +188,27 @@ export class OVectorPolysFeature extends OVectorFeatureLineBase {
   }
 
   // TODO:
-  // loadLines: (withMValues?: boolean) => Array<{ offset: number; line: VectorLine }>;
+  // loadLines: (withMValues?: boolean) => VectorLinesWithOffset;
   // loadGeometry: (withMValues: boolean) => VectorGeometry;
   // loadGeometryFlat: () => [number[], number[]]; // Adds the tesselation automatically
   // readIndices: () => number[];
 }
 
-// TODO:
 /**
- *
+ * 3D Point Vector Feature
+ * Type 4.
+ * Extends from @see {@link OVectorFeatureBase}.
+ * Store either a single 3D point or a list of 3D points.
  */
 export class OVectorPoints3DFeature extends OVectorFeatureBase {
   type: VectorFeatureType = 4;
   geometry?: VectorPoints3D;
   /**
-   * @param cache
-   * @param id
-   * @param properties
-   * @param extent
-   * @param geometryIndex
+   * @param cache - the column cache for future retrieval
+   * @param id - the id of the feature
+   * @param properties - the properties of the feature
+   * @param extent - the extent of the feature
+   * @param geometryIndex - the index of the 3D Point Geometry in the cache
    */
   constructor(
     cache: ColumnCacheReader,
@@ -203,7 +221,8 @@ export class OVectorPoints3DFeature extends OVectorFeatureBase {
   }
 
   /**
-   *
+   * Read in the 3D Point Geometry. Can be more than one point.
+   * @returns the 3D Point Geometry
    */
   loadGeometry(): VectorPoints {
     if (!this.geometry)
@@ -215,20 +234,26 @@ export class OVectorPoints3DFeature extends OVectorFeatureBase {
   }
 }
 /**
- *
+ * TODO: 3D Lines Vector Feature
+ * Type 5
+ * Extends from @see {@link OVectorFeatureBase}.
+ * Store either a single 3D line or a list of 3D lines.
  */
 export class OVectorLines3DFeature extends OVectorFeatureBase {
   type: VectorFeatureType = 5;
 }
 /**
- *
+ * TODO: 3D Polygons Vector Feature
+ * Type 6
+ * Extends from @see {@link OVectorFeatureBase}.
+ * Store either a single 3D polygon or a list of 3D polygons.
  */
 export class OVectorPolys3DFeature extends OVectorFeatureBase {
   type: VectorFeatureType = 6;
 }
 
 /**
- *
+ * All feature class types. Points, Lines, and Polys for both 2D and 3D
  */
 export type OVectorFeature =
   | OVectorPointsFeature
@@ -239,9 +264,10 @@ export type OVectorFeature =
   | OVectorPolys3DFeature;
 
 /**
- * @param bytes
- * @param extent
- * @param cache
+ * @param bytes - the bytes to read from
+ * @param extent - the extent of the vector layer to help decode the geometry
+ * @param cache - the column cache to read from
+ * @returns - the decoded feature
  */
 export function readFeature(
   bytes: Uint8Array,
@@ -308,6 +334,7 @@ export function writeFeature(feature: BaseVectorFeature, cache: ColumnCacheWrite
   const hasOffsets = feature.hasOffsets();
   const hasBBox = feature.hasBBox();
   const hasMValues = feature.hasMValues();
+  const singlePoint = feature.type === 1 && feature.geometry.length === 1;
   let flags = 0;
   if ('id' in feature) flags += 1 << 1;
   if (hasBBox) flags += 1 << 2;
@@ -315,6 +342,7 @@ export function writeFeature(feature: BaseVectorFeature, cache: ColumnCacheWrite
   if ('indices' in feature && feature.indices.length) flags += 1 << 4;
   if ('tesselation' in feature && feature.tesselation.length) flags += 1 << 5;
   if (hasMValues) flags += 1 << 6;
+  if (singlePoint) flags += 1 << 7;
   pbf.writeVarint(flags); // just 1 byte
   // id is stored in unsigned column
   if (feature.id) pbf.writeVarint(feature.id);
@@ -330,11 +358,16 @@ export function writeFeature(feature: BaseVectorFeature, cache: ColumnCacheWrite
   //   pbf.writeVarint(cache.addColumnData(OColumnName.signed, encodeOffset(feature.offset)));
   // geometry
   // if ('geometry' in feature) pbf.writeVarint(feature.addGeometryToCache(cache));
-  const indexOrIndexes = feature.addGeometryToCache(cache);
-  if (Array.isArray(indexOrIndexes)) {
-    pbf.writeVarint(cache.addColumnData(OColumnName.indices, indexOrIndexes));
+  if (singlePoint) {
+    const { x, y } = feature.geometry[0] as Point;
+    pbf.writeVarint(weave2D(zigzag(x), zigzag(y)));
   } else {
-    pbf.writeVarint(indexOrIndexes);
+    const indexOrIndexes = feature.addGeometryToCache(cache);
+    if (Array.isArray(indexOrIndexes)) {
+      pbf.writeVarint(cache.addColumnData(OColumnName.indices, indexOrIndexes));
+    } else {
+      pbf.writeVarint(indexOrIndexes);
+    }
   }
   // indices
   // if ('indices' in feature)
@@ -362,6 +395,7 @@ export function writeFeature(feature: BaseVectorFeature, cache: ColumnCacheWrite
 //   const hasOffsets = feature.hasOffsets();
 //   const hasBBox = feature.hasBBox();
 //   const hasMValues = feature.hasMValues();
+//   const singlePoint = feature.type === 1 && feature.geometry.length === 1;
 //   let flags = 0;
 //   if ('id' in feature) flags += 1 << 1;
 //   if (hasBBox) flags += 1 << 2;
@@ -379,10 +413,15 @@ export function writeFeature(feature: BaseVectorFeature, cache: ColumnCacheWrite
 //   if ('bbox' in feature && hasBBox) feature.bbox.forEach((n) => res.push(cache.addNumber(n)));
 //   // TODO: store offsets for each line if applicable (the first section of a points feature will be the offset)
 //   const indexOrIndexes = feature.addGeometryToCache(cache);
-//   if (Array.isArray(indexOrIndexes)) {
-//     res.push(cache.addColumnData(OColumnName.indices, indexOrIndexes));
+//   if (singlePoint) {
+//     const { x, y } = feature.geometry[0] as Point;
+//     res.push(weave2D(zigzag(x), zigzag(y)));
 //   } else {
-//     res.push(indexOrIndexes);
+//     if (Array.isArray(indexOrIndexes)) {
+//       res.push(cache.addColumnData(OColumnName.indices, indexOrIndexes));
+//     } else {
+//       res.push(indexOrIndexes);
+//     }
 //   }
 //   // TODO: indices, tesselation, and mValues
 

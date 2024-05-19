@@ -7,8 +7,24 @@ import { brotliCompressSync, gzipSync } from 'zlib';
 //   path.join(__dirname, '../test/fixtures/14-8801-5371.vector.pbf'),
 // ) as Uint8Array;
 
-const data = fs.readFileSync(path.join(__dirname, '../benchmarks/data/omt/mvt/2_2_2.mvt'));
-const covtData = fs.readFileSync(path.join(__dirname, '../benchmarks/data/omt/covt/2_2_2.covt'));
+// const FOLDER = 'amazon_here';
+// const XYZ = '4_8_5';
+// const FILE_TYPE = 'pbf';
+
+const FOLDER = 'omt';
+const XYZ = '3_4_5';
+const FILE_TYPE = 'mvt';
+
+// const FOLDER = 'bing';
+// const XYZ = '11_603_769';
+// const FILE_TYPE = 'mvt';
+
+const data = fs.readFileSync(
+  path.join(__dirname, `../benchmarks/data/${FOLDER}/mvt/${XYZ}.${FILE_TYPE}`),
+);
+const covtData = fs.readFileSync(
+  path.join(__dirname, `../benchmarks/data/${FOLDER}/covt/${XYZ}.covt`),
+);
 const tile = new VectorTile(new Uint8Array(data));
 
 const result = writeOVTile(tile);

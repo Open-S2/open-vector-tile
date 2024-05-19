@@ -1,12 +1,12 @@
 # TODO
 
 [x] Make sure imports are forced to be ordered by their names
-[ ] Improve column storage for faster checks if data exists
+[x] Improve column storage for faster checks if data exists
 
 [ ] Vector Feature - encode & decode
 [ ] Vector Layer - encode & decode
 [ ] Vector Tile - encode & decode
-[ ] Comments for all code
+[x] Comments for all code
 [ ] Typescript tests > 90%
 
 [ ] Encode first 5 zooms of my s2 tiles (both streets and terrain)
@@ -14,7 +14,7 @@
 
 [ ] Write the specification page
 [ ] Readme
-[ ] NPM package and cargo packages are setup
+[x] NPM package and cargo packages are setup
 [ ] Build blog page
 
 [ ] Port to Rust

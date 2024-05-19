@@ -10,6 +10,16 @@ const SHIFT_RIGHT_32 = 1 / SHIFT_LEFT_32;
 export type ReadFieldFunction<U> = (tag: number, input: U, pbf: Pbf) => void;
 
 /**
+ * A tag is a pair of a number and a type.
+ */
+export interface Tag {
+  /** the number of the tag */
+  tag: number;
+  /** the type of the tag */
+  type: number;
+}
+
+/**
  * Create a new PBF instance and either read or write to it.
  * Follows the early Protobuf spec supporting various types of encoding
  * including messages (which are usually representative of class objects).
@@ -65,7 +75,7 @@ export class Pbf {
    * Reads a tag from the buffer, pulls out the tag and type and returns it.
    * @returns - {tag: number, type: number}
    */
-  readTag(): { tag: number; type: number } {
+  readTag(): Tag {
     const input = this.readVarint();
     const tag = input >> 3;
     const type = (this.type = input & 7);
@@ -437,6 +447,7 @@ export class Pbf {
   // === WRITING =================================================================
 
   /**
+   * Write a tag and its associated type
    * @param tag - the tag to write
    * @param type - the type to write  (will never be greater than 3 bits)
    */
@@ -445,6 +456,7 @@ export class Pbf {
   }
 
   /**
+   * Allocate more space in the buffer
    * @param min - the minimum number of bytes to allocate
    */
   realloc(min: number): void {
@@ -470,6 +482,7 @@ export class Pbf {
   }
 
   /**
+   * Write a 32-bit unsigned integer
    * @param val - the 32-bit unsigned integer to write
    */
   writeFixed32(val: number): void {
@@ -479,6 +492,7 @@ export class Pbf {
   }
 
   /**
+   * Write a 32-bit signed integer
    * @param val - the 32-bit signed integer to write
    */
   writeSFixed32(val: number): void {
@@ -488,6 +502,7 @@ export class Pbf {
   }
 
   /**
+   * Write a 64-bit unsigned integer
    * @param val - the 64-bit unsigned integer to write
    */
   writeFixed64(val: number): void {
@@ -498,6 +513,7 @@ export class Pbf {
   }
 
   /**
+   * Write a 64-bit signed integer
    * @param val - the 64-bit signed integer to write
    */
   writeSFixed64(val: number): void {
@@ -508,6 +524,8 @@ export class Pbf {
   }
 
   /**
+   * Write a varint. Can be max 64-bits. Numbers are coerced to an unsigned
+   * while number before using this function.
    * @param val - any whole unsigned number. It's usually best practice to
    * not use this function directly unless you know what you're doing.
    */
@@ -529,6 +547,8 @@ export class Pbf {
   }
 
   /**
+   * Write a signed varint. Can be max 64-bits. Numbers can be negative
+   * but must still be a while number.
    * @param val - any whole signed number. It's usually best practice to
    * not use this function directly unless you know what you're doing.
    */
@@ -537,8 +557,9 @@ export class Pbf {
   }
 
   /**
-   * @param val - the boolean to write. Can also be a number, in which case
+   * Write a boolean value. Can also be a number, in which case
    * it will be converted to a boolean. 0 is false, anything else is true.
+   * @param val - the boolean to write.
    */
   writeBoolean(val: boolean | number): void {
     const bool = Boolean(val);
@@ -546,6 +567,8 @@ export class Pbf {
   }
 
   /**
+   * Write a string. Strings larger then 128 bytes will be written
+   * in chunks of 128 bytes and are slightly less efficient.
    * @param str - the string to write
    */
   writeString(str: string): void {
@@ -568,6 +591,7 @@ export class Pbf {
   }
 
   /**
+   * Write a 32-bit floating point number
    * @param val - a 32-bit floating point number to write
    */
   writeFloat(val: number): void {
@@ -577,6 +601,7 @@ export class Pbf {
   }
 
   /**
+   * Write a 64-bit floating point number
    * @param val - a 64-bit floating point number to write
    */
   writeDouble(val: number): void {
@@ -586,6 +611,7 @@ export class Pbf {
   }
 
   /**
+   * Write a byte array
    * @param buf - a Buffer to write. Will write the length of the buffer first.
    * After that, the buffer will be written byte by byte.
    */
@@ -597,6 +623,9 @@ export class Pbf {
   }
 
   /**
+   * Write a message to the buffer. Allows you to pass in an object
+   * with a write function to define how the message should be written.
+   * A good tool to abstract away storing classes or sub-classes.
    * @param fn - the user defined function to call to write the message
    * @param obj - the object to pass to the user defined function
    */
@@ -617,6 +646,9 @@ export class Pbf {
   }
 
   /**
+   * Write a message to the buffer. Allows you to pass in an object
+   * with a write function to define how the message should be written.
+   * A good tool to abstract away storing classes or sub-classes.
    * @param tag - the tag to write to associate with the message. This will help track how to
    * read following data.
    * @param fn - user defined function to call to manually define how to write the object
@@ -628,6 +660,7 @@ export class Pbf {
   }
 
   /**
+   * Write a packed repeated unsigned whole number array to the buffer.
    * @param tag - the tag to write to associate with the value.
    * @param arr - the array of unsigned whole numbers to write.
    */
@@ -636,6 +669,7 @@ export class Pbf {
   }
 
   /**
+   * Write a packed repeated signed whole number array to the buffer.
    * @param tag - the tag to write to associate with the value.
    * @param arr - the array of signed whole numbers to write.
    */
@@ -644,6 +678,8 @@ export class Pbf {
   }
 
   /**
+   * Write a packed repeated boolean array to the buffer.
+   * Supports numbers: `0` is false, everything else is true.
    * @param tag - the tag to write to associate with the value.
    * @param arr - the array of booleans to write.
    */
@@ -652,6 +688,7 @@ export class Pbf {
   }
 
   /**
+   * Write a packed repeated 32-bit float array to the buffer.
    * @param tag - the tag to write to associate with the value.
    * @param arr - the array of floats to write.
    */
@@ -660,6 +697,7 @@ export class Pbf {
   }
 
   /**
+   * Write a packed repeated 64-bit double array to the buffer.
    * @param tag - the tag to write to associate with the value.
    * @param arr - the array of doubles to write.
    */
@@ -668,6 +706,7 @@ export class Pbf {
   }
 
   /**
+   * Write a packed repeated 32-bit unsigned integer array to the buffer.
    * @param tag - the tag to write to associate with the value.
    * @param arr - the array of unsigned 32-bit numbers to write.
    */
@@ -676,6 +715,7 @@ export class Pbf {
   }
 
   /**
+   * Write a packed repeated 32-bit signed integer array to the buffer.
    * @param tag - the tag to write to associate with the value.
    * @param arr - the array of signed 32-bit numbers to write.
    */
@@ -684,6 +724,7 @@ export class Pbf {
   }
 
   /**
+   * Write a packed repeated 64-bit unsigned integer array to the buffer.
    * @param tag - the tag to write to associate with the value.
    * @param arr - the array of unsigned 64-bit numbers to write.
    */
@@ -692,6 +733,7 @@ export class Pbf {
   }
 
   /**
+   * Write a packed repeated 64-bit signed integer array to the buffer.
    * @param tag - the tag to write to associate with the value.
    * @param arr - the array of signed 64-bit numbers to write.
    */
@@ -700,6 +742,8 @@ export class Pbf {
   }
 
   /**
+   * Write a packed repeated byte array to the buffer with
+   * an associated tag.
    * @param tag - the tag to write to associate with the value.
    * @param buffer - the buffer of bytes to write.
    */
@@ -709,6 +753,8 @@ export class Pbf {
   }
 
   /**
+   * write a packed repeated fixed 32-bit integer array to the buffer
+   * with an associated tag.
    * @param tag - the tag to write to associate with the value.
    * @param val - the unsigned 32-bit integer to write.
    */
@@ -718,6 +764,8 @@ export class Pbf {
   }
 
   /**
+   * Write a packed repeated signed 32-bit integer array to the buffer
+   * with an associated tag.
    * @param tag - the tag to write to associate with the value.
    * @param val - the signed 32-bit integer to write.
    */
@@ -727,6 +775,8 @@ export class Pbf {
   }
 
   /**
+   * Write a packed repeated unsigned 64-bit integer array to the buffer
+   * with an associated tag.
    * @param tag - the tag to write to associate with the value.
    * @param val - the unsigned 64-bit integer to write.
    */
@@ -736,6 +786,8 @@ export class Pbf {
   }
 
   /**
+   * Write a packed repeated signed 64-bit integer array to the buffer
+   * with an associated tag.
    * @param tag - the tag to write to associate with the value.
    * @param val - the signed 64-bit integer to write.
    */
@@ -745,6 +797,8 @@ export class Pbf {
   }
 
   /**
+   * Write a packed repeated unsigned integer array to the buffer
+   * with an associated tag.
    * @param tag - the tag to write to associate with the value.
    * @param val - the unsigned number to write.
    */
@@ -754,6 +808,8 @@ export class Pbf {
   }
 
   /**
+   * Write a packed repeated signed integer array to the buffer
+   * with an associated tag.
    * @param tag - the tag to write to associate with the value.
    * @param val - the signed number to write.
    */
@@ -763,6 +819,8 @@ export class Pbf {
   }
 
   /**
+   * Write a packed repeated string array to the buffer
+   * with an associated tag.
    * @param tag - the tag to write to associate with the value.
    * @param str - the string to write.
    */
@@ -772,6 +830,8 @@ export class Pbf {
   }
 
   /**
+   * Write a packed repeated float array to the buffer
+   * with an associated tag.
    * @param tag - the tag to write to associate with the value.
    * @param val - the float to write.
    */
@@ -781,6 +841,8 @@ export class Pbf {
   }
 
   /**
+   * Write a packed repeated double array to the buffer
+   * with an associated tag.
    * @param tag - the tag to write to associate with the value.
    * @param val - the double to write.
    */
@@ -790,6 +852,8 @@ export class Pbf {
   }
 
   /**
+   * Write a packed repeated boolean array to the buffer
+   * with an associated tag.
    * @param tag - the tag to write to associate with the value.
    * @param val - the boolean to write.
    */

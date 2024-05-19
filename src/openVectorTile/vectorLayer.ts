@@ -88,8 +88,17 @@ export function writeOVLayer(
   pbf.writeVarintField(2, cache.addColumnData(OColumnName.string, layer.name));
   pbf.writeVarintField(3, encodeExtent(layer.extent as Extents));
   console.info(`writing ${layer.features.length} features`);
-  // first write size
-  // for (const feature of layer.features) pbf.writeVarintField(4, writeFeature(feature, cache));
+  // sort by feature type
+  layer.features = layer.features.sort((a, b) => a.type - b.type);
+  const totalPoints = layer.features.reduce(
+    (acc, feature) => acc + (feature.type === 1 ? 1 : 0),
+    0,
+  );
+  console.info('total points', totalPoints);
+  const totalLines = layer.features.reduce((acc, feature) => acc + (feature.type === 2 ? 1 : 0), 0);
+  console.info('total lines', totalLines);
+  const totalPolys = layer.features.reduce((acc, feature) => acc + (feature.type === 3 ? 1 : 0), 0);
+  console.info('total polys', totalPolys);
   for (const feature of layer.features) pbf.writeBytesField(4, writeFeature(feature, cache));
 }
 
