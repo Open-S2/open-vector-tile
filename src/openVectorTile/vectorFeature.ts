@@ -82,12 +82,11 @@ export class OVectorFeatureBase {
 }
 
 /**
- * Vector Feature Base 2D
+ * Vector Feature Base 2D.
+ * Extends from @see {@link OVectorFeatureBase}.
  */
 export class OVectorFeatureBase2D extends OVectorFeatureBase {
-  /**
-   * @returns the BBox of the feature (in lon-lat space)
-   */
+  /** @returns the BBox of the feature (in lon-lat space) */
   bbox(): BBox {
     if (this.bboxIndex === -1) return [0, 0, 0, 0];
     return this.cache.getColumn<BBox>(OColumnName.bbox, this.bboxIndex);
@@ -95,12 +94,11 @@ export class OVectorFeatureBase2D extends OVectorFeatureBase {
 }
 
 /**
- * Vector Feature Base 3D
+ * Vector Feature Base 3D.
+ * Extends from @see {@link OVectorFeatureBase}.
  */
 export class OVectorFeatureBase3D extends OVectorFeatureBase {
-  /**
-   * @returns the BBox3D of the feature (in lon-lat space)
-   */
+  /** @returns the BBox3D of the feature (in lon-lat space) */
   bbox(): BBox3D {
     if (this.bboxIndex === -1) return [0, 0, 0, 0, 0, 0];
     return this.cache.getColumn<BBox3D>(OColumnName.bbox, this.bboxIndex);
@@ -117,23 +115,17 @@ export class OVectorPointsFeature extends OVectorFeatureBase2D {
   type: VectorFeatureType = 1;
   geometry?: VectorPoints;
 
-  /**
-   * @returns the geometry as an array of points
-   */
+  /** @returns the geometry as an array of points */
   loadPoints(): Point[] {
     return this.loadGeometry();
   }
 
-  /**
-   * @returns the geometry as an array of lines
-   */
+  /** @returns the geometry as an array of lines */
   loadLines(): VectorLinesWithOffset {
     return [];
   }
 
-  /**
-   * @returns the geometry as an array of points
-   */
+  /** @returns the geometry as an array of points */
   loadGeometry(): VectorPoints {
     const geometryIndex = this.geometryIndices[0];
     if (!this.geometry) {
@@ -152,23 +144,19 @@ export class OVectorPointsFeature extends OVectorFeatureBase2D {
 /**
  * Lines Vector Feature
  * Type 2
- * Extends from @see {@link OVectorFeatureLineBase}.
+ * Extends from @see {@link OVectorFeatureBase2D}.
  * Store either a single line or a list of lines
  */
 export class OVectorLinesFeature extends OVectorFeatureBase2D {
   type: VectorFeatureType = 2;
   geometry?: VectorLinesWithOffset;
 
-  /**
-   * @returns the geometry as a flattened array of points
-   */
+  /** @returns the geometry as a flattened array of points */
   loadPoints(): Point[] {
     return this.loadGeometry().flatMap((line) => line);
   }
 
-  /**
-   * @returns the geometry as an array of lines objects that include offsets
-   */
+  /** @returns the geometry as an array of lines objects that include offsets */
   loadLines(): VectorLinesWithOffset {
     if (this.geometry) return this.geometry;
     // prepare variables
@@ -197,9 +185,7 @@ export class OVectorLinesFeature extends OVectorFeatureBase2D {
     return lines;
   }
 
-  /**
-   * @returns the geometry as an array of flattened line geometry
-   */
+  /** @returns the geometry as an array of flattened line geometry */
   loadGeometry(): VectorLines {
     return this.loadLines().map((line) => line.geometry);
   }
@@ -208,7 +194,7 @@ export class OVectorLinesFeature extends OVectorFeatureBase2D {
 /**
  * Polys Vector Feature
  * Type 3
- * Extends from @see {@link OVectorFeatureLineBase}.
+ * Extends from @see {@link OVectorFeatureBase2D}.
  * Stores either one or multiple polygons. Polygons are an abstraction to polylines, and
  * each polyline can contain an offset.
  */
@@ -254,18 +240,14 @@ export class OVectorPolysFeature extends OVectorFeatureBase2D {
     return polys;
   }
 
-  /**
-   * @returns the geometry as a flattened array of points
-   */
+  /** @returns the geometry as a flattened array of points */
   loadPoints(): Point[] {
     return this.loadGeometry().flatMap((poly) => {
       return poly.flatMap((line) => line);
     });
   }
 
-  /**
-   * @returns the geometry flattened into an array with offsets
-   */
+  /** @returns the geometry flattened into an array with offsets */
   loadLines(): VectorLinesWithOffset {
     const lines = this.#loadLinesWithOffsets();
     // flatten
@@ -303,9 +285,7 @@ export class OVectorPolysFeature extends OVectorFeatureBase2D {
     return [geometry, this.readIndices()];
   }
 
-  /**
-   * @returns the indices of the geometry
-   */
+  /** @returns the indices of the geometry */
   readIndices(): number[] {
     if (this.indicesIndex === -1) return [];
     return this.cache.getColumn<number[]>(OColumnName.indices, this.indicesIndex);
@@ -328,23 +308,19 @@ export class OVectorPolysFeature extends OVectorFeatureBase2D {
 /**
  * 3D Point Vector Feature
  * Type 4.
- * Extends from @see {@link OVectorFeatureBase}.
+ * Extends from @see {@link OVectorFeatureBase3D}.
  * Store either a single 3D point or a list of 3D points.
  */
 export class OVectorPoints3DFeature extends OVectorFeatureBase3D {
   type: VectorFeatureType = 4;
   geometry?: VectorPoints3D;
 
-  /**
-   *  @returns the geometry as a flattened array of points
-   */
+  /** @returns the geometry as a flattened array of points */
   loadPoints(): Point3D[] {
     return this.loadGeometry();
   }
 
-  /**
-   * @returns the geometry as an array of lines
-   */
+  /** @returns the geometry as an array of lines */
   loadLines(): VectorLines3DWithOffset {
     return [];
   }
@@ -370,23 +346,19 @@ export class OVectorPoints3DFeature extends OVectorFeatureBase3D {
 /**
  * 3D Lines Vector Feature
  * Type 5
- * Extends from @see {@link OVectorFeatureBase}.
+ * Extends from @see {@link OVectorFeatureBase3D}.
  * Store either a single 3D line or a list of 3D lines.
  */
 export class OVectorLines3DFeature extends OVectorFeatureBase3D {
   type: VectorFeatureType = 5;
   geometry?: VectorLines3DWithOffset;
 
-  /**
-   * @returns the geometry as a flattened array of points
-   */
+  /** @returns the geometry as a flattened array of points */
   loadPoints(): Point3D[] {
     return this.loadGeometry().flatMap((line) => line);
   }
 
-  /**
-   * @returns the geometry as an array of lines objects that include offsets
-   */
+  /** @returns the geometry as an array of lines objects that include offsets */
   loadLines(): VectorLines3DWithOffset {
     if (this.geometry) return this.geometry;
     // prepare variables
@@ -415,9 +387,7 @@ export class OVectorLines3DFeature extends OVectorFeatureBase3D {
     return lines;
   }
 
-  /**
-   * @returns the geometry as an array of flattened line geometry
-   */
+  /** @returns the geometry as an array of flattened line geometry */
   loadGeometry(): VectorLines3D {
     return this.loadLines().map((line) => line.geometry);
   }
@@ -425,7 +395,7 @@ export class OVectorLines3DFeature extends OVectorFeatureBase3D {
 /**
  * 3D Polygons Vector Feature
  * Type 6
- * Extends from @see {@link OVectorFeatureBase}.
+ * Extends from @see {@link OVectorFeatureBase3D}.
  * Store either a single 3D polygon or a list of 3D polygons.
  */
 export class OVectorPolys3DFeature extends OVectorFeatureBase3D {
@@ -470,27 +440,21 @@ export class OVectorPolys3DFeature extends OVectorFeatureBase3D {
     return polys;
   }
 
-  /**
-   * @returns the geometry as a flattened array of points
-   */
+  /** @returns the geometry as a flattened array of points */
   loadPoints(): Point3D[] {
     return this.loadGeometry().flatMap((poly) => {
       return poly.flatMap((line) => line);
     });
   }
 
-  /**
-   * @returns the geometry flattened into an array with offsets
-   */
+  /** @returns the geometry flattened into an array with offsets */
   loadLines(): VectorLines3DWithOffset {
     const lines = this.#loadLinesWithOffsets();
     // flatten
     return lines.flatMap((line) => line);
   }
 
-  /**
-   * @returns the geometry as an array of raw poly geometry
-   */
+  /** @returns the geometry as an array of raw poly geometry */
   loadGeometry(): VectorMultiPoly3D {
     return this.#loadLinesWithOffsets().map((poly) => {
       return poly.map((line) => line.geometry);
@@ -519,9 +483,7 @@ export class OVectorPolys3DFeature extends OVectorFeatureBase3D {
     return [geometry, this.readIndices()];
   }
 
-  /**
-   * @returns the indices of the geometry
-   */
+  /** @returns the indices of the geometry */
   readIndices(): number[] {
     if (this.indicesIndex === -1) return [];
     return this.cache.getColumn<number[]>(OColumnName.indices, this.indicesIndex);
@@ -541,9 +503,7 @@ export class OVectorPolys3DFeature extends OVectorFeatureBase3D {
   }
 }
 
-/**
- * All feature class types. Points, Lines, and Polys for both 2D and 3D
- */
+/** All feature class types. Points, Lines, and Polys for both 2D and 3D */
 export type OVectorFeature =
   | OVectorPointsFeature
   | OVectorLinesFeature

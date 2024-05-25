@@ -10,8 +10,8 @@ export type BBox3D = [
   bottom: number,
   right: number,
   top: number,
-  low: number,
-  high: number,
+  near: number,
+  far: number,
 ];
 
 /**

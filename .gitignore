@@ -5,7 +5,6 @@ tsconfig.build.tsbuildinfo
 tsconfig.test.tsbuildinfo
 .DS_Store
 target/
-vector-tile-spec/
 benchmarks/data/bing/mvt/*.mvt
 tools/fetchBingTiles.ts
 tools/fetchOMT.ts

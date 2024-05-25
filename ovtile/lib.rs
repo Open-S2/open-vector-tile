@@ -1,6 +1,6 @@
 #![no_std]
 // #![deny(missing_docs)]
-//! The `ovtile` Rust crate provides functionalities to read and write Open Vector Tile Spec messages.
+//! The `open-vector-tile` Rust crate provides functionalities to read and write Open Vector Tile Spec messages.
 //! This crate is a 0 dependency package that uses `no_std` and is intended to be used in
 //! embedded systems and WASM applications.
 
