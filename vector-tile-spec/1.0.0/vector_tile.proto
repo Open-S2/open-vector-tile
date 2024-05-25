@@ -2,6 +2,10 @@ package open_vector_tile;
 
 option optimize_for = LITE_RUNTIME;
 
+// This is a modified version of the Mapbox Vector Tile specification
+// To show how the two specifications coexist, we're using the same
+// protobuffer definition.
+
 message Tile {
   // GeomType is described in section 4.3.4 of the specification
   enum GeomType {
@@ -110,6 +114,6 @@ message Tile {
   repeated OpenLayer layers = 4;
   // Note: required if using the Open Vector Tile Specification
   optional ColumnCache column_cache = 5;
-
+  // potential extensions
   extensions 16 to 8191;
 }
