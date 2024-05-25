@@ -1,7 +1,7 @@
 # open-vector-tile ![GitHub Actions Workflow Status][test-workflow] [![npm][npm-image]][npm-url] [![downloads][downloads-image]][downloads-url] [![bundle][bundle-image]][bundle-url] [![docs-ts][docs-ts-image]][docs-ts-url] [![docs-rust][docs-rust-image]][docs-rust-url] ![doc-coverage][doc-coverage-image] ![code-coverage][code-coverage-image] [![Discord][discord-image]][discord-url]
 
-[test-workflow]: https://img.shields.io/github/actions/workflow/status/CraigglesO/open-vector-tile/test-workflow?branch=master
-[npm-image]: https://img.shields.io/npm/v/open-vector-tile.svg
+[test-workflow]: https://img.shields.io/github/actions/workflow/status/Open-S2/open-vector-tile/test.yml?logo=github
+[npm-image]: https://img.shields.io/npm/v/open-vector-tile.svg?logo=npm&logoColor=white
 [npm-url]: https://npmjs.org/package/open-vector-tile
 [bundle-image]: https://img.shields.io/bundlejs/size/open-vector-tile?exports=VectorTile
 [bundle-url]: https://bundlejs.com/?q=open-vector-tile&treeshake=%5B%7B+VectorTile+%7D%5D
@@ -13,7 +13,7 @@
 [docs-rust-url]: https://docs.rs/open-vector-tile
 [doc-coverage-image]: https://raw.githubusercontent.com/Open-S2/open-vector-tile/master/assets/doc-coverage.svg
 [code-coverage-image]: https://raw.githubusercontent.com/Open-S2/open-vector-tile/master/assets/code-coverage.svg
-[discord-image]: https://img.shields.io/discord/953563031701426206
+[discord-image]: https://img.shields.io/discord/953563031701426206?logo=discord&logoColor=white
 [discord-url]: https://discord.opens2.com
 
 ## About
