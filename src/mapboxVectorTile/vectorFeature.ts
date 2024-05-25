@@ -2,11 +2,12 @@ import type { Pbf as Protobuf } from '../pbf';
 import type {
   BBox,
   BBox3D,
+  OldVectorFeatureType,
   Point,
   Properties,
   Value,
-  VectorFeatureType,
   VectorGeometry,
+  VectorLine,
   VectorLinesWithOffset,
 } from '../vectorTile.spec';
 
@@ -20,7 +21,7 @@ export default class MapboxVectorFeature {
   version = 5;
   properties: Properties = {};
   extent: number;
-  type: VectorFeatureType = 1;
+  type: OldVectorFeatureType = 1;
   isS2: boolean;
   #pbf: Protobuf;
   #indices = -1;
@@ -66,14 +67,14 @@ export default class MapboxVectorFeature {
     if (feature.isS2) {
       if (tag === 15) feature.id = pbf.readVarint();
       else if (tag === 1) feature.#readTag(pbf, feature);
-      else if (tag === 2) feature.type = pbf.readVarint() as VectorFeatureType;
+      else if (tag === 2) feature.type = pbf.readVarint() as OldVectorFeatureType;
       else if (tag === 3) feature.#geometry = pbf.pos;
       else if (tag === 4) feature.#indices = pbf.pos;
       else if (tag === 5) feature.#tesselation = pbf.pos;
     } else {
       if (tag === 1) feature.id = pbf.readVarint();
       else if (tag === 2) feature.#readTag(pbf, feature);
-      else if (tag === 3) feature.type = pbf.readVarint() as VectorFeatureType;
+      else if (tag === 3) feature.type = pbf.readVarint() as OldVectorFeatureType;
       else if (tag === 4) feature.#geometry = pbf.pos;
       else if (tag === 5) feature.#indices = pbf.pos;
       else if (tag === 6) feature.#tesselation = pbf.pos;
@@ -98,7 +99,7 @@ export default class MapboxVectorFeature {
   /**
    * @returns - MapboxVectorTile's do not support m-values so we return false
    */
-  hasMValues(): boolean {
+  get hasMValues(): boolean {
     return false;
   }
 
@@ -111,9 +112,43 @@ export default class MapboxVectorFeature {
   }
 
   /**
+   * @returns - regardless of the type, we return a flattend point array
+   */
+  loadPoints(): Point[] {
+    let res: Point[] = [];
+    const geometry = this.loadGeometry();
+    if (this.type === 1) res = geometry as Point[];
+    else if (this.type === 2) res = (geometry as Point[][]).flatMap((p) => p);
+    else if (this.type === 3 || this.type === 4)
+      res = (geometry as Point[][][]).flatMap((p) => {
+        return p.flatMap((p) => p);
+      });
+
+    return res;
+  }
+
+  /**
+   * @returns - an array of lines. The offsets will be set to 0
+   */
+  loadLines(): VectorLinesWithOffset {
+    const geometry = this.loadGeometry();
+    let res: VectorLinesWithOffset = [];
+
+    if (this.type === 2) {
+      res = (geometry as VectorLine[]).map((line) => ({ geometry: line, offset: 0 }));
+    } else if (this.type === 3 || this.type === 4) {
+      res = (geometry as VectorLine[][]).flatMap((poly) => {
+        return poly.map((line) => ({ geometry: line, offset: 0 }));
+      });
+    }
+
+    return res;
+  }
+
+  /**
    * @returns - [flattened geometry & tesslation if applicable, indices]
    */
-  loadGeometryFlat(): [number[] | VectorGeometry, number[]] {
+  loadGeometryFlat(): [geometry: number[] | VectorGeometry, indices: number[]] {
     if (!this.isS2) return [this.loadGeometry(), [] as number[]];
     this.#pbf.pos = this.#geometry;
     const { extent } = this;
@@ -230,19 +265,11 @@ export default class MapboxVectorFeature {
     return lines;
   }
 
-  // TODO
-  /**
-   * @returns - an array of lines. The offsets will be set to 0
-   */
-  loadLines(): VectorLinesWithOffset {
-    return [];
-  }
-
   /**
    * @returns - an array of indices for the geometry
    */
   readIndices(): number[] {
-    if (this.#indices === 0) return [];
+    if (this.#indices <= 0) return [];
     this.#pbf.pos = this.#indices;
 
     let curr = 0;

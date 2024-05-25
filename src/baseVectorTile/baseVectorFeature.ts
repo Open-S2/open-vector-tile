@@ -1,20 +1,24 @@
-import { OColumnName, encodeOffset } from '../';
+import { OColumnName } from '../openVectorTile/columnCache';
+import { encodeShape } from '../openVectorTile/vectorValue';
 
 import type {
   BBox,
   BBox3D,
   ColumnCacheWriter,
-  ColumnValue,
   MapboxVectorFeature,
   OProperties,
+  Point,
+  Point3D,
   VectorLine,
   VectorLine3D,
   VectorLines,
+  VectorLines3D,
   VectorMultiPoly,
+  VectorMultiPoly3D,
   VectorPoints,
   VectorPoints3D,
-  VectorPoly,
 } from '../';
+import { weave2D, weave3D, zigzag } from 'open-vector-tile/util';
 
 /**
  * Base Vector Feature
@@ -29,36 +33,6 @@ export class VectorFeatureBase {
     public properties: OProperties = {},
     public id?: number,
   ) {}
-
-  /**
-   * @returns true if the feature has offsets
-   */
-  hasOffsets(): boolean {
-    return false;
-  }
-
-  /**
-   * @returns true if the feature has M values
-   */
-  hasMValues(): boolean {
-    return false;
-  }
-
-  /**
-   * @returns true if the feature has BBox
-   */
-  hasBBox(): boolean {
-    return false;
-  }
-
-  /**
-   * @param cache - the column cache to store the offsets in
-   * @returns the column values for the feature
-   */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  addOffsetsToCache(cache: ColumnCacheWriter): ColumnValue[] {
-    return [];
-  }
 }
 
 /**
@@ -73,13 +47,38 @@ export class BaseVectorPointsFeature extends VectorFeatureBase {
    * @param geometry - the geometry of the feature
    * @param properties - the properties of the feature
    * @param id - the id of the feature
+   * @param bbox - the BBox of the feature
    */
   constructor(
     public geometry: VectorPoints,
-    properties?: OProperties,
+    properties: OProperties = {},
     id?: number,
+    public bbox: BBox = [0, 0, 0, 0],
   ) {
     super(properties, id);
+  }
+
+  /**
+   * Points do not have this feature, so return false
+   * @returns false always
+   */
+  get hasOffsets(): boolean {
+    return false;
+  }
+
+  /**
+   * Points do not have this feature, so return false
+   * @returns false always
+   */
+  get hasMValues(): boolean {
+    return false;
+  }
+
+  /**
+   * @returns - true if the feature has BBox
+   */
+  get hasBBox(): boolean {
+    return this.bbox.some((v) => v !== 0);
   }
 
   /**
@@ -87,7 +86,18 @@ export class BaseVectorPointsFeature extends VectorFeatureBase {
    * @returns the index in the points column where the geometry is stored
    */
   addGeometryToCache(cache: ColumnCacheWriter): number {
+    if (this.geometry.length === 1) {
+      const { x, y } = this.geometry[0];
+      return weave2D(zigzag(x), zigzag(y));
+    }
     return cache.addColumnData(OColumnName.points, this.geometry);
+  }
+
+  /**
+   * @returns the geometry
+   */
+  loadGeometry(): VectorPoints {
+    return this.geometry;
   }
 }
 
@@ -98,12 +108,10 @@ export class BaseVectorPointsFeature extends VectorFeatureBase {
 export class BaseVectorLine {
   /**
    * @param geometry - the geometry of the feature
-   * @param mvalues - the M values of the feature
    * @param offset - the offset of the feature
    */
   constructor(
     public geometry: VectorLine,
-    public mvalues?: OProperties[],
     public offset: number = 0,
   ) {}
 }
@@ -125,7 +133,7 @@ export class BaseVectorLinesFeature extends VectorFeatureBase {
   constructor(
     public geometry: BaseVectorLine[],
     public bbox: BBox = [0, 0, 0, 0],
-    properties?: OProperties,
+    properties: OProperties = {},
     id?: number,
   ) {
     super(properties, id);
@@ -134,24 +142,23 @@ export class BaseVectorLinesFeature extends VectorFeatureBase {
   /**
    * @returns - true if the feature has offsets
    */
-  hasOffsets(): boolean {
+  get hasOffsets(): boolean {
     return this.geometry.some((line) => line.offset > 0);
   }
 
   /**
    * @returns - true if the feature has BBox
    */
-  hasBBox(): boolean {
+  get hasBBox(): boolean {
     return this.bbox.some((v) => v !== 0);
   }
 
   /**
-   * @param cache - the column cache to store the offsets
-   * @returns the indexes in the signed column where the offsets are stored
+   * @returns - true if the feature has M values
    */
-  addOffsetsToCache(cache: ColumnCacheWriter): ColumnValue[] {
-    return this.geometry.map((line) => {
-      return cache.addColumnData(OColumnName.signed, encodeOffset(line.offset));
+  get hasMValues(): boolean {
+    return this.geometry.some((line) => {
+      return line.geometry.some((point) => point.m !== undefined);
     });
   }
 
@@ -159,13 +166,31 @@ export class BaseVectorLinesFeature extends VectorFeatureBase {
    * @param cache - the column cache to store the geometry
    * @returns the indexes in the points column where the geometry is stored
    */
-  addGeometryToCache(cache: ColumnCacheWriter): number[] {
+  addGeometryToCache(cache: ColumnCacheWriter): number {
     const indices: number[] = [];
-    indices.push(this.geometry.length);
+    // store number of lines
+    if (this.geometry.length !== 1) indices.push(this.geometry.length);
     for (const line of this.geometry) {
+      // store offset for current line
+      if (this.hasOffsets) indices.push(encodeOffset(line.offset));
+      // store geometry data and track its index position
       indices.push(cache.addColumnData(OColumnName.points, line.geometry));
+      // store length of mvalues and the mvalues indexes if they exist
+      if (this.hasMValues) {
+        indices.push(line.geometry.length);
+        for (const point of line.geometry) {
+          indices.push(...encodeShape(cache, point.m ?? {}));
+        }
+      }
     }
-    return indices;
+    return cache.addColumnData(OColumnName.indices, indices);
+  }
+
+  /**
+   * @returns the flattened geometry
+   */
+  loadGeometry(): VectorLines {
+    return this.geometry.map((line) => line.geometry);
   }
 }
 
@@ -177,6 +202,7 @@ export class BaseVectorLinesFeature extends VectorFeatureBase {
  */
 export class BaseVectorPolysFeature extends VectorFeatureBase {
   type = 3;
+  tesselation: Point[];
   /**
    * @param geometry - the geometry of the feature
    * @param indices - the indices of the geometry
@@ -188,57 +214,90 @@ export class BaseVectorPolysFeature extends VectorFeatureBase {
   constructor(
     public geometry: BaseVectorLine[][],
     public indices: number[] = [],
-    public tesselation: number[] = [],
+    tesselation: number[] = [],
     public bbox: BBox = [0, 0, 0, 0],
-    properties?: OProperties,
+    properties: OProperties = {},
     id?: number,
   ) {
     super(properties, id);
+    this.tesselation = this.#fixTesselation(tesselation);
+  }
+
+  /**
+   * @param tesselation - the tesselation of the geometry but flattened
+   * @returns - the tesselation of the geometry as a list of points
+   */
+  #fixTesselation(tesselation: number[]): Point[] {
+    if (tesselation.length % 2 !== 0) {
+      throw new Error('The input tesselation must have an even number of elements.');
+    }
+    return tesselation.reduce((acc, _, index, array) => {
+      if (index % 2 === 0) {
+        acc.push({ x: array[index], y: array[index + 1] });
+      }
+      return acc;
+    }, [] as Point[]);
   }
 
   /**
    * @returns true if the feature has offsets
    */
-  hasOffsets(): boolean {
+  get hasOffsets(): boolean {
     return this.geometry.some((poly) => poly.some((line) => line.offset > 0));
   }
 
   /**
    * @returns true if the feature has BBox
    */
-  hasBBox(): boolean {
+  get hasBBox(): boolean {
     return this.bbox.some((v) => v !== 0);
   }
 
   /**
-   * @param cache - the column cache to store the offsets
-   * @returns the indexes in the signed column where the offsets are stored
+   * @returns - true if the feature has M values
    */
-  addOffsetsToCache(cache: ColumnCacheWriter): ColumnValue[] {
-    return this.geometry.flatMap((poly) => {
-      return [
-        poly.length,
-        ...poly.map((line) => {
-          return cache.addColumnData(OColumnName.signed, encodeOffset(line.offset));
-        }),
-      ];
-    });
+  get hasMValues(): boolean {
+    return this.geometry.some((poly) =>
+      poly.some((line) => {
+        return line.geometry.some((point) => point.m !== undefined);
+      }),
+    );
   }
 
   /**
    * @param cache - the column cache to store the geometry
    * @returns the indexes in the points column where the geometry is stored
    */
-  addGeometryToCache(cache: ColumnCacheWriter): number[] {
+  addGeometryToCache(cache: ColumnCacheWriter): number {
     const indices: number[] = [];
-    indices.push(this.geometry.length);
+    // store number of polygons
+    if (this.geometry.length > 1) indices.push(this.geometry.length);
     for (const poly of this.geometry) {
+      // store number of lines in the polygon
       indices.push(poly.length);
+      // store each line
       for (const line of poly) {
+        // store offset for current line
+        if (this.hasOffsets) indices.push(encodeOffset(line.offset));
+        // store geometry data and track its index position
         indices.push(cache.addColumnData(OColumnName.points, line.geometry));
+        // store length of mvalues and the mvalues indexes if they exist
+        if (this.hasMValues) {
+          indices.push(line.geometry.length);
+          for (const point of line.geometry) {
+            indices.push(...encodeShape(cache, point.m ?? {}));
+          }
+        }
       }
     }
-    return indices;
+    return cache.addColumnData(OColumnName.indices, indices);
+  }
+
+  /**
+   * @returns the flattened geometry
+   */
+  loadGeometry(): VectorMultiPoly {
+    return this.geometry.map((poly) => poly.map((line) => line.geometry));
   }
 }
 
@@ -251,13 +310,38 @@ export class BaseVectorPoint3DFeature extends VectorFeatureBase {
    * @param geometry - the geometry of the feature
    * @param properties - the properties of the feature
    * @param id - the id of the feature
+   * @param bbox - the bbox of the feature
    */
   constructor(
     public geometry: VectorPoints3D,
-    properties?: OProperties,
+    properties: OProperties = {},
     id?: number,
+    public bbox: BBox3D = [0, 0, 0, 0, 0, 0],
   ) {
     super(properties, id);
+  }
+
+  /**
+   * Points do not have this feature, so return false
+   * @returns false always
+   */
+  get hasOffsets(): boolean {
+    return false;
+  }
+
+  /**
+   * Points do not have this feature, so return false
+   * @returns false always
+   */
+  get hasMValues(): boolean {
+    return false;
+  }
+
+  /**
+   * @returns true if the feature has BBox
+   */
+  get hasBBox(): boolean {
+    return this.bbox.some((v) => v !== 0);
   }
 
   /**
@@ -265,7 +349,18 @@ export class BaseVectorPoint3DFeature extends VectorFeatureBase {
    * @returns the index in the points column where the geometry is stored
    */
   addGeometryToCache(cache: ColumnCacheWriter): number {
+    if (this.geometry.length === 1) {
+      const { x, y, z } = this.geometry[0];
+      return weave3D(zigzag(x), zigzag(y), zigzag(z));
+    }
     return cache.addColumnData(OColumnName.points3D, this.geometry);
+  }
+
+  /**
+   * @returns the geometry
+   */
+  loadGeometry(): VectorPoints3D {
+    return this.geometry;
   }
 }
 
@@ -276,12 +371,10 @@ export class BaseVectorPoint3DFeature extends VectorFeatureBase {
 export class BaseVectorLine3D {
   /**
    * @param geometry - the geometry of the feature
-   * @param mvalues - the M values of the feature
    * @param offset - the offset of the feature
    */
   constructor(
     public geometry: VectorLine3D,
-    public mvalues?: OProperties[],
     public offset: number = 0,
   ) {}
 }
@@ -303,7 +396,7 @@ export class BaseVectorLines3DFeature extends VectorFeatureBase {
   constructor(
     public geometry: BaseVectorLine3D[],
     public bbox: BBox3D = [0, 0, 0, 0, 0, 0],
-    properties?: OProperties,
+    properties: OProperties = {},
     id?: number,
   ) {
     super(properties, id);
@@ -312,24 +405,23 @@ export class BaseVectorLines3DFeature extends VectorFeatureBase {
   /**
    * @returns true if the feature has offsets
    */
-  hasOffsets(): boolean {
+  get hasOffsets(): boolean {
     return this.geometry.some((line) => line.offset > 0);
   }
 
   /**
    * @returns true if the feature has BBox
    */
-  hasBBox(): boolean {
+  get hasBBox(): boolean {
     return this.bbox.some((v) => v !== 0);
   }
 
   /**
-   * @param cache - the column cache to store the offsets
-   * @returns the indexes in the signed column where the offsets are stored
+   * @returns - true if the feature has M values
    */
-  addOffsetsToCache(cache: ColumnCacheWriter): ColumnValue[] {
-    return this.geometry.map((line) => {
-      return cache.addNumber(encodeOffset(line.offset));
+  get hasMValues(): boolean {
+    return this.geometry.some((line) => {
+      return line.geometry.some((point) => point.m !== undefined);
     });
   }
 
@@ -337,13 +429,31 @@ export class BaseVectorLines3DFeature extends VectorFeatureBase {
    * @param cache - the column cache to store the geometry
    * @returns the indexes in the points column where the geometry is stored
    */
-  addGeometryToCache(cache: ColumnCacheWriter): number[] {
+  addGeometryToCache(cache: ColumnCacheWriter): number {
     const indices: number[] = [];
-    indices.push(this.geometry.length);
+    // store number of lines
+    if (this.geometry.length > 1) indices.push(this.geometry.length);
     for (const line of this.geometry) {
+      // store offset for current line
+      if (this.hasOffsets) indices.push(encodeOffset(line.offset));
+      // store geometry data and track its index position
       indices.push(cache.addColumnData(OColumnName.points3D, line.geometry));
+      // store length of mvalues and the mvalues indexes if they exist
+      if (this.hasMValues) {
+        indices.push(line.geometry.length);
+        for (const point of line.geometry) {
+          indices.push(...encodeShape(cache, point.m ?? {}));
+        }
+      }
     }
-    return indices;
+    return cache.addColumnData(OColumnName.indices, indices);
+  }
+
+  /**
+   * @returns the flattened geometry
+   */
+  loadGeometry(): VectorLines3D {
+    return this.geometry.map((line) => line.geometry);
   }
 }
 
@@ -355,10 +465,7 @@ export class BaseVectorLines3DFeature extends VectorFeatureBase {
  */
 export class BaseVectorPolys3DFeature extends VectorFeatureBase {
   type = 6;
-  geometry: BaseVectorLine3D[][];
-  indices: number[];
-  tesselation: number[];
-  bbox: BBox3D;
+  tesselation: Point3D[];
 
   /**
    * @param geometry - the geometry of the feature
@@ -369,66 +476,92 @@ export class BaseVectorPolys3DFeature extends VectorFeatureBase {
    * @param id - the id of the feature
    */
   constructor(
-    geometry: BaseVectorLine3D[][],
-    indices: number[] = [],
+    public geometry: BaseVectorLine3D[][],
+    public indices: number[] = [],
     tesselation: number[] = [],
-    bbox: BBox3D = [0, 0, 0, 0, 0, 0],
-    properties?: OProperties,
+    public bbox: BBox3D = [0, 0, 0, 0, 0, 0],
+    properties: OProperties = {},
     id?: number,
   ) {
     super(properties, id);
-    this.geometry = geometry;
-    this.indices = indices;
-    this.tesselation = tesselation;
-    this.bbox = bbox;
+    this.tesselation = this.#fixTesselation(tesselation);
+  }
+
+  /**
+   * @param tesselation - the tesselation of the geometry but flattened
+   * @returns - the tesselation of the geometry as a list of points
+   */
+  #fixTesselation(tesselation: number[]): Point3D[] {
+    if (tesselation.length % 3 !== 0) {
+      throw new Error('The input tesselation must have an even number of elements.');
+    }
+    return tesselation.reduce((acc, _, index, array) => {
+      if (index % 3 === 0) {
+        acc.push({ x: array[index], y: array[index + 1], z: array[index + 2] });
+      }
+      return acc;
+    }, [] as Point3D[]);
   }
 
   /**
    * @returns true if the feature has BBox
    */
-  hasBBox(): boolean {
+  get hasBBox(): boolean {
     return this.bbox.some((v) => v !== 0);
   }
 
   /**
    * @returns true if the feature has offsets
    */
-  hasOffsets(): boolean {
+  get hasOffsets(): boolean {
     return this.geometry.some((poly) => poly.some((line) => line.offset > 0));
   }
 
   /**
-   * @param cache - the column cache to store the offsets
-   * @returns the indexes in the signed column where the offsets are stored
+   * @returns - true if the feature has M values
    */
-  addOffsetsToCache(cache: ColumnCacheWriter): ColumnValue[] {
-    return this.geometry.flatMap((poly) => {
-      return [
-        poly.length,
-        ...poly.map((line) => {
-          return cache.addColumnData(OColumnName.signed, encodeOffset(line.offset));
-        }),
-      ];
-    });
+  get hasMValues(): boolean {
+    return this.geometry.some((poly) =>
+      poly.some((line) => {
+        return line.geometry.some((point) => point.m !== undefined);
+      }),
+    );
   }
 
   /**
    * @param cache - the column cache to store the geometry
    * @returns the indexes in the points column where the geometry is stored
    */
-  addGeometryToCache(cache: ColumnCacheWriter): number[] {
+  addGeometryToCache(cache: ColumnCacheWriter): number {
     const indices: number[] = [];
-    // store number of polys
-    indices.push(this.geometry.length);
+    // store number of polygons
+    if (this.geometry.length > 1) indices.push(this.geometry.length);
     for (const poly of this.geometry) {
-      // store number of lines in the poly
+      // store number of lines in the polygon
       indices.push(poly.length);
+      // store each line
       for (const line of poly) {
-        // store location of each line in the points3D column
+        // store offset for current line
+        if (this.hasOffsets) indices.push(encodeOffset(line.offset));
+        // store geometry data and track its index position
         indices.push(cache.addColumnData(OColumnName.points3D, line.geometry));
+        // store length of mvalues and the mvalues indexes if they exist
+        if (this.hasMValues) {
+          indices.push(line.geometry.length);
+          for (const point of line.geometry) {
+            indices.push(...encodeShape(cache, point.m ?? {}));
+          }
+        }
       }
     }
-    return indices;
+    return cache.addColumnData(OColumnName.indices, indices);
+  }
+
+  /**
+   * @returns the flattened geometry
+   */
+  loadGeometry(): VectorMultiPoly3D {
+    return this.geometry.map((poly) => poly.map((line) => line.geometry));
   }
 }
 
@@ -450,8 +583,7 @@ export type BaseVectorFeature =
 export function fromMapboxVectorFeature(feature: MapboxVectorFeature): BaseVectorFeature {
   const { id, properties } = feature;
   const geometry = feature.loadGeometry();
-  // const indices = feature.readIndices();
-  const indices: number[] = [];
+  const indices = feature.readIndices();
   const tesselation: number[] = [];
   feature.addTesselation(tesselation, 1 / feature.extent);
   switch (feature.type) {
@@ -465,21 +597,7 @@ export function fromMapboxVectorFeature(feature: MapboxVectorFeature): BaseVecto
       }
       return new BaseVectorLinesFeature(baseLines, undefined, properties, id);
     }
-    case 3: {
-      const geo = geometry as VectorPoly;
-      const baseLines: BaseVectorLine[] = [];
-      for (const line of geo) {
-        baseLines.push(new BaseVectorLine(line));
-      }
-      return new BaseVectorPolysFeature(
-        [baseLines],
-        indices,
-        tesselation,
-        undefined,
-        properties,
-        id,
-      );
-    }
+    case 3:
     case 4: {
       const geo = geometry as VectorMultiPoly;
       const baseMultPoly: BaseVectorLine[][] = [];
@@ -502,4 +620,22 @@ export function fromMapboxVectorFeature(feature: MapboxVectorFeature): BaseVecto
     default:
       throw new Error(`Unknown feature type: ${feature.type}`);
   }
+}
+
+/**
+ * Encode offset values into a signed integer to reduce byte cost without too much loss
+ * @param offset - float or double value to be compressed
+ * @returns - a signed integer that saves 3 decimal places
+ */
+export function encodeOffset(offset: number): number {
+  return Math.floor(offset * 1_000);
+}
+
+/**
+ * Decode offset from a signed integer into a float or double
+ * @param offset - the signed integer to be decompressed
+ * @returns - a float or double that restores 3 decimal places
+ */
+export function decodeOffset(offset: number): number {
+  return offset / 1_000;
 }

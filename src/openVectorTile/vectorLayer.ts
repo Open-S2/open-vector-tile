@@ -1,6 +1,6 @@
 import { OColumnName } from './columnCache';
 import { Pbf as Protobuf } from '../pbf';
-import { OVectorFeature, readFeature, writeFeature } from './vectorFeature';
+import { OVectorFeature, readFeature, writeOVFeature } from './vectorFeature';
 
 import type { BaseVectorLayer } from '../baseVectorTile';
 import type { ColumnCacheReader, ColumnCacheWriter } from './columnCache';
@@ -19,7 +19,7 @@ export class OVectorLayer {
   version: number = 1;
   name: string = '';
   extent: Extents = 4096;
-  features: OVectorFeature[] = [];
+  #features = new Map<number, OVectorFeature>();
   #pbf: Protobuf;
   #cache: ColumnCacheReader;
   #featuresPos: number[] = [];
@@ -41,8 +41,8 @@ export class OVectorLayer {
    */
   #readLayer(tag: number, layer: OVectorLayer, pbf: Protobuf): void {
     // lets convert from switch to if statements
-    if (tag === 1) layer.name = layer.#cache.getColumn(OColumnName.string, pbf.readVarint());
-    else if (tag === 2) layer.version = pbf.readVarint();
+    if (tag === 1) layer.version = pbf.readVarint();
+    else if (tag === 2) layer.name = layer.#cache.getColumn(OColumnName.string, pbf.readVarint());
     else if (tag === 3) layer.extent = decodeExtent(pbf.readVarint());
     else if (tag === 4) layer.#featuresPos.push(pbf.pos);
   }
@@ -55,16 +55,20 @@ export class OVectorLayer {
   }
 
   /**
+   * should return OVectorFeature which is a type combining all 6 feature types
    * @param i - The index of the feature
    * @returns - A feature at the given index
    */
   feature(i: number): OVectorFeature {
     if (i < 0 || i >= this.#featuresPos.length) throw new Error('feature index out of bounds');
-    if (this.features[i] !== undefined) return this.features[i];
+    let feature = this.#features.get(i);
+    if (feature !== undefined) return feature;
 
     this.#pbf.pos = this.#featuresPos[i];
-    // readFeature should return OVectorFeature which is a type combining all 6 feature types
-    return (this.features[i] = readFeature(this.#pbf.readBytes(), this.extent, this.#cache));
+    feature = readFeature(this.#pbf.readBytes(), this.extent, this.#cache);
+
+    this.#features.set(i, feature);
+    return feature;
   }
 }
 
@@ -78,35 +82,46 @@ export class OVectorLayer {
  * @param layerCache.layer - the layer to encode into the Protobuffer
  * @param layerCache.cache - the cache where all column level data is stored
  * @param pbf - the pbf protocol we are writing to
+ * @param verbose - set to true to print out write information
  */
 export function writeOVLayer(
   layerCache: { layer: BaseVectorLayer; cache: ColumnCacheWriter },
   pbf: Protobuf,
+  verbose = false,
 ): void {
   const { layer, cache } = layerCache;
   pbf.writeVarintField(1, layer.version);
   pbf.writeVarintField(2, cache.addColumnData(OColumnName.string, layer.name));
   pbf.writeVarintField(3, encodeExtent(layer.extent as Extents));
-  console.info(`writing ${layer.features.length} features`);
+
   // sort by feature type
   layer.features = layer.features.sort((a, b) => a.type - b.type);
-  const totalPoints = layer.features.reduce(
-    (acc, feature) => acc + (feature.type === 1 ? 1 : 0),
-    0,
-  );
-  console.info('total points', totalPoints);
-  const totalLines = layer.features.reduce((acc, feature) => acc + (feature.type === 2 ? 1 : 0), 0);
-  console.info('total lines', totalLines);
-  const totalPolys = layer.features.reduce((acc, feature) => acc + (feature.type === 3 ? 1 : 0), 0);
-  console.info('total polys', totalPolys);
-  for (const feature of layer.features) pbf.writeBytesField(4, writeFeature(feature, cache));
+
+  for (const feature of layer.features) pbf.writeBytesField(4, writeOVFeature(feature, cache));
+
+  if (verbose) {
+    const totals = { points: 0, lines: 0, polys: 0, points3D: 0, lines3D: 0, polys3D: 0, all: 0 };
+    for (const feature of layer.features) {
+      if (feature.type === 1) totals.points += 1;
+      else if (feature.type === 2) totals.lines += 1;
+      else if (feature.type === 3) totals.polys += 1;
+      else if (feature.type === 4) totals.points3D += 1;
+      else if (feature.type === 5) totals.lines3D += 1;
+      else if (feature.type === 6) totals.polys3D += 1;
+      totals.all += 1;
+    }
+    console.info(totals);
+    console.info(
+      `wrote "${layer.name}" with extent "${layer.extent}" and version "${layer.version}"\n`,
+    );
+  }
 }
 
 /**
  * @param extent - number are in 512, 1024, 2048, 4096, 8192
  * @returns - remap to smaller values: 0 -> 512, 1 -> 1024, 2 -> 2048, 3 -> 4096, 4 -> 8192
  */
-function encodeExtent(extent: Extents): number {
+export function encodeExtent(extent: Extents): number {
   if (extent === 8192) return 4;
   else if (extent === 4096) return 3;
   else if (extent === 2048) return 2;
@@ -119,7 +134,7 @@ function encodeExtent(extent: Extents): number {
  * @param encExtent - number are in 0, 1, 2, 3, 4
  * @returns - remap to smaller values: 0 -> 512, 1 -> 1024, 2 -> 2048, 3 -> 4096, 4 -> 8192
  */
-function decodeExtent(encExtent: number): Extents {
+export function decodeExtent(encExtent: number): Extents {
   if (encExtent === 4) return 8192;
   else if (encExtent === 3) return 4096;
   else if (encExtent === 2) return 2048;

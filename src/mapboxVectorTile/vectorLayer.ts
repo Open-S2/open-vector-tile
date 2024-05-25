@@ -18,7 +18,7 @@ export default class MapboxVectorLayer {
   #keys: string[] = [];
   #values: Value[] = [];
   #featuresPos: number[] = [];
-  features: VectorFeature[] = [];
+  #features = new Map<number, VectorFeature>();
   /**
    * @param pbf - The Protobuf object to read from
    * @param end - The end position of the message in the buffer
@@ -51,11 +51,12 @@ export default class MapboxVectorLayer {
    */
   feature(i: number): VectorFeature {
     if (i < 0 || i >= this.#featuresPos.length) throw new Error('feature index out of bounds');
-    if (this.features[i] !== undefined) return this.features[i];
+    let vtf = this.#features.get(i);
+    if (vtf !== undefined) return vtf;
 
     this.#pbf.pos = this.#featuresPos[i];
     const end = this.#pbf.readVarint() + this.#pbf.pos;
-    const vtf = (this.features[i] = new VectorFeature(
+    vtf = new VectorFeature(
       this.#pbf,
       end,
       this.isS2,
@@ -63,7 +64,9 @@ export default class MapboxVectorLayer {
       this.version,
       this.#keys,
       this.#values,
-    ));
+    );
+
+    this.#features.set(i, vtf);
 
     return vtf;
   }

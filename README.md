@@ -2,8 +2,8 @@
 
 [npm-image]: https://img.shields.io/npm/v/open-vector-tile.svg
 [npm-url]: https://npmjs.org/package/open-vector-tile
-[bundlephobia-image]: https://img.shields.io/bundlephobia/minzip/open-vector-tile@0.1.0.svg
-[bundlephobia-url]: https://bundlephobia.com/package/open-vector-tile@0.1.0
+[bundlephobia-image]: https://img.shields.io/bundlephobia/minzip/open-vector-tile.svg
+[bundlephobia-url]: https://bundlephobia.com/package/open-vector-tile
 [downloads-image]: https://img.shields.io/npm/dm/open-vector-tile.svg
 [downloads-url]: https://www.npmjs.com/package/open-vector-tile
 [docs-ts-image]: https://img.shields.io/badge/docs-typescript-yellow.svg
@@ -16,13 +16,14 @@
 
 A Modified TypeScript implementation of the [Mapbox Vector Tile](https://github.com/mapbox/vector-tile-js) library. It is backwards compatible but offers a lot of new features and improvements including (but not limited to):
 
-* Proper module treeshake.
+* 🔗 zero dependency builds.
+* 🌴 Proper module treeshake.
 * Pre-Tessellated & Indexed geometries to quickly ship data to the renderer.
-* Support for 3D geometries.
+* 🌴 Support for 3D geometries.
 * Support for M-Values for each geometry point (used by lines and polygons).
-  * M-Values are stored as "Shapes" which reuses objects only needing to do lookups on values.
+* M-Values are stored as "Shapes" which reuses objects only needing to do lookups on values.
 * Column encoding of data to make it more compact. Better gzip and brotli compression.
-* Support nested objects in properties.
+* 🪺 Support nested objects in properties.
 
 ## Inspiration
 

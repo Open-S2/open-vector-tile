@@ -7,11 +7,11 @@ import {
   OColumnName,
 } from '../../src/openVectorTile/columnCache';
 import { describe, expect, it } from 'bun:test';
-import { encodeShape, encodeValue, readShape } from '../../src/openVectorTile/vectorValue';
+import { encodeShape, readShape } from '../../src/openVectorTile/vectorValue';
 
 import type { OValue } from '../../src/vectorTile.spec';
 
-describe('encodeValue and decodeValue', () => {
+describe('encodeShape and decodeValue', () => {
   const pbf = new Pbf();
   const col = new ColumnCacheWriter();
   const exampleValue = {
@@ -20,68 +20,73 @@ describe('encodeValue and decodeValue', () => {
     c: 2,
   };
 
-  encodeValue(col, exampleValue);
+  encodeShape(col, exampleValue);
   // Next we store the column in a pbf
   col.write(col, pbf);
   const rawData = pbf.commit();
 
-  it('encodedValue stored in column', () => {
-    expect(col[OColumnName.string]).toEqual(
-      new Map<string, OColumnBaseChunk<string>>([
-        ['a', { col: OColumnName.string, data: 'a', index: 0 }],
-        ['b', { col: OColumnName.string, data: 'b', index: 1 }],
-        ['c', { col: OColumnName.string, data: 'c', index: 2 }],
-      ]),
-    );
-    expect(col[OColumnName.unsigned]).toEqual(
-      new Map<number, OColumnBaseChunk<number>>([
-        [1, { col: OColumnName.unsigned, data: 1, index: 0 }],
-        [2, { col: OColumnName.unsigned, data: 2, index: 1 }],
-        [3, { col: OColumnName.unsigned, data: 3, index: 2 }],
-      ]),
-    );
-    expect(col[OColumnName.values]).toEqual(
-      new Map([
-        [
-          '[6,3,0,3,{"col":1,"data":3,"index":0},1,3,{"col":1,"data":1,"index":1},2,3,{"col":1,"data":2,"index":2}]',
-          {
-            col: 7,
-            data: [
-              6,
-              3,
-              0,
-              3,
-              {
-                col: 1,
-                data: 3,
-                index: 2,
-              },
-              1,
-              3,
-              {
-                col: 1,
-                data: 1,
-                index: 0,
-              },
-              2,
-              3,
-              {
-                col: 1,
-                data: 2,
-                index: 1,
-              },
-            ],
-            index: 0,
-          },
-        ],
+  it('encodedValue stored in pbf', () => {
+    expect(rawData).toEqual(
+      new Uint8Array([
+        2, 1, 97, 2, 1, 98, 2, 1, 99, 8, 1, 8, 2, 8, 3, 66, 7, 13, 0, 6, 1, 6, 2, 6, 66, 3, 2, 0, 1,
       ]),
     );
   });
 
-  it('encodedValue stored in pbf', () => {
-    expect(rawData).toEqual(
-      new Uint8Array([
-        2, 1, 97, 2, 1, 98, 2, 1, 99, 8, 1, 8, 2, 8, 3, 58, 11, 6, 3, 0, 3, 17, 1, 3, 1, 2, 3, 9,
+  it('encodedValue stored in column', () => {
+    expect(col[OColumnName.string]).toEqual(
+      new Map<string, OColumnBaseChunk<string>>([
+        ['a', { col: OColumnName.string, data: 'a', index: 0, count: 1 }],
+        ['b', { col: OColumnName.string, data: 'b', index: 1, count: 1 }],
+        ['c', { col: OColumnName.string, data: 'c', index: 2, count: 1 }],
+      ]),
+    );
+    expect(col[OColumnName.unsigned]).toEqual(
+      new Map<number, OColumnBaseChunk<number>>([
+        [1, { col: OColumnName.unsigned, data: 1, index: 0, count: 1 }],
+        [2, { col: OColumnName.unsigned, data: 2, index: 1, count: 1 }],
+        [3, { col: OColumnName.unsigned, data: 3, index: 2, count: 1 }],
+      ]),
+    );
+    expect(col[OColumnName.shapes]).toEqual(
+      new Map([
+        [
+          '[13,0,6,1,6,2,6]',
+          {
+            col: 8,
+            count: 1,
+            data: [13, 0, 6, 1, 6, 2, 6],
+            index: 0,
+          },
+        ],
+        [
+          '[{"col":1,"data":3},{"col":1,"data":1},{"col":1,"data":2}]',
+          {
+            col: 8,
+            count: 1,
+            data: [
+              {
+                col: 1,
+                count: 1,
+                data: 3,
+                index: 2,
+              },
+              {
+                col: 1,
+                count: 1,
+                data: 1,
+                index: 0,
+              },
+              {
+                col: 1,
+                count: 1,
+                data: 2,
+                index: 1,
+              },
+            ],
+            index: 1,
+          },
+        ],
       ]),
     );
   });
@@ -93,18 +98,12 @@ describe('encodeValue and decodeValue', () => {
   it('new Column is build correctly', () => {
     expect(newCol[OColumnName.string]).toEqual([{ pos: 1 }, { pos: 4 }, { pos: 7 }]);
     expect(newCol[OColumnName.unsigned]).toEqual([{ pos: 10 }, { pos: 12 }, { pos: 14 }]);
-    expect(newCol[OColumnName.values]).toEqual([{ pos: 16 }]);
+    expect(newCol[OColumnName.shapes]).toEqual([{ pos: 16 }, { pos: 25 }]);
   });
 
   it('decodeValue works', () => {
-    const decodedValue: OValue = newCol.getColumn(OColumnName.values, 0);
-    expect(decodedValue).toEqual({ a: 3, b: 1, c: 2 });
-  });
-
-  it('post decode, the column should have read data', () => {
-    expect(newCol[OColumnName.string]).toEqual(['a', 'b', 'c']);
-    expect(newCol[OColumnName.unsigned]).toEqual([1, 2, 3]);
-    expect(newCol[OColumnName.values]).toEqual([{ data: { a: 3, b: 1, c: 2 } }]);
+    const decodedValue: OValue = newCol.getColumn(OColumnName.shapes, 0);
+    expect(decodedValue).toEqual([13, 0, 6, 1, 6, 2, 6]);
   });
 });
 
@@ -124,7 +123,7 @@ describe('encodeValue and decodeValue complex object', () => {
     },
   };
 
-  encodeValue(col, exampleValue);
+  encodeShape(col, exampleValue);
   // Next we store the column in a pbf
   col.write(col, pbf);
   const rawData = pbf.commit();
@@ -133,8 +132,10 @@ describe('encodeValue and decodeValue complex object', () => {
   const newPbf = new Pbf(rawData);
   const newCol = new ColumnCacheReader(newPbf);
 
-  const returnedValue = newCol.getColumn(OColumnName.values, 0);
-  expect(returnedValue).toEqual(exampleValue);
+  const returnedValue = newCol.getColumn(OColumnName.shapes, 0);
+  expect(returnedValue).toEqual([
+    25, 0, 22, 1, 22, 2, 22, 3, 2, 5, 20, 2, 2, 2, 2, 2, 10, 13, 11, 6, 12, 10, 13, 18,
+  ]);
 });
 
 describe('encodeShape and decodeShape', () => {
@@ -167,19 +168,20 @@ describe('encodeShape and decodeShape', () => {
   it('encodedShape stored in column', () => {
     expect(col[OColumnName.string]).toEqual(
       new Map<string, OColumnBaseChunk<string>>([
-        ['a', { col: 0, data: 'a', index: 0 }],
-        ['b', { col: 0, data: 'b', index: 1 }],
-        ['c', { col: 0, data: 'c', index: 2 }],
+        ['a', { col: 0, data: 'a', index: 0, count: 2 }],
+        ['b', { col: 0, data: 'b', index: 1, count: 2 }],
+        ['c', { col: 0, data: 'c', index: 2, count: 2 }],
       ]),
     );
     expect(col[OColumnName.unsigned]).toEqual(
       new Map<number, OColumnBaseChunk<number>>([
         [
-          0,
+          3,
           {
             col: 1,
-            data: 0,
-            index: 0,
+            data: 3,
+            index: 3,
+            count: 1,
           },
         ],
         [
@@ -187,7 +189,8 @@ describe('encodeShape and decodeShape', () => {
           {
             col: 1,
             data: 1,
-            index: 1,
+            index: 2,
+            count: 1,
           },
         ],
         [
@@ -195,15 +198,8 @@ describe('encodeShape and decodeShape', () => {
           {
             col: 1,
             data: 2,
-            index: 2,
-          },
-        ],
-        [
-          3,
-          {
-            col: 1,
-            data: 3,
-            index: 3,
+            index: 0,
+            count: 2,
           },
         ],
         [
@@ -212,113 +208,86 @@ describe('encodeShape and decodeShape', () => {
             col: 1,
             data: 5,
             index: 4,
+            count: 1,
+          },
+        ],
+        [
+          0,
+          {
+            col: 1,
+            data: 0,
+            index: 1,
+            count: 1,
           },
         ],
       ]),
     );
-    expect(col[OColumnName.indices]).toEqual(
-      new Map([
+    expect(col[OColumnName.indices]).toEqual(new Map([]));
+    expect(col[OColumnName.shapes]).toEqual(
+      new Map<string, OColumnBaseChunk<ColumnValue[]>>([
         [
-          '[3,0,1,1,1,2,1]',
+          '[13,0,6,1,6,2,6]',
           {
-            col: 6,
-            data: [3, 0, 1, 1, 1, 2, 1],
+            col: 8,
+            count: 2,
+            data: [13, 0, 6, 1, 6, 2, 6],
             index: 0,
           },
         ],
         [
-          '[0,1,2]',
+          '[{"col":1,"data":3},{"col":1,"data":1},{"col":1,"data":2}]',
           {
-            col: 6,
-            data: [0, 1, 2],
-            index: 1,
-          },
-        ],
-        [
-          '[3,2,4]',
-          {
-            col: 6,
-            data: [3, 2, 4],
-            index: 2,
-          },
-        ],
-      ]),
-    );
-    expect(col[OColumnName.values]).toEqual(
-      new Map<string, OColumnBaseChunk<ColumnValue[]>>([
-        [
-          '[3,{"col":1,"data":3,"index":0}]',
-          {
-            col: 7,
+            col: 8,
+            count: 1,
             data: [
-              3,
               {
                 col: 1,
+                count: 1,
                 data: 3,
                 index: 3,
               },
-            ],
-            index: 0,
-          },
-        ],
-        [
-          '[3,{"col":1,"data":1,"index":1}]',
-          {
-            col: 7,
-            data: [
-              3,
               {
                 col: 1,
+                count: 1,
                 data: 1,
-                index: 1,
+                index: 2,
+              },
+              {
+                col: 1,
+                count: 2,
+                data: 2,
+                index: 0,
               },
             ],
             index: 1,
           },
         ],
         [
-          '[3,{"col":1,"data":2,"index":2}]',
+          '[{"col":1,"data":5},{"col":1,"data":2},{"col":1,"data":0}]',
           {
-            col: 7,
+            col: 8,
+            count: 1,
             data: [
-              3,
               {
                 col: 1,
-                data: 2,
-                index: 2,
-              },
-            ],
-            index: 2,
-          },
-        ],
-        [
-          '[3,{"col":1,"data":5,"index":3}]',
-          {
-            col: 7,
-            data: [
-              3,
-              {
-                col: 1,
+                count: 1,
                 data: 5,
                 index: 4,
               },
-            ],
-            index: 3,
-          },
-        ],
-        [
-          '[3,{"col":1,"data":0,"index":4}]',
-          {
-            col: 7,
-            data: [
-              3,
               {
                 col: 1,
-                data: 0,
+                count: 2,
+                data: 2,
                 index: 0,
               },
+              {
+                col: 1,
+                count: 1,
+                data: 0,
+                index: 1,
+              },
             ],
-            index: 4,
+            index: 2,
           },
         ],
       ]),
@@ -329,9 +298,8 @@ describe('encodeShape and decodeShape', () => {
   it('rawData is encoded to pbf', () => {
     expect(rawData).toEqual(
       new Uint8Array([
-        2, 1, 97, 2, 1, 98, 2, 1, 99, 8, 0, 8, 1, 8, 2, 8, 3, 8, 5, 50, 7, 6, 5, 2, 0, 0, 2, 1, 50,
-        3, 0, 2, 2, 50, 3, 6, 1, 4, 58, 2, 3, 25, 58, 2, 3, 9, 58, 2, 3, 17, 58, 2, 3, 33, 58, 2, 3,
-        1,
+        2, 1, 97, 2, 1, 98, 2, 1, 99, 8, 2, 8, 0, 8, 1, 8, 3, 8, 5, 66, 7, 13, 0, 6, 1, 6, 2, 6, 66,
+        3, 3, 2, 0, 66, 3, 4, 0, 1,
       ]),
     );
   });
@@ -358,9 +326,9 @@ describe('encodeShape and decodeShape complex objects', () => {
     d: 'hello',
     e: ['w', 'o', 'r', 'l', 'd'],
     f: {
-      g: 3,
+      g: 3.3,
       h: -1,
-      i: 2.2,
+      i: 2,
     },
   };
   const exampleValue2 = {
@@ -388,11 +356,10 @@ describe('encodeShape and decodeShape complex objects', () => {
       new Uint8Array([
         2, 1, 97, 2, 1, 98, 2, 1, 99, 2, 1, 100, 2, 5, 104, 101, 108, 108, 111, 2, 1, 101, 2, 1,
         119, 2, 1, 111, 2, 1, 114, 2, 1, 108, 2, 1, 102, 2, 1, 103, 2, 1, 104, 2, 1, 105, 2, 5, 119,
-        111, 114, 108, 100, 8, 3, 16, 199, 1, 16, 1, 25, 154, 153, 153, 153, 153, 153, 1, 64, 50,
-        20, 12, 11, 2, 0, 0, 2, 1, 4, 3, 8, 7, 18, 19, 6, 16, 19, 22, 21, 24, 23, 50, 8, 0, 2, 2, 2,
-        2, 2, 2, 2, 50, 8, 0, 4, 1, 14, 2, 3, 6, 9, 58, 1, 0, 58, 1, 1, 58, 1, 2, 58, 2, 4, 4, 58,
-        12, 5, 5, 4, 6, 4, 7, 4, 8, 4, 9, 4, 3, 58, 2, 3, 1, 58, 2, 3, 10, 58, 2, 3, 3, 58, 2, 4,
-        14, 58, 12, 5, 5, 4, 12, 4, 5, 4, 9, 4, 9, 4, 7, 58, 2, 3, 2,
+        111, 114, 108, 100, 8, 2, 8, 3, 16, 199, 1, 16, 1, 33, 154, 153, 153, 153, 153, 153, 1, 64,
+        33, 102, 102, 102, 102, 102, 102, 10, 64, 66, 24, 25, 0, 22, 1, 22, 2, 22, 3, 2, 5, 20, 2,
+        2, 2, 2, 2, 10, 13, 11, 18, 12, 10, 13, 6, 66, 12, 2, 1, 0, 4, 6, 7, 8, 9, 3, 1, 1, 0, 66,
+        12, 2, 0, 1, 14, 12, 5, 9, 9, 7, 0, 0, 1,
       ]),
     );
   });

@@ -53,6 +53,15 @@ export default tseslint.config(
           allowSeparatedGroups: true,
         },
       ],
+      // allow variables with underscores to not be used
+      '@typescript-eslint/no-unused-vars': [
+        'error', // or "error"
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
     },
   },
 );

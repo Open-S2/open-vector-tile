@@ -7,13 +7,17 @@ import { brotliCompressSync, gzipSync } from 'zlib';
 //   path.join(__dirname, '../test/fixtures/14-8801-5371.vector.pbf'),
 // ) as Uint8Array;
 
-// const FOLDER = 'amazon_here';
-// const XYZ = '4_8_5';
+// const FOLDER = 'amazon';
+// const XYZ = '5_5_11';
 // const FILE_TYPE = 'pbf';
 
 const FOLDER = 'omt';
-const XYZ = '3_4_5';
+const XYZ = '2_2_2';
 const FILE_TYPE = 'mvt';
+
+// const FOLDER = 'omt';
+// const XYZ = '4_3_9';
+// const FILE_TYPE = 'mvt';
 
 // const FOLDER = 'bing';
 // const XYZ = '11_603_769';
@@ -39,27 +43,26 @@ console.info(
   `Brotli:\nMVT: ${brotliCompressSync(data).length} bytes -> COVT: ${brotliCompressSync(covtData).length} bytes -> OVT: ${brotliCompressSync(result).length} bytes`,
 );
 
-// NOT WORKING
+// amazon (5_5_11)
 // Default:
-// MVT: 578549 bytes -> COVT: 310123 bytes -> OVT: 317657 bytes
+// MVT: 393103 bytes -> COVT: 162691 bytes -> OVT: 143714 bytes
 // Gzip:
-// MVT: 317773 bytes -> COVT: 184973 bytes -> OVT: 128753 bytes
+// MVT: 176110 bytes -> COVT: 128045 bytes -> OVT: 49332 bytes
 // Brotli:
-// MVT: 169112 bytes -> COVT: 166436 bytes -> OVT: 84220 bytes
-// Brotli is 50% the size of the Mapbox Vector Tile
+// MVT: 137233 bytes -> COVT: 115701 bytes -> OVT: 38418 bytes
 
-// LOTS OF ADDITIONS
+// omt (2_2_2)
 // Default:
-// MVT: 578549 bytes -> COVT: 310123 bytes -> OVT: 364019 bytes
+// MVT: 578549 bytes -> COVT: 310123 bytes -> OVT: 460414 bytes
 // Gzip:
-// MVT: 317773 bytes -> COVT: 184973 bytes -> OVT: 141613 bytes
+// MVT: 317773 bytes -> COVT: 184973 bytes -> OVT: 206084 bytes
 // Brotli:
-// MVT: 169112 bytes -> COVT: 166436 bytes -> OVT: 104648 bytes
+// MVT: 169112 bytes -> COVT: 166436 bytes -> OVT: 164576 bytes
 
-// WORKING + BACK TO BASICS
+// bing (11_603_769)
 // Default:
-// MVT: 578549 bytes -> COVT: 310123 bytes -> OVT: 371611 bytes
+// MVT: 53040 bytes -> COVT: 41999 bytes -> OVT: 51591 bytes
 // Gzip:
-// MVT: 317773 bytes -> COVT: 184973 bytes -> OVT: 131232 bytes
+// MVT: 43068 bytes -> COVT: 33947 bytes -> OVT: 38313 bytes
 // Brotli:
-// MVT: 169112 bytes -> COVT: 166436 bytes -> OVT: 97359 bytes
+// MVT: 40598 bytes -> COVT: 31790 bytes -> OVT: 34205 bytes

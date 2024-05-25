@@ -11,10 +11,9 @@ describe('parsing vector tiles', () => {
   const data = fs.readFileSync(
     path.join(__dirname, 'fixtures/14-8801-5371.vector.pbf'),
   ) as Uint8Array;
+  const tile = new VectorTile(data);
 
   it('should have all layers', () => {
-    const tile = new VectorTile(data);
-
     expect(Object.keys(tile.layers)).toEqual([
       'landuse',
       'waterway',
@@ -33,16 +32,21 @@ describe('parsing vector tiles', () => {
     ]);
   });
 
+  it('shoulnd contain mValues and have an empty bbox', () => {
+    const poi_label = tile.layers.poi_label;
+    const feature = poi_label.feature(11);
+
+    expect(feature.hasMValues).toEqual(false);
+    expect(feature.bbox()).toEqual([0, 0, 0, 0]);
+  });
+
   it('should extract the tags of a feature', () => {
-    const tile = new VectorTile(data);
-    const poi_label = tile.layers.poi_label as MapboxVectorLayer;
-    const road = tile.layers.road as MapboxVectorLayer;
+    const poi_label = tile.layers.poi_label;
+    const road = tile.layers.road;
 
     expect(poi_label.length).toEqual(558);
 
     const park = poi_label.feature(11);
-
-    // expect(park.bbox()).toEqual([ 3898, 1731, 3898, 1731 ]);
 
     expect(function () {
       const park = poi_label.feature(1e9);
@@ -56,23 +60,40 @@ describe('parsing vector tiles', () => {
 
     // Check point geometry
     expect(park.loadGeometry()).toEqual([{ x: 3898, y: 1731 }]);
+    expect(park.loadLines()).toEqual([]);
+    expect(park.loadPoints()).toEqual([{ x: 3898, y: 1731 }]);
 
     // Check line geometry
-    expect(road.feature(656).loadGeometry()).toEqual([
+    const feature_656 = road.feature(656);
+    expect(feature_656.loadGeometry()).toEqual([
       [
         { x: 1988, y: 306 },
         { x: 1808, y: 321 },
         { x: 1506, y: 347 },
       ],
     ]);
+    expect(feature_656.loadLines()).toEqual([
+      {
+        geometry: [
+          { x: 1988, y: 306 },
+          { x: 1808, y: 321 },
+          { x: 1506, y: 347 },
+        ],
+        offset: 0,
+      },
+    ]);
+    expect(feature_656.loadPoints()).toEqual([
+      { x: 1988, y: 306 },
+      { x: 1808, y: 321 },
+      { x: 1506, y: 347 },
+    ]);
   });
 
   it('changing first point of a polygon should not change last point', () => {
-    const tile = new VectorTile(data);
-    const buildingLayer = tile.layers.building as MapboxVectorLayer;
+    const buildingLayer = tile.layers.building;
 
-    const building = buildingLayer.feature(0).loadGeometry();
-    expect(building).toEqual([
+    const building = buildingLayer.feature(0);
+    expect(building.loadGeometry()).toEqual([
       [
         [
           { x: 2039, y: -32 },
@@ -83,21 +104,69 @@ describe('parsing vector tiles', () => {
         ],
       ],
     ]);
+    expect(building.loadLines()).toEqual([
+      {
+        geometry: [
+          {
+            x: 2039,
+            y: -32,
+          },
+          {
+            x: 2035,
+            y: -31,
+          },
+          {
+            x: 2032,
+            y: -31,
+          },
+          {
+            x: 2032,
+            y: -32,
+          },
+          {
+            x: 2039,
+            y: -32,
+          },
+        ],
+        offset: 0,
+      },
+    ]);
+    expect(building.loadPoints()).toEqual([
+      {
+        x: 2039,
+        y: -32,
+      },
+      {
+        x: 2035,
+        y: -31,
+      },
+      {
+        x: 2032,
+        y: -31,
+      },
+      {
+        x: 2032,
+        y: -32,
+      },
+      {
+        x: 2039,
+        y: -32,
+      },
+    ]);
   });
 });
 
 test('VectorLayer', () => {
-  const { version, name, extent, isS2, length, features } = new MapboxVectorLayer(
+  const { version, name, extent, isS2, length } = new MapboxVectorLayer(
     new Protobuf(Buffer.alloc(0)),
     0,
   );
-  expect({ version, name, extent, isS2, length, features }).toEqual({
+  expect({ version, name, extent, isS2, length }).toEqual({
     version: 5,
     name: 'default',
     extent: 4096,
     isS2: false,
     length: 0,
-    features: [],
   });
 });
 
@@ -133,7 +202,10 @@ test('https://github.com/mapbox/vector-tile-js/issues/15', () => {
 test('https://github.com/mapbox/mapbox-gl-js/issues/1019', () => {
   const data = fs.readFileSync(path.join(__dirname, 'fixtures/12-1143-1497.vector.pbf'));
   const tile = new VectorTile(data);
-  const waterLayer = tile.layers.water as MapboxVectorLayer;
+  const waterLayer = tile.layers.water;
+  const waterFeature = waterLayer.feature(1);
+  const waterGeometry = waterFeature.loadGeometry();
+  expect(waterGeometry).toHaveLength(1);
   expect(waterLayer.feature(1).loadGeometry()).toHaveLength(1);
 });
 
@@ -141,7 +213,7 @@ test('https://github.com/mapbox/vector-tile-js/issues/60', () => {
   const data = fs.readFileSync(path.join(__dirname, 'fixtures/multipolygon-with-closepath.pbf'));
   const tile = new VectorTile(data);
   for (const id in tile.layers) {
-    const layer = tile.layers[id] as MapboxVectorLayer;
+    const layer = tile.layers[id];
     for (let i = 0; i < layer.length; i++) {
       layer.feature(i).loadGeometry();
     }

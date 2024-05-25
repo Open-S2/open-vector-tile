@@ -1,6 +1,5 @@
 import { OColumnName } from './columnCache';
 
-import type { Pbf as Protobuf } from '../pbf';
 import type { ColumnCacheReader, ColumnCacheWriter, ColumnValue } from './columnCache';
 import type { OProperties, OValue } from '../vectorTile.spec';
 
@@ -19,15 +18,15 @@ export function encodeShape(
   cache: ColumnCacheWriter,
   shape: OProperties,
 ): [shapeIndex: number, valueIndexes: number] {
-  const shapeStore: number[] = []; // this will store the key index (found in string column) OR OValues
-  const valueStore: number[] = []; // this will store the value index (found in values column) OR OValues
+  const shapeStore: number[] = []; // this will store a "shape" of numbers on how to rebuild the object
+  const valueStore: ColumnValue[] = []; // this will store the value index (found in values column)
 
   _encodeShape(cache, shape, shapeStore, valueStore);
 
   // return the index of the shape and the value index set
   return [
-    cache.addColumnData(OColumnName.indices, shapeStore),
-    cache.addColumnData(OColumnName.indices, valueStore),
+    cache.addColumnData(OColumnName.shapes, shapeStore),
+    cache.addColumnData(OColumnName.shapes, valueStore),
   ];
 }
 
@@ -40,25 +39,36 @@ export function encodeShape(
  */
 function _encodeShape(
   cache: ColumnCacheWriter,
-  shape: OProperties,
+  shape: OValue,
   shapeStore: number[],
-  valueStore: number[],
+  valueStore: ColumnValue[],
 ): void {
-  const entries = Object.entries(shape).filter(([, v]) => v !== undefined);
-  shapeStore.push(entries.length);
-  for (const [key, value] of entries) {
-    // store key
-    shapeStore.push(cache.addColumnData(OColumnName.string, key));
-    // value may be an object, so we need to recurse in that case
-    if (!Array.isArray(value) && typeof value === 'object' && value !== null) {
-      shapeStore.push(0);
+  if (Array.isArray(shape)) {
+    shapeStore.push(shapeEncode(0, shape.length));
+    for (const value of shape) _encodeShape(cache, value, shapeStore, valueStore);
+  } else if (typeof shape === 'object' && shape !== null) {
+    const entries = Object.entries(shape).filter(([, v]) => v !== undefined);
+    shapeStore.push(shapeEncode(1, entries.length));
+    for (const [key, value] of entries) {
+      // store key
+      shapeStore.push(cache.addColumnData(OColumnName.string, key));
       _encodeShape(cache, value, shapeStore, valueStore);
-    } else {
-      shapeStore.push(1);
-      // its important to note that we never store objects, only null, bool, string, number, and arrays of those
-      // however, an array may store sub objects, so shapes do not improve upon that case
-      valueStore.push(encodeValue(cache, value));
     }
+  } else {
+    // the shape encodes the type
+    let colName = 5;
+    if (shape === null) valueStore.push(2);
+    else if (shape === false) valueStore.push(0);
+    else if (shape === true) valueStore.push(1);
+    else if (typeof shape === 'number') {
+      const cachedNum = cache.addNumber(shape);
+      colName = typeof cachedNum === 'number' ? 0 : cachedNum.col;
+      valueStore.push(cachedNum);
+    } else if (typeof shape === 'string') {
+      colName = 0; // is a string
+      valueStore.push(cache.addColumnData(OColumnName.string, shape));
+    } else throw Error('Cannot encode value type');
+    shapeStore.push(shapeEncode(2, colName));
   }
 }
 
@@ -73,169 +83,82 @@ export function readShape(
   valueIndex: number,
   cache: ColumnCacheReader,
 ): OProperties {
-  const res: OProperties = {};
-
   // first get the data from pbf
-  const shapeIndices: number[] = cache.getColumn(OColumnName.indices, shapeIndex);
-  const valueIndices: number[] = cache.getColumn(OColumnName.indices, valueIndex);
+  const shapeIndices: number[] = cache.getColumn(OColumnName.shapes, shapeIndex);
+  const valueIndices: number[] = cache.getColumn(OColumnName.shapes, valueIndex);
   // then decode it
-  _readShape([...shapeIndices], [...valueIndices], res, cache);
+  const value: { data: OValue } = { data: {} };
+  _readShape([...shapeIndices], [...valueIndices], value, cache);
 
-  return res;
+  return value.data as OProperties;
 }
 
 /**
  * @param shapeIndices - the index to the key indices and whether the value is an object or not
  * @param valueIndices - the index to the values column
  * @param res - The resulting shape we mutate
+ * @param res.data - to maintain the reference through the recursion
  * @param cache - the cache where all raw data is stored in a column format
  */
 function _readShape(
   shapeIndices: number[],
   valueIndices: number[],
-  res: OProperties,
+  res: { data: OValue },
   cache: ColumnCacheReader,
 ): void {
-  let length = shapeIndices.shift() ?? 0;
-  while (length-- > 0) {
-    const key: string = cache.getColumn(OColumnName.string, shapeIndices.shift() ?? 0);
-    const valueType = shapeIndices.shift() ?? 0;
-    if (valueType === 0) {
-      res[key] = {};
-      _readShape(shapeIndices, valueIndices, res[key] as OProperties, cache);
+  const { type, countOrCol } = shapeDecode(shapeIndices.shift() ?? 0);
+  if (type === 2) {
+    const valueIndex = valueIndices.shift() ?? 0;
+    if (countOrCol === 5) {
+      if (valueIndex === 0) res.data = false;
+      else if (valueIndex === 1) res.data = true;
+      else res.data = null;
     } else {
-      res[key] = cache.getColumn(OColumnName.values, valueIndices.shift() ?? 0);
+      res.data = cache.getColumn(countOrCol, valueIndex);
     }
-  }
+  } else if (type === 0) {
+    res.data = [];
+    for (let i = 0; i < countOrCol; i++) {
+      const tmp: { data: OValue } = { data: {} };
+      _readShape(shapeIndices, valueIndices, tmp, cache);
+      res.data.push(tmp.data);
+    }
+  } else if (type === 1) {
+    res.data = {};
+    for (let i = 0; i < countOrCol; i++) {
+      const key = cache.getColumn<string>(OColumnName.string, shapeIndices.shift() ?? 0);
+      const value: { data: OValue } = { data: {} };
+      _readShape(shapeIndices, valueIndices, value, cache);
+      res.data[key] = value.data;
+    }
+  } else throw Error('Cannot decode value type');
 }
 
 /**
- * EXPLANATION OF THE CODE:
- *
- * Values are self contained generic types, arrays, or objects.
- * We encode them seperate into a standalone protobuf message.
- * Then we check if that resulting bytes exists in the cache.
- * If not, we add it and write it.
- *
- * Values are also stored in a manner of looking up string & number column indexes.
- * So a value is mostly a collection of lookup devices.
+ * A shape pair for stronger compression and decoding
  */
-
-/**
- * Write a value to the pbf and return the column index
- * @param cache - the cache where all data is stored in a column format
- * @param value - the value to encode
- * @returns - an index to the values column where the data is stored
- */
-export function encodeValue(cache: ColumnCacheWriter, value: OValue): number {
-  const res: ColumnValue[] = [];
-  // STEP 1: encode a value
-  writeValue(res, value, cache);
-  // Step 2: Send to cache for an index
-  return cache.addColumnData(OColumnName.values, res);
+export interface ShapePair {
+  /** The type (0 - array, 1 - object, 2 - value) */
+  type: 0 | 1 | 2;
+  /** the length if object or array; or the column to read from */
+  countOrCol: number;
 }
 
 /**
- * @param res - the index set to be stored
- * @param value - the value to encode
- * @param cache - the cache where all data is stored in a column format
+ * @param type - 0 is array, 1 is object, 2 is value
+ * @param countOrColname - the length of the object or array; if value, its the column name
+ * - can match columns for [0-4] (string, u64, i64, f32, f64),
+ * - or matches a type: 5 represents bool and null, 6 represents array, 7 represents object
+ * @returns - the encoded message
  */
-function writeValue(res: ColumnValue[], value: OValue, cache: ColumnCacheWriter): void {
-  if (value === null || value === undefined) {
-    res.push(0); // null
-  } else if (typeof value === 'boolean') {
-    if (value) res.push(1);
-    else res.push(2);
-  } else if (typeof value === 'number') {
-    res.push(3, cache.addNumber(value));
-  } else if (typeof value === 'string') {
-    res.push(4, cache.addColumnData(OColumnName.string, value));
-  } else if (Array.isArray(value)) {
-    value = value.filter((v) => v !== undefined);
-    // write size
-    res.push(5, value.length);
-    // run "writeValue" on all values
-    for (const v of value) writeValue(res, v, cache);
-  } else if (typeof value === 'object') {
-    const entries = Object.entries(value).filter(([, v]) => v !== undefined);
-    // write size
-    res.push(6, entries.length);
-    // run "writeValue" on all values
-    for (const [key, v] of entries) {
-      res.push(cache.addColumnData(OColumnName.string, key));
-      writeValue(res, v, cache);
-    }
-  } else {
-    throw new Error('Cannot encode value type', value);
-  }
+function shapeEncode(type: 0 | 1 | 2, countOrColname: number): number {
+  return (countOrColname << 2) + type;
 }
 
 /**
- * @param pbf - the pbf protocol we are reading from
- * @param cache - the cache where all data is stored in a column format
- * @returns - the decoded value
+ * @param num - the column and index encoded together
+ * @returns - the decoded message
  */
-export function readValue(pbf: Protobuf, cache: ColumnCacheReader): OValue {
-  const res: { data: OValue } = { data: null };
-  // clone because we `shift` the array
-  const bytes = [...pbf.readPackedVarint()];
-
-  _read(bytes, cache, res);
-
-  return res.data;
-}
-
-/**
- * @param data - the bytes we are reading
- * @param cache - the cache where all data is stored in a column format
- * @param value - the data value we are mutating
- * @param value.data - the decoded value we mutate. Put inside of an object so the reference is maintained outside the function
- */
-function _read(data: number[], cache: ColumnCacheReader, value: { data: OValue }): void {
-  const tag = data.shift();
-  switch (tag) {
-    // data is already null
-    case 0:
-    default:
-      break;
-    case 1:
-      value.data = true;
-      break;
-    case 2:
-      value.data = false;
-      break;
-    // data is a string->unsigned->signed->double
-    case 3: {
-      value.data = cache.getColumnData(data.shift() ?? 0);
-      break;
-    }
-    // data is a string
-    case 4: {
-      value.data = cache.getColumn(OColumnName.string, data.shift() ?? 0);
-      break;
-    }
-    // data is an array
-    case 5: {
-      value.data = [];
-      const size = data.shift() ?? 0;
-      for (let i = 0; i < size; i++) {
-        const nestedData: { data: OValue } = { data: null };
-        _read(data, cache, nestedData);
-        value.data.push(nestedData.data);
-      }
-      break;
-    }
-    // data is an object
-    case 6: {
-      value.data = {};
-      const size = data.shift() ?? 0;
-      for (let i = 0; i < size; i++) {
-        const nestedData: { data: OValue } = { data: null };
-        const key: string = cache.getColumn(OColumnName.string, data.shift() ?? 0);
-        _read(data, cache, nestedData);
-        value.data[key] = nestedData.data;
-      }
-      break;
-    }
-  }
+function shapeDecode(num: number): ShapePair {
+  return { type: (num & 0b11) as 0 | 1 | 2, countOrCol: num >> 2 };
 }

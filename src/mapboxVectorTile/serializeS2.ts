@@ -6,6 +6,7 @@ import { commandEncode, zigzag } from '../util';
 import type { BaseVectorFeature, BaseVectorLayer, BaseVectorTile } from '../baseVectorTile';
 import type { MapboxVectorFeature, MapboxVectorLayer, VectorTile } from '../';
 import type {
+  Point,
   Value,
   VectorLines,
   VectorMultiPoly,
@@ -73,11 +74,9 @@ function writeLayer(layer: BaseVectorLayer | MapboxVectorLayer, pbf: Protobuf): 
     valuecache: {},
   };
 
-  const isVectorTileLayer = 'length' in layer;
-
-  const ll = isVectorTileLayer ? layer.length : layer.features.length;
+  const ll = layer.length;
   for (i = 0; i < ll; i++) {
-    const feature = isVectorTileLayer ? layer.feature(i) : layer.features[i];
+    const feature = layer.feature(i);
     pbf.writeMessage(2, writeFeature, { context, feature });
   }
 
@@ -109,10 +108,10 @@ function writeFeature(contextWF: ContextWithFeature, pbf: Protobuf): void {
   pbf.writeVarintField(3, feature.type);
   // geoemtry, indices
   pbf.writeMessage(4, writeGeometry, feature);
-  if ('indices' in feature && feature.indices !== undefined) {
+  if ('indices' in feature && feature.indices.length) {
     pbf.writeMessage(5, writeIndices, feature.indices);
   }
-  if ('tesselation' in feature && feature.tesselation !== undefined) {
+  if ('tesselation' in feature && feature.tesselation.length) {
     pbf.writeMessage(6, writeTesselation, feature.tesselation);
   }
 }
@@ -169,12 +168,12 @@ function writeIndices(indices: number[], pbf: Protobuf): void {
  * @param geometry - the geometry to write
  * @param pbf - the Protobuf object to write to
  */
-function writeTesselation(geometry: number[], pbf: Protobuf): void {
+function writeTesselation(geometry: Point[], pbf: Protobuf): void {
   let x = 0;
   let y = 0;
-  for (let i = 0, gl = geometry.length; i < gl; i += 2) {
-    const dx = geometry[i] - x;
-    const dy = geometry[i + 1] - y;
+  for (const point of geometry) {
+    const dx = point.x - x;
+    const dy = point.y - y;
     pbf.writeVarint(zigzag(dx));
     pbf.writeVarint(zigzag(dy));
     x += dx;
@@ -188,7 +187,7 @@ function writeTesselation(geometry: number[], pbf: Protobuf): void {
  */
 function writeGeometry(feature: BaseVectorFeature | MapboxVectorFeature, pbf: Protobuf): void {
   const { type } = feature;
-  const geometry = 'geometry' in feature ? feature.geometry : feature.loadGeometry();
+  const geometry = feature.loadGeometry();
 
   if (type === 1) writePointGeometry(geometry as VectorPoints, pbf);
   else if (type === 4) writeMultiPolyGeometry(geometry as VectorMultiPoly, pbf);

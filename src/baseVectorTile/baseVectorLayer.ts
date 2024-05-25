@@ -39,6 +39,13 @@ export default class BaseVectorLayer {
   }
 
   /**
+   * @returns The number of features in the layer
+   */
+  get length(): number {
+    return this.features.length;
+  }
+
+  /**
    * @param layer - a Mapbox Vector Layer
    * @returns A Base Vector Layer
    */
@@ -52,7 +59,4 @@ export default class BaseVectorLayer {
     }
     return vectorLayer;
   }
-
-  // TODO: implement
-  // static fromJSON(): BaseVectorLayer {}
 }

@@ -1,24 +1,23 @@
 # TODO
 
-[x] Make sure imports are forced to be ordered by their names
-[x] Improve column storage for faster checks if data exists
-
-[ ] Vector Feature - encode & decode
-[ ] Vector Layer - encode & decode
-[ ] Vector Tile - encode & decode
-[x] Comments for all code
-[ ] Typescript tests > 90%
-
-[ ] Encode first 5 zooms of my s2 tiles (both streets and terrain)
-[ ] Port over to s2maps-gpu engine and upload example.
+[ ] reuse functions for VectorFeature by creating extra subclasses
 
 [ ] Write the specification page
 [ ] Readme
-[x] NPM package and cargo packages are setup
+
 [ ] Build blog page
+
+[ ] Encode first 5 zooms of my s2 tiles (both streets and terrain)
+[ ] Port over to s2maps-gpu engine and upload example.
 
 [ ] Port to Rust
 [ ] Rust tests > 90%
 [ ] Rust Documentation complete
 
-[ ] Thoroughly benchmark everything
+[ ] Thoroughly benchmark sizes
+[ ] Thoroughly benchmark read/write speeds
+
+// PLAIN: 466_594 bytes
+// WITHOUT PROPERTIE DATA: 176_751 bytes (~62%)
+// WITHOUT GEOMETRY: 315_858 bytes (~32%)
+// WITHOUT BOTH: 35_193 bytes (~92.45746838)

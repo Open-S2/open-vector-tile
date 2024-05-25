@@ -1,7 +1,5 @@
 import BaseVectorLayer from './baseVectorLayer';
 import { MapboxVectorLayer, VectorTile } from '../';
-// TODO: parseOpenVectorTile
-// TODO: parseGeoJSON
 
 /**
  * Base Vector Tile
@@ -22,13 +20,10 @@ export default class BaseVectorTile {
     const vectorTile = new BaseVectorTile();
     for (const layerName in tile.layers) {
       const layer = tile.layers[layerName];
-      if (!(layer instanceof MapboxVectorLayer)) continue;
+      if (!(layer instanceof MapboxVectorLayer)) throw Error('Unsupported vector tile type');
       vectorTile.layers[layerName] = BaseVectorLayer.fromMapboxVectorLayer(layer);
     }
 
     return vectorTile;
   }
-
-  // TODO: implement
-  // static fromJSON(): BaseVectorTile {}
 }

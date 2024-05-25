@@ -5,6 +5,13 @@ import {
   deltaDecodeSortedArray,
   deltaEncodeArray,
   deltaEncodeSortedArray,
+  dequantizeBBox,
+  dequantizeBBox3D,
+  dequantizeLat,
+  dequantizeLon,
+  quantizeBBox,
+  quantizeLat,
+  quantizeLon,
   unweave2D,
   unweave3D,
   unweaveAndDeltaDecode3DArray,
@@ -17,6 +24,68 @@ import {
   zigzag,
 } from '../src/util';
 import { describe, expect, test } from 'bun:test';
+
+describe('quantizeLonLat and dequantizeLonLat', () => {
+  test('quantizeLonLat', () => {
+    expect([quantizeLon(-179.6765432), quantizeLat(-89.235657434254)]).toEqual([15074, 71242]);
+    expect([quantizeLon(179.6765432), quantizeLat(89.235657434254)]).toEqual([16762141, 16705973]);
+    expect([quantizeLon(-180), quantizeLat(-90)]).toEqual([0, 0]);
+    expect([quantizeLon(180), quantizeLat(90)]).toEqual([16777215, 16777215]);
+    expect(Number(16777215).toString(2).length <= 24).toBe(true);
+  });
+
+  test('dequantizeLonLat', () => {
+    expect([dequantizeLon(15074), dequantizeLat(71242)]).toEqual([
+      -179.67654703119678, -89.23565621588565,
+    ]);
+    expect([dequantizeLon(16762141), dequantizeLat(16705973)]).toEqual([
+      179.67654703119678, 89.23565621588565,
+    ]);
+    expect([dequantizeLon(0), dequantizeLat(0)]).toEqual([-180, -90]);
+    expect([dequantizeLon(16777215), dequantizeLat(16777215)]).toEqual([180, 90]);
+  });
+});
+
+describe('quantizeBBox and dequantizeBBox', () => {
+  test('quantizeBBox', () => {
+    expect(quantizeBBox([-179.6765432, -89.235657434254, 179.6765432, 89.235657434254])).toEqual(
+      new Uint8Array([0, 58, 226, 1, 22, 74, 255, 197, 29, 254, 233, 181]),
+    );
+    expect(quantizeBBox([-180, -90, 180, 90])).toEqual(
+      new Uint8Array([0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255]),
+    );
+  });
+
+  test('dequantizeBBox', () => {
+    expect(
+      dequantizeBBox(new Uint8Array([0, 58, 226, 1, 22, 74, 255, 197, 29, 254, 233, 181])),
+    ).toEqual([-179.67654703119678, -89.23565621588565, 179.67654703119678, 89.23565621588565]);
+    expect(
+      dequantizeBBox(new Uint8Array([0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255])),
+    ).toEqual([-180, -90, 180, 90]);
+  });
+
+  test('quantizeBBox3D and dequantizeBBox3D', () => {
+    expect(
+      quantizeBBox([-179.6765432, -89.235657434254, 179.6765432, 89.235657434254, -100.2, 2004.21]),
+    ).toEqual(
+      new Uint8Array([
+        0, 58, 226, 1, 22, 74, 255, 197, 29, 254, 233, 181, 102, 102, 200, 194, 184, 134, 250, 68,
+      ]),
+    );
+
+    expect(
+      dequantizeBBox3D(
+        new Uint8Array([
+          0, 58, 226, 1, 22, 74, 255, 197, 29, 254, 233, 181, 102, 102, 200, 194, 184, 134, 250, 68,
+        ]),
+      ),
+    ).toEqual([
+      -179.67654703119678, -89.23565621588565, 179.67654703119678, 89.23565621588565,
+      -100.19999694824219, 2004.2099609375,
+    ]);
+  });
+});
 
 describe('commandEncode and commandDecode', () => {
   test('commandEncode', () => {

@@ -25,7 +25,7 @@ describe('serialize and parse vector tile points', () => {
 
   it('should be capable of parsing the points', () => {
     const tile = new VectorTile(data);
-    const layer = tile.layers.points as MapboxVectorLayer;
+    const layer = tile.layers.points;
 
     const point1 = layer.feature(0);
     const point2 = layer.feature(1);
@@ -74,7 +74,7 @@ describe('serialize and parse vector tile lines', () => {
 
   it('should be capable of parsing the lines', () => {
     const tile = new VectorTile(data);
-    const layer = tile.layers.lines as MapboxVectorLayer;
+    const layer = tile.layers.lines;
 
     const line1 = layer.feature(0);
     const line2 = layer.feature(1);
@@ -164,7 +164,7 @@ describe('serialize and parse vector tile polygons', () => {
 
   it('should be capable of parsing the polygons', () => {
     const tile = new VectorTile(data);
-    const layer = tile.layers.polygons as MapboxVectorLayer;
+    const layer = tile.layers.polygons;
 
     const poly1 = layer.feature(0);
     const poly2 = layer.feature(1);
@@ -303,17 +303,16 @@ describe('serialize and parse vector tile polygons', () => {
 });
 
 test('VectorLayer', () => {
-  const { version, name, extent, isS2, length, features } = new MapboxVectorLayer(
+  const { version, name, extent, isS2, length } = new MapboxVectorLayer(
     new Protobuf(Buffer.alloc(0)),
     0,
   );
-  expect({ version, name, extent, isS2, length, features }).toEqual({
+  expect({ version, name, extent, isS2, length }).toEqual({
     version: 5,
     name: 'default',
     extent: 4096,
     isS2: false,
     length: 0,
-    features: [],
   });
 });
 

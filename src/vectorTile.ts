@@ -18,7 +18,7 @@ type Layers = Record<string, MapboxVectorLayer | OVectorLayer>;
 /**
  * A Vector Tile may parse either Mapbox or OpenVector Tile Layers
  * The input is a Uint8Array that has encoded protobuffer messages.
- * @see {@link Protobuf}
+ * @see {@link Protobuf}.
  *
  * Example:
  *
@@ -33,6 +33,7 @@ type Layers = Record<string, MapboxVectorLayer | OVectorLayer>;
 export class VectorTile {
   #columns!: ColumnCacheReader;
   readonly layers: Layers = {};
+  #layerIndexes: number[] = [];
   /**
    * @param data - the input data to parse
    * @param end - the size of the data, leave blank to parse the entire data
@@ -40,6 +41,7 @@ export class VectorTile {
   constructor(data: Uint8Array, end = 0) {
     const pbf = new Protobuf(data);
     pbf.readFields(this.#readTile, this, end);
+    this.#readLayers(pbf);
   }
 
   /**
@@ -53,10 +55,22 @@ export class VectorTile {
       const layer = new MapboxVectorLayer(pbf, pbf.readVarint() + pbf.pos, tag === 1);
       if (layer.length !== 0) vectorTile.layers[layer.name] = layer;
     } else if (tag === 4) {
-      const layer = new OVectorLayer(pbf, pbf.readVarint() + pbf.pos, this.#columns);
-      vectorTile.layers[layer.name] = layer;
+      // store the position of each layer for later retrieval.
+      // Columns must be prepped before reading the layer.
+      vectorTile.#layerIndexes.push(pbf.pos);
     } else if (tag === 5) {
-      this.#columns = new ColumnCacheReader(pbf, pbf.readVarint() + pbf.pos);
+      vectorTile.#columns = new ColumnCacheReader(pbf, pbf.readVarint() + pbf.pos);
+    }
+  }
+
+  /**
+   * @param pbf - the pbf to read from
+   */
+  #readLayers(pbf: Protobuf): void {
+    for (const pos of this.#layerIndexes) {
+      pbf.pos = pos;
+      const layer = new OVectorLayer(pbf, pbf.readVarint() + pbf.pos, this.#columns);
+      this.layers[layer.name] = layer;
     }
   }
 }
@@ -64,9 +78,10 @@ export class VectorTile {
 /**
  * Write a tile to a Protobuf. and return a buffer
  * @param tile - the tile may be a base vector tile or a S2/Mapbox vector tile
+ * @param verbose - whether to print debug messages
  * @returns - a protobuffer encoded buffer using the Open Vector Tile Spec
  */
-export function writeOVTile(tile: BaseVectorTile | VectorTile): Uint8Array {
+export function writeOVTile(tile: BaseVectorTile | VectorTile, verbose = false): Uint8Array {
   const pbf = new Protobuf();
   const cache = new ColumnCacheWriter();
 
@@ -76,8 +91,8 @@ export function writeOVTile(tile: BaseVectorTile | VectorTile): Uint8Array {
     if (layer instanceof OVectorLayer) continue;
     const baseLayer =
       layer instanceof MapboxVectorLayer ? BaseVectorLayer.fromMapboxVectorLayer(layer) : layer;
-    console.info('writing layer', baseLayer.name);
-    pbf.writeMessage(4, writeOVLayer, { layer: baseLayer, cache });
+    if (verbose === true) console.info('writing layer', baseLayer.name);
+    pbf.writeMessage(4, writeOVLayer, { layer: baseLayer, cache, verbose });
   }
   // now we can write columns
   pbf.writeMessage(5, cache.write, cache);

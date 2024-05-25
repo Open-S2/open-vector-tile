@@ -10,8 +10,8 @@ export type BBox3D = [
   bottom: number,
   right: number,
   top: number,
-  near: number,
-  far: number,
+  low: number,
+  high: number,
 ];
 
 /**
@@ -69,7 +69,7 @@ export type VectorFeatureType =
 export interface Point {
   x: number;
   y: number;
-  m?: OValue;
+  m?: OProperties;
 }
 /**
  * Open Vector Spec can be an x,y,z but also may contain an MValue if the geometry is a line or polygon
@@ -78,7 +78,7 @@ export interface Point3D {
   x: number;
   y: number;
   z: number;
-  m?: OValue;
+  m?: OProperties;
 }
 
 /**
@@ -88,12 +88,25 @@ export interface VectorLineWithOffset {
   /** the offset of the line to start processing the dash position */
   offset: number;
   /** the line data */
-  line: VectorLine;
+  geometry: VectorLine;
 }
 /**
  * Built array line data with associated offset to help render dashed lines across tiles.
  */
 export type VectorLinesWithOffset = VectorLineWithOffset[];
+/**
+ * Built array line data with associated offset to help render dashed lines across tiles.
+ */
+export interface VectorLine3DWithOffset {
+  /** the offset of the line to start processing the dash position */
+  offset: number;
+  /** the line data */
+  geometry: VectorLine3D;
+}
+/**
+ * Built array line data with associated offset to help render dashed lines across tiles.
+ */
+export type VectorLines3DWithOffset = VectorLine3DWithOffset[];
 
 /**
  * A set of points

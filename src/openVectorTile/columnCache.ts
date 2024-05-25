@@ -1,5 +1,10 @@
-import { readValue } from './vectorValue';
-import { deltaDecodeArray, deltaEncodeArray } from '../util';
+import {
+  deltaDecodeArray,
+  deltaEncodeArray,
+  dequantizeBBox,
+  dequantizeBBox3D,
+  quantizeBBox,
+} from '../util';
 import {
   unweaveAndDeltaDecode3DArray,
   unweaveAndDeltaDecodeArray,
@@ -8,7 +13,14 @@ import {
 } from '../util';
 
 import type { Pbf as Protobuf } from '../pbf';
-import type { OValue, Point, Point3D, VectorPoints, VectorPoints3D } from '../vectorTile.spec';
+import type {
+  BBox,
+  BBox3D,
+  Point,
+  Point3D,
+  VectorPoints,
+  VectorPoints3D,
+} from '../vectorTile.spec';
 
 /**
  * Column Types take up 3 bits.
@@ -25,8 +37,12 @@ export enum OColumnName {
   /** Number types are sorted prior to storing */
   signed,
   /**
-   * offsets and bbox values are stored in double
-   * (lines and polygons have bbox associated with them for zooming)
+   * Floating precision helps ensure only 32 bit cost
+   * Number types are sorted prior to storing
+   */
+  float,
+  /**
+   * worst case, no compression
    * Number types are sorted prior to storing
    */
   double,
@@ -47,12 +63,19 @@ export enum OColumnName {
    */
   points3D,
   /**
-   * tracking M-values for lines are stored in indices since each m value is just an index to
-   * values
+   * store M-Value, Shape, and Value encodings
+   * store geometry shapes.
+   * store geometry indices.
    */
   indices,
-  /** Values encompasses all properties, m-values, and shapes */
-  values,
+  /** Shapes describe how to rebuild objects */
+  shapes,
+  /**
+   * BBox - specially compressed to reduce byte cost. each value is only 3 bytes worst case
+   * BBox3D - specially compressed to reduce byte cost. each value is only 3 bytes worst case.
+   * The z values are stored as floats and cost 4 bytes.
+   */
+  bbox,
 }
 
 /**
@@ -85,54 +108,6 @@ export type ColumnValueRead<T> = Array<RawData<T> | PositionReference>;
  * @template T - Any Type; the raw data parsed and available. Kept to reduce fetch duplication
  */
 export type ColumnValueReadSimple<T> = Array<T | PositionReference>;
-// strings are stored in a column of strings
-/**
- * strings are stored in a column of strings
- */
-export type OColumnString<T = string> = ColumnValueReadSimple<T>;
-// all base number types are stored together delta encoded.
-// So to read them you need to decode the entire group
-/**
- * unsigned whole numbers are stored in unsigned
- */
-export type OColumnUnsigned<T = number> = ColumnValueReadSimple<T>;
-/**
- * negative numbers are stored in signed
- */
-export type OColumnSigned<T = number> = ColumnValueReadSimple<T>;
-/**
- * non-whole numbers are stored in double
- */
-export type OColumnDouble<T = number> = ColumnValueReadSimple<T>;
-/**
- * for geometry types each column is individually weaved and delta encoded
- */
-export type OColumnPoints<T = VectorPoints> = ColumnValueReadSimple<T>;
-/**
- * for geometry types each column is individually weaved and delta encoded
- */
-export type OColumnPoints3D<T = VectorPoints3D> = ColumnValueReadSimple<T>;
-/**
- * Several ways to use the indices column
- * 1. M-Value indexes
- * 2. geometry Indices
- * 3. Shape/Value indexes
- */
-export type OColumnIndices<T = number> = ColumnValueReadSimple<T>;
-/**
- * values are stored in a manner of looking up string & number column indexes.
- */
-export type OColumnValues<T = OValue> = ColumnValueRead<T>;
-
-/**
- * A column index pair for reading
- */
-export interface ColumnIndex {
-  /** the column in the cache data is stored */
-  col: OColumnName;
-  /** the index in the column */
-  index: number;
-}
 
 /**
  * Column Cache Reader
@@ -141,14 +116,27 @@ export interface ColumnIndex {
  * This allows for quick and easy access to data in a column format.
  */
 export class ColumnCacheReader {
-  [OColumnName.string]: OColumnString = [];
-  [OColumnName.unsigned]: OColumnUnsigned = [];
-  [OColumnName.signed]: OColumnSigned = [];
-  [OColumnName.double]: OColumnDouble = [];
-  [OColumnName.points]: OColumnPoints = [];
-  [OColumnName.points3D]: OColumnPoints3D = [];
-  [OColumnName.indices]: OColumnIndices = [];
-  [OColumnName.values]: OColumnValues = [];
+  /** strings are stored in a column of strings */
+  [OColumnName.string]: ColumnValueReadSimple<string> = [];
+  /** unsigned whole numbers are stored in unsigned */
+  [OColumnName.unsigned]: ColumnValueReadSimple<number> = [];
+  /** negative numbers are stored in signed */
+  [OColumnName.signed]: ColumnValueReadSimple<number> = [];
+  /** non-whole 32-bit numbers are stored in float */
+  [OColumnName.float]: ColumnValueReadSimple<number> = [];
+  /** non-whole numbers greater than 32-bit are stored in double */
+  [OColumnName.double]: ColumnValueReadSimple<number> = [];
+  /** for geometry types each column is individually weaved and delta encoded */
+  [OColumnName.points]: ColumnValueReadSimple<VectorPoints> = [];
+  /** for geometry types each column is individually weaved and delta encoded */
+  [OColumnName.points3D]: ColumnValueReadSimple<VectorPoints3D> = [];
+  /** store M-Value indices, geometry indices, and geometry shapes */
+  [OColumnName.indices]: ColumnValueReadSimple<number> = [];
+  /** shapes and possibly value indices are stored in a number[] to be decoded by readShape */
+  [OColumnName.shapes]: ColumnValueRead<number[]> = [];
+  /** Stores both BBox and BBox3D in a single column */
+  [OColumnName.bbox]: ColumnValueRead<BBox | BBox3D> = [];
+
   readonly #pbf: Protobuf;
   /**
    * @param pbf - the pbf protocol we are reading from
@@ -157,17 +145,6 @@ export class ColumnCacheReader {
   constructor(pbf: Protobuf, end = 0) {
     this.#pbf = pbf;
     pbf.readFields(this.#read.bind(this), this, end);
-  }
-
-  // Must handle all column types, everyone works the same except for "values" which
-  // may have a "pos" key in it
-  /**
-   * @param colIndex - an encoded number that contains the column to read from and index in the column
-   * @returns - the parsed data
-   */
-  getColumnData<T>(colIndex: number): T {
-    const { col, index } = columnDecode(colIndex);
-    return this.getColumn<T>(col, index);
   }
 
   /**
@@ -179,9 +156,10 @@ export class ColumnCacheReader {
     let res: T;
     const columnValue = this[col][index];
     const hasPos = typeof columnValue === 'object' && 'pos' in columnValue;
+    const currPos = this.#pbf.pos;
     if (hasPos) this.#pbf.pos = columnValue.pos;
 
-    if (col === OColumnName.values) {
+    if (col === OColumnName.shapes) {
       if (hasPos) {
         this[col][index] = { data: this.#getColumnData(col) };
       }
@@ -192,6 +170,9 @@ export class ColumnCacheReader {
       }
       res = this[col][index] as T;
     }
+
+    // return to original position
+    this.#pbf.pos = currPos;
 
     return res;
   }
@@ -216,8 +197,16 @@ export class ColumnCacheReader {
         return unweaveAndDeltaDecode3DArray(this.#pbf.readPackedVarint()) as T;
       case OColumnName.indices:
         return deltaDecodeArray(this.#pbf.readPackedVarint()) as T;
-      case OColumnName.values:
-        return readValue(this.#pbf, this) as T;
+      case OColumnName.shapes:
+        return this.#pbf.readPackedVarint() as T;
+      case OColumnName.bbox: {
+        const data = this.#pbf.readBytes();
+        if (data.byteLength === 12) {
+          return dequantizeBBox(data) as T;
+        } else {
+          return dequantizeBBox3D(data) as T;
+        }
+      }
       default:
         throw new Error('Unknown column type');
     }
@@ -229,7 +218,7 @@ export class ColumnCacheReader {
    * @param pbf - the protobuf object to read from
    */
   #read(tag: number, reader: ColumnCacheReader, pbf: Protobuf): void {
-    if (tag < 0 || tag > 9) throw new Error('Unknown column type');
+    if (tag < 0 || tag > 10) throw new Error('Unknown column type');
     const columnType = tag as OColumnName;
     reader[columnType].push({ pos: pbf.pos });
   }
@@ -248,65 +237,22 @@ export type OColumnBaseChunk<T> = {
    * from a map to an array
    */
   index: number;
+  /** track how many times this chunk is reused */
+  count: number;
 };
-/**
- * A building block for all column types.
- */
-export type OColumnBaseWrite<K, V = K> = Map<K, OColumnBaseChunk<V>>;
-/**
- * strings are grouped by their bytes.
- */
-export type OColumnStringWrite<T = string> = OColumnBaseWrite<T>;
-/**
- * Unsigned integers are sorted prior to storing
- */
-export type OColumnUnsignedWrite<T = number> = OColumnBaseWrite<T>;
-/**
- * Signed integers are sorted prior to storing
- */
-export type OColumnSignedWrite<T = number> = OColumnBaseWrite<T>;
-/**
- * Double values are sorted prior to storing
- */
-export type OColumnDoubleWrite<T = number> = OColumnBaseWrite<T>;
-/**
- * for geometry types each column is individually weaved and delta encoded
- */
-export type OColumnPointsWrite<T = Point[]> = OColumnBaseWrite<string, T>;
-/**
- * for geometry types each column is individually weaved and delta encoded
- */
-export type OColumnPoints3DWrite<T = Point3D[]> = OColumnBaseWrite<string, T>;
-/**
- * Features should be sorted by id prior to building a column
- */
-export type OColumnIndicesWrite<T = number[]> = OColumnBaseWrite<string, T>;
 /**
  * All columns are stored as an object to be able to reference them later.
  * Some columns will use this to sort, others will simply be used to store the raw data.
  */
-export interface ColumnValueRef {
-  /** The raw data in the column */
-  data: unknown;
-  /** The column it's stored in */
-  col: OColumnName;
-  /** The index in the column. Will be updated during the writing phase when converted from a map to an array */
-  index: number;
-}
+export type ColumnValueRef = OColumnBaseChunk<unknown>;
 /**
  * A value is a collection of lookup devices. A number is decoded by the appropriate function,
  * but the object is a reference to one of the number columns.
  * Number types are eventually sorted, so we track the column and index with the data.
  */
 export type ColumnValue = number | ColumnValueRef;
-/**
- * All column types that will be written
- */
-export type OColumnValuesWrite<T = ColumnValue[]> = OColumnBaseWrite<string, T>;
-/**
- * All column types that will be sorted
- */
-export type SortableColumns = OColumnName.unsigned | OColumnName.signed | OColumnName.double;
+/** A building block for all column types. */
+export type OColumnBaseWrite<K, V = K> = Map<K, OColumnBaseChunk<V>>;
 
 /**
  * The cache where all data is stored in a column format.
@@ -314,14 +260,26 @@ export type SortableColumns = OColumnName.unsigned | OColumnName.signed | OColum
  * Number types maintain their own index for sorting purposes.
  */
 export class ColumnCacheWriter {
-  [OColumnName.string]: OColumnStringWrite = new Map<string, OColumnBaseChunk<string>>();
-  [OColumnName.unsigned]: OColumnUnsignedWrite = new Map<number, OColumnBaseChunk<number>>();
-  [OColumnName.signed]: OColumnSignedWrite = new Map<number, OColumnBaseChunk<number>>();
-  [OColumnName.double]: OColumnDoubleWrite = new Map<number, OColumnBaseChunk<number>>();
-  [OColumnName.points]: OColumnPointsWrite = new Map<string, OColumnBaseChunk<Point[]>>();
-  [OColumnName.points3D]: OColumnPoints3DWrite = new Map<string, OColumnBaseChunk<Point3D[]>>();
-  [OColumnName.indices]: OColumnIndicesWrite = new Map<string, OColumnBaseChunk<number[]>>();
-  [OColumnName.values]: OColumnValuesWrite = new Map<string, OColumnBaseChunk<ColumnValue[]>>();
+  /** strings are grouped by their bytes. */
+  [OColumnName.string] = new Map<string, OColumnBaseChunk<string>>();
+  /** Unsigned integers are sorted prior to storing */
+  [OColumnName.unsigned] = new Map<number, OColumnBaseChunk<number>>();
+  /** Signed integers are sorted prior to storing */
+  [OColumnName.signed] = new Map<number, OColumnBaseChunk<number>>();
+  /** 32-bit partial values are sorted prior to storing */
+  [OColumnName.float] = new Map<number, OColumnBaseChunk<number>>();
+  /** 64-bit partial  values are sorted prior to storing */
+  [OColumnName.double] = new Map<number, OColumnBaseChunk<number>>();
+  /** for geometry types each column is individually weaved and delta encoded */
+  [OColumnName.points] = new Map<string, OColumnBaseChunk<Point[]>>();
+  /** for geometry types each column is individually weaved and delta encoded */
+  [OColumnName.points3D] = new Map<string, OColumnBaseChunk<Point3D[]>>();
+  /** Indices track geometry indices, geometry shapes, or other indexing data */
+  [OColumnName.indices] = new Map<string, OColumnBaseChunk<number[]>>();
+  /** Contains number arrays of how to rebuild objects */
+  [OColumnName.shapes] = new Map<string, OColumnBaseChunk<ColumnValue[]>>();
+  /** Features should be sorted by id prior to building a column */
+  [OColumnName.bbox] = new Map<string, OColumnBaseChunk<BBox | BBox3D>>();
 
   /**
    * @template T - one of the column types
@@ -334,16 +292,31 @@ export class ColumnCacheWriter {
     const type = typeof value;
     const isString = type === 'string';
     const isNumber = type === 'number';
-    const key = isString || isNumber ? value : JSON.stringify(value);
+    const key =
+      isString || isNumber
+        ? value
+        : // we need to simplify value keys to only include the column and data for better matching.
+          col === OColumnName.shapes
+          ? JSON.stringify(
+              (value as ColumnValue[]).map((v) =>
+                typeof v === 'number' ? v : { col: v.col, data: v.data },
+              ),
+            )
+          : 'data' in (value as ColumnValueRef)
+            ? JSON.stringify((value as ColumnValueRef).data)
+            : JSON.stringify(value);
 
     // look for duplicates
     const colData = this[col];
     const data = colData.get(key as string & number);
-    if (data !== undefined) return data.index;
+    if (data !== undefined) {
+      data.count++;
+      return data.index;
+    }
 
     // otherwise add
     // @ts-expect-error - i want to fix this later
-    colData.set(key as string & number, { col, data: value, index: colData.size });
+    colData.set(key as string & number, { col, data: value, index: colData.size, count: 1 });
     return colData.size - 1;
   }
 
@@ -372,9 +345,13 @@ export class ColumnCacheWriter {
         col: columnType,
         data: value,
         index: column.size,
+        count: 0,
       } as OColumnBaseChunk<number>;
       column.set(value, columnValue);
     }
+
+    // increment count
+    columnValue.count++;
 
     return columnValue;
   }
@@ -387,9 +364,10 @@ export class ColumnCacheWriter {
    * @param pbf - the pbf protocol we are writing to
    */
   write(column: ColumnCacheWriter, pbf: Protobuf): void {
-    const unsigned = sortNumbers([...column[OColumnName.unsigned].values()]);
-    const signed = sortNumbers([...column[OColumnName.signed].values()]);
-    const double = sortNumbers([...column[OColumnName.double].values()]);
+    const unsigned = sortColumn([...column[OColumnName.unsigned].values()]);
+    const signed = sortColumn([...column[OColumnName.signed].values()]);
+    const float = sortColumn([...column[OColumnName.float].values()]);
+    const double = sortColumn([...column[OColumnName.double].values()]);
     // for each column, encode apropriately and send to pbf
     for (const [string] of column[OColumnName.string]) {
       pbf.writeStringField(OColumnName.string, string);
@@ -400,12 +378,9 @@ export class ColumnCacheWriter {
     for (const s of signed) {
       pbf.writeSVarintField(OColumnName.signed, s.data);
     }
-    // POTENTAIL FOR SORTING - NOTE: don't see any improvements
-    // pbf.writePackedVarint(
-    //   OColumnName.unsigned,
-    //   deltaEncodeSortedArray(unsigned.map((v) => v.data)),
-    // );
-    // pbf.writePackedVarint(OColumnName.signed, deltaEncodeSortedArray(signed.map((v) => v.data)));
+    for (const f of float) {
+      pbf.writeFloatField(OColumnName.float, f.data);
+    }
     for (const d of double) {
       pbf.writeDoubleField(OColumnName.double, d.data);
     }
@@ -424,13 +399,18 @@ export class ColumnCacheWriter {
     for (const indices of allIndices) {
       pbf.writePackedVarint(OColumnName.indices, deltaEncodeArray(indices.data));
     }
-    // values
-    const allValues = [...column[OColumnName.values].values()];
-    for (const arr of allValues) {
-      const packed = arr.data.map((v) =>
-        typeof v === 'object' ? columnEncode(v.col, v.index) : v,
-      );
-      pbf.writePackedVarint(OColumnName.values, packed);
+    // shapes
+    const allShapes = [...column[OColumnName.shapes].values()];
+    for (const arr of allShapes) {
+      const packed = arr.data.map((v) => (typeof v === 'object' ? v.index : v));
+      pbf.writePackedVarint(OColumnName.shapes, packed);
+    }
+    // bbox
+    const allBBox = [...column[OColumnName.bbox].values()];
+    for (const bbox of allBBox) {
+      const data = quantizeBBox(bbox.data);
+      const dataBuf = Buffer.from(data.buffer, data.byteOffset, data.byteLength);
+      pbf.writeBytesField(OColumnName.bbox, dataBuf);
     }
   }
 }
@@ -441,26 +421,12 @@ export class ColumnCacheWriter {
  * @param input - an interable array of number columns (contains data and index)
  * @returns - the sorted array
  */
-function sortNumbers(input: Array<OColumnBaseChunk<number>>): Array<OColumnBaseChunk<number>> {
-  input = input.sort((a, b) => a.data - b.data);
+function sortColumn(input: Array<OColumnBaseChunk<number>>): Array<OColumnBaseChunk<number>> {
+  input = input.sort((a, b) => {
+    const count = b.count - a.count;
+    if (count !== 0) return count;
+    return a.data - b.data;
+  });
   input.forEach((v, i) => (v.index = i));
   return input;
-}
-
-/**
- * @param col - the column in the cache data is stored
- * @param index - the index at said column to find data
- * @returns - the encoded message of the col and index together
- */
-export function columnEncode(col: OColumnName, index: number): number {
-  // column is never bigger then 3 bits in size
-  return (index << 3) + (col & 0x7);
-}
-
-/**
- * @param colIndex - the column and index encoded together
- * @returns - the decoded column and index
- */
-export function columnDecode(colIndex: number): ColumnIndex {
-  return { col: colIndex & 0x7, index: colIndex >> 3 };
 }

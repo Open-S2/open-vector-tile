@@ -1,4 +1,4 @@
-import type { Point, Point3D } from './vectorTile.spec';
+import type { BBox, BBox3D, Point, Point3D } from './vectorTile.spec';
 
 /**
  * Encode a command with the given length of the data that follows.
@@ -288,4 +288,164 @@ export function deltaDecodeSortedArray(array: number[]): number[] {
   }
 
   return res;
+}
+
+/**
+ * 24-bit quantization
+ * ~0.000021457672119140625 degrees precision
+ * ~2.388 meters precision
+ * @param lon - the longitude
+ * @returns - the quantized longitude
+ */
+export function quantizeLon(lon: number): number {
+  return Math.round(((lon + 180) * 16_777_215) / 360);
+}
+
+/**
+ * 24-bit quantization
+ * ~0.000010728836059570312 degrees precision
+ * ~1.194 meters precision
+ * @param lat - the latitude
+ * @returns - the quantized latitude
+ */
+export function quantizeLat(lat: number): number {
+  return Math.round(((lat + 90) * 16_777_215) / 180);
+}
+
+/**
+ * @param qLon - the quantized longitude
+ * @returns - the longitude
+ */
+export function dequantizeLon(qLon: number): number {
+  return (qLon * 360) / 16_777_215 - 180;
+}
+
+/**
+ * @param qLat - the quantized latitude
+ * @returns - the latitude
+ */
+export function dequantizeLat(qLat: number): number {
+  return (qLat * 180) / 16_777_215 - 90;
+}
+
+/**
+ * Packs a 24-bit integer into a buffer at the specified offset.
+ * @param buffer - The buffer to pack the integer into
+ * @param value - The 24-bit integer to pack
+ * @param offset - The offset in the buffer to start packing
+ */
+function pack24BitUInt(buffer: Uint8Array, value: number, offset: number): void {
+  buffer[offset] = (value >> 16) & 0xff;
+  buffer[offset + 1] = (value >> 8) & 0xff;
+  buffer[offset + 2] = value & 0xff;
+}
+
+/**
+ * @param buffer - The buffer containing the packed 24-bit integer
+ * @param offset - The offset in the buffer to start unpacking
+ * @returns - The unpacked 24-bit integer
+ */
+function unpack24BitUInt(buffer: Uint8Array, offset: number): number {
+  return (buffer[offset] << 16) | (buffer[offset + 1] << 8) | buffer[offset + 2];
+}
+
+/**
+ * @param buffer - the buffer to write to
+ * @param value - the float to write
+ * @param offset - the offset at which we start writting to the buffer
+ */
+function packFloat(buffer: Uint8Array, value: number, offset: number): void {
+  const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+  view.setFloat32(offset, value, true); // true for little-endian
+}
+
+/**
+ * @param buffer - The buffer containing the packed float
+ * @param offset - The offset in the buffer to start unpacking
+ * @returns - The unpacked float
+ */
+function unpackFloat(buffer: Uint8Array, offset: number): number {
+  const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+  return view.getFloat32(offset, true); // true for little-endian
+}
+
+/**
+ * | Decimal Places | Approximate Accuracy in Distance       |
+ * |----------------|----------------------------------------|
+ * | 0              | 111 km (69 miles)                      |
+ * | 1              | 11.1 km (6.9 miles)                    |
+ * | 2              | 1.11 km (0.69 miles)                   |
+ * | 3              | 111 meters (364 feet)                  |
+ * | 4              | 11.1 meters (36.4 feet)                |
+ * | 5              | 1.11 meters (3.64 feet)                |
+ * | 6              | 0.111 meters (11.1 cm or 4.39 inches)  |
+ * | 7              | 1.11 cm (0.44 inches)                  |
+ * | 8              | 1.11 mm (0.044 inches)                 |
+ * 24-bit quantization for longitude and latitude
+ * LONGITUDE:
+ * - ~0.000021457672119140625 degrees precision
+ * - ~2.388 meters precision
+ * LATITUDE:
+ * - ~0.000010728836059570312 degrees precision
+ * - ~1.194 meters precision
+ * @param bbox - either 2D or 3D.
+ * @returns - the quantized bounding box
+ */
+export function quantizeBBox(bbox: BBox | BBox3D): Uint8Array {
+  const is3D = bbox.length === 6;
+  const buffer = new Uint8Array(is3D ? 20 : 12);
+
+  const qLon1 = quantizeLon(bbox[0]);
+  const qLat1 = quantizeLat(bbox[1]);
+  const qLon2 = quantizeLon(bbox[2]);
+  const qLat2 = quantizeLat(bbox[3]);
+
+  pack24BitUInt(buffer, qLon1, 0);
+  pack24BitUInt(buffer, qLat1, 3);
+  pack24BitUInt(buffer, qLon2, 6);
+  pack24BitUInt(buffer, qLat2, 9);
+  if (is3D) {
+    packFloat(buffer, bbox[4], 12);
+    packFloat(buffer, bbox[5], 16);
+  }
+
+  return buffer;
+}
+
+/**
+ * @param buffer - The buffer containing the quantized bounding box
+ * @returns - The decoded bounding box
+ */
+export function dequantizeBBox(buffer: Uint8Array): BBox {
+  const qLon1 = unpack24BitUInt(buffer, 0);
+  const qLat1 = unpack24BitUInt(buffer, 3);
+  const qLon2 = unpack24BitUInt(buffer, 6);
+  const qLat2 = unpack24BitUInt(buffer, 9);
+
+  const lon1 = dequantizeLon(qLon1);
+  const lat1 = dequantizeLat(qLat1);
+  const lon2 = dequantizeLon(qLon2);
+  const lat2 = dequantizeLat(qLat2);
+
+  return [lon1, lat1, lon2, lat2];
+}
+
+/**
+ * @param buffer - The buffer containing the quantized 3D bounding box
+ * @returns - The decoded 3D bounding box
+ */
+export function dequantizeBBox3D(buffer: Uint8Array): BBox3D {
+  const qLon1 = unpack24BitUInt(buffer, 0);
+  const qLat1 = unpack24BitUInt(buffer, 3);
+  const qLon2 = unpack24BitUInt(buffer, 6);
+  const qLat2 = unpack24BitUInt(buffer, 9);
+  const zLow = unpackFloat(buffer, 12);
+  const zHigh = unpackFloat(buffer, 16);
+
+  const lon1 = dequantizeLon(qLon1);
+  const lat1 = dequantizeLat(qLat1);
+  const lon2 = dequantizeLon(qLon2);
+  const lat2 = dequantizeLat(qLat2);
+
+  return [lon1, lat1, lon2, lat2, zLow, zHigh];
 }

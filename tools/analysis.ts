@@ -2,8 +2,16 @@ import { VectorTile } from '../src';
 import fs from 'fs';
 import path from 'path';
 
-const FOLDER = 'bing';
-const XYZ = '4_8_5';
+// const FOLDER = 'bing';
+// const XYZ = '4_8_5';
+// const FILE_TYPE = 'mvt';
+
+// const FOLDER = 'test';
+// const XYZ = '5_5_11';
+// const FILE_TYPE = 'pbf';
+
+const FOLDER = 'omt';
+const XYZ = '4_3_9';
 const FILE_TYPE = 'mvt';
 
 const data = fs.readFileSync(
@@ -12,8 +20,10 @@ const data = fs.readFileSync(
 const tile = new VectorTile(new Uint8Array(data));
 
 console.info(tile.layers);
-// const { poi } = tile.layers;
-// const first = poi.feature(0);
-// const second = poi.feature(1);
-// const third = poi.feature(2);
-// console.log(first, second, third);
+const layer = tile.layers.transportation;
+// const layer = tile.layers['Admin0 forest or park'];
+// // const { poi } = tile.layers;
+const first = layer.feature(0);
+const second = layer.feature(1);
+const third = layer.feature(2);
+console.info(first, second, third);

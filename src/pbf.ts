@@ -665,7 +665,7 @@ export class Pbf {
    * @param arr - the array of unsigned whole numbers to write.
    */
   writePackedVarint(tag: number, arr: number[]): void {
-    if (arr.length > 0) this.writeMessage(tag, writePackedVarint, arr);
+    this.writeMessage(tag, writePackedVarint, arr);
   }
 
   /**
@@ -674,7 +674,7 @@ export class Pbf {
    * @param arr - the array of signed whole numbers to write.
    */
   writePackedSVarint(tag: number, arr: number[]): void {
-    if (arr.length > 0) this.writeMessage(tag, writePackedSVarint, arr);
+    this.writeMessage(tag, writePackedSVarint, arr);
   }
 
   /**
@@ -684,7 +684,7 @@ export class Pbf {
    * @param arr - the array of booleans to write.
    */
   writePackedBoolean(tag: number, arr: (number | boolean)[]): void {
-    if (arr.length > 0) this.writeMessage(tag, writePackedBoolean, arr);
+    this.writeMessage(tag, writePackedBoolean, arr);
   }
 
   /**
@@ -693,7 +693,7 @@ export class Pbf {
    * @param arr - the array of floats to write.
    */
   writePackedFloat(tag: number, arr: number[]): void {
-    if (arr.length > 0) this.writeMessage(tag, writePackedFloat, arr);
+    this.writeMessage(tag, writePackedFloat, arr);
   }
 
   /**
@@ -702,7 +702,7 @@ export class Pbf {
    * @param arr - the array of doubles to write.
    */
   writePackedDouble(tag: number, arr: number[]): void {
-    if (arr.length > 0) this.writeMessage(tag, writePackedDouble, arr);
+    this.writeMessage(tag, writePackedDouble, arr);
   }
 
   /**
@@ -711,7 +711,7 @@ export class Pbf {
    * @param arr - the array of unsigned 32-bit numbers to write.
    */
   writePackedFixed32(tag: number, arr: number[]): void {
-    if (arr.length > 0) this.writeMessage(tag, writePackedFixed32, arr);
+    this.writeMessage(tag, writePackedFixed32, arr);
   }
 
   /**
@@ -720,7 +720,7 @@ export class Pbf {
    * @param arr - the array of signed 32-bit numbers to write.
    */
   writePackedSFixed32(tag: number, arr: number[]): void {
-    if (arr.length > 0) this.writeMessage(tag, writePackedSFixed32, arr);
+    this.writeMessage(tag, writePackedSFixed32, arr);
   }
 
   /**
@@ -729,7 +729,7 @@ export class Pbf {
    * @param arr - the array of unsigned 64-bit numbers to write.
    */
   writePackedFixed64(tag: number, arr: number[]): void {
-    if (arr.length > 0) this.writeMessage(tag, writePackedFixed64, arr);
+    this.writeMessage(tag, writePackedFixed64, arr);
   }
 
   /**
@@ -738,7 +738,7 @@ export class Pbf {
    * @param arr - the array of signed 64-bit numbers to write.
    */
   writePackedSFixed64(tag: number, arr: number[]): void {
-    if (arr.length > 0) this.writeMessage(tag, writePackedSFixed64, arr);
+    this.writeMessage(tag, writePackedSFixed64, arr);
   }
 
   /**
