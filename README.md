@@ -1,5 +1,6 @@
-# open-vector-tile [![Build Status](https://github.com/Open-S2/open-vector-tile/workflows/test/badge.svg)](https://github.com/Open-S2/open-vector-tile/actions) [![npm][npm-image]][npm-url] [![downloads][downloads-image]][downloads-url] [![bundle][bundle-image]][bundle-url] [![docs-ts][docs-ts-image]][docs-ts-url] [![docs-rust][docs-rust-image]][docs-rust-url] ![doc-coverage][doc-coverage-image] ![code-coverage][code-coverage-image] [![Discord][discord-image]][discord-url]
+# open-vector-tile ![GitHub Actions Workflow Status][test-workflow] [![npm][npm-image]][npm-url] [![downloads][downloads-image]][downloads-url] [![bundle][bundle-image]][bundle-url] [![docs-ts][docs-ts-image]][docs-ts-url] [![docs-rust][docs-rust-image]][docs-rust-url] ![doc-coverage][doc-coverage-image] ![code-coverage][code-coverage-image] [![Discord][discord-image]][discord-url]
 
+[test-workflow]: https://img.shields.io/github/actions/workflow/status/CraigglesO/open-vector-tile/test-workflow?branch=master
 [npm-image]: https://img.shields.io/npm/v/open-vector-tile.svg
 [npm-url]: https://npmjs.org/package/open-vector-tile
 [bundle-image]: https://img.shields.io/bundlejs/size/open-vector-tile?exports=VectorTile
