@@ -20,7 +20,7 @@ const svg = `
 `.trim();
 
 // Run the command and capture stdout
-const proc = Bun.spawn(['bun', 'run', 'test', '2>&1']);
+const proc = Bun.spawn(['bun', 'run', 'test:coverage', '2>&1']);
 const text = await new Response(proc.stdout).text();
 const lines = text.trim().split('\n');
 
