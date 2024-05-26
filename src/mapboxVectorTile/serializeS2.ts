@@ -1,10 +1,11 @@
 import { BaseVectorPolysFeature } from '../baseVectorTile';
-import { OVectorLayer } from '../';
+import { OVectorLayer } from '../openVectorTile/vectorLayer';
 import { Pbf as Protobuf } from '../pbf';
 import { commandEncode, zigzag } from '../util';
 
+import type { VectorTile } from '../vectorTile';
 import type { BaseVectorFeature, BaseVectorLayer, BaseVectorTile } from '../baseVectorTile';
-import type { MapboxVectorFeature, MapboxVectorLayer, VectorTile } from '../';
+import type { MapboxVectorFeature, MapboxVectorLayer } from '../mapboxVectorTile';
 import type {
   Point,
   Value,

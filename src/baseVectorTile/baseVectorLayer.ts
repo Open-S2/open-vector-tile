@@ -1,4 +1,4 @@
-import { MapboxVectorLayer } from '../';
+import MapboxVectorLayer from '../mapboxVectorTile/vectorLayer';
 import { fromMapboxVectorFeature } from './baseVectorFeature';
 
 import type { BaseVectorFeature } from './baseVectorFeature';

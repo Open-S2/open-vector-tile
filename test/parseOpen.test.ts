@@ -1,16 +1,14 @@
 import MapboxProtobuf from 'pbf';
 import { VectorTile as MapboxVectorTile } from '@mapbox/vector-tile';
+import { OVectorLayer } from '../src/openVectorTile';
 import { VectorGeometry } from '../src/vectorTile.spec';
-import fs from 'fs';
-import path from 'path';
-import { OVectorLayer, VectorTile, writeOVTile } from '../src';
+import { VectorTile, writeOVTile } from '../src';
 import { describe, expect, it, test } from 'bun:test';
 
-describe('parsing vector tiles', () => {
-  const data = fs.readFileSync(
-    path.join(__dirname, 'fixtures/14-8801-5371.vector.pbf'),
-  ) as Uint8Array;
-  const mapboxTile = new VectorTile(data);
+describe('parsing vector tiles', async () => {
+  const data = await Bun.file(`${__dirname}/fixtures/14-8801-5371.vector.pbf`).arrayBuffer();
+  const uint8 = new Uint8Array(data, 0, data.byteLength);
+  const mapboxTile = new VectorTile(uint8);
   const ovData = writeOVTile(mapboxTile);
   const tile = new VectorTile(ovData);
 
@@ -84,9 +82,10 @@ describe('parsing vector tiles', () => {
   });
 });
 
-test('https://github.com/mapbox/vector-tile-js/issues/15', () => {
-  const data = fs.readFileSync(path.join(__dirname, 'fixtures/lots-of-tags.vector.pbf'));
-  const mapboxTile = new VectorTile(data);
+test('https://github.com/mapbox/vector-tile-js/issues/15', async () => {
+  const data = await Bun.file(`${__dirname}/fixtures/lots-of-tags.vector.pbf`).arrayBuffer();
+  const uint8 = new Uint8Array(data, 0, data.byteLength);
+  const mapboxTile = new VectorTile(uint8);
   const ovData = writeOVTile(mapboxTile);
   const tile = new VectorTile(ovData);
   const feature = tile.layers['stuttgart-rails'].feature(0);
@@ -95,9 +94,10 @@ test('https://github.com/mapbox/vector-tile-js/issues/15', () => {
   expect(feature.extent).toEqual(4096);
 });
 
-test('https://github.com/mapbox/mapbox-gl-js/issues/1019', () => {
-  const data = fs.readFileSync(path.join(__dirname, 'fixtures/12-1143-1497.vector.pbf'));
-  const mapboxTile = new VectorTile(data);
+test('https://github.com/mapbox/mapbox-gl-js/issues/1019', async () => {
+  const data = await Bun.file(`${__dirname}/fixtures/12-1143-1497.vector.pbf`).arrayBuffer();
+  const uint8 = new Uint8Array(data, 0, data.byteLength);
+  const mapboxTile = new VectorTile(uint8);
   const ovData = writeOVTile(mapboxTile);
   const tile = new VectorTile(ovData);
   const waterLayer = tile.layers.water;
@@ -106,9 +106,13 @@ test('https://github.com/mapbox/mapbox-gl-js/issues/1019', () => {
   expect(waterGeometry).toHaveLength(1);
 });
 
-test('https://github.com/mapbox/vector-tile-js/issues/60', () => {
-  const data = fs.readFileSync(path.join(__dirname, 'fixtures/multipolygon-with-closepath.pbf'));
-  const mapboxTile = new VectorTile(data);
+test('https://github.com/mapbox/vector-tile-js/issues/60', async () => {
+  // const data = fs.readFileSync(path.join(__dirname, 'fixtures/multipolygon-with-closepath.pbf'));
+  const data = await Bun.file(
+    `${__dirname}/fixtures/multipolygon-with-closepath.pbf`,
+  ).arrayBuffer();
+  const uint8 = new Uint8Array(data, 0, data.byteLength);
+  const mapboxTile = new VectorTile(uint8);
   const ovData = writeOVTile(mapboxTile);
   const tile = new VectorTile(ovData);
   for (const id in tile.layers) {
@@ -119,10 +123,11 @@ test('https://github.com/mapbox/vector-tile-js/issues/60', () => {
   }
 });
 
-describe('parsing multi polygons are the same', () => {
-  const data = fs.readFileSync(path.join(__dirname, 'fixtures/1-1-0.vector.pbf')) as Uint8Array;
-  const mTile = new MapboxVectorTile(new MapboxProtobuf(data));
-  const localTile = new VectorTile(data);
+describe('parsing multi polygons are the same', async () => {
+  const data = await Bun.file(`${__dirname}/fixtures/1-1-0.vector.pbf`).arrayBuffer();
+  const uint8 = new Uint8Array(data, 0, data.byteLength);
+  const mTile = new MapboxVectorTile(new MapboxProtobuf(uint8));
+  const localTile = new VectorTile(uint8);
   const ovData = writeOVTile(localTile);
   const ovTile = new VectorTile(ovData);
 

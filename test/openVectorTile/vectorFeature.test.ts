@@ -8,7 +8,7 @@ import {
   BaseVectorPointsFeature,
   BaseVectorPolys3DFeature,
   BaseVectorPolysFeature,
-} from '../../src';
+} from '../../src/baseVectorTile';
 import { ColumnCacheReader, ColumnCacheWriter } from '../../src/openVectorTile/columnCache';
 import {
   OVectorLines3DFeature,

@@ -1,5 +1,6 @@
 import { Pbf as Protobuf } from '../src/pbf';
-import { MapboxVectorFeature, MapboxVectorLayer, VectorTile } from '../src';
+import { VectorTile } from '../src';
+import { MapboxVectorFeature, MapboxVectorLayer } from '../src/mapboxVectorTile';
 import { describe, expect, it, test } from 'bun:test';
 
 describe('serialize and parse vector tile points', () => {

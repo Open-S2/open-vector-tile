@@ -1,4 +1,6 @@
-import { BaseVectorLayer, ColumnCacheReader, ColumnCacheWriter, Pbf as Protobuf } from '../../src';
+import { BaseVectorLayer } from '../../src/baseVectorTile';
+import { Pbf as Protobuf } from '../../src/pbf';
+import { ColumnCacheReader, ColumnCacheWriter } from '../../src/openVectorTile';
 import {
   OVectorLayer,
   decodeExtent,

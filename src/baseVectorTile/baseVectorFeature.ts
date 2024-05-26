@@ -1,11 +1,12 @@
 import { OColumnName } from '../openVectorTile/columnCache';
 import { encodeShape } from '../openVectorTile/vectorValue';
+import { weave2D, weave3D, zigzag } from 'open-vector-tile/util';
 
+import type { ColumnCacheWriter } from '../openVectorTile/columnCache';
+import type MapboxVectorFeature from '../mapboxVectorTile/vectorFeature';
 import type {
   BBox,
   BBox3D,
-  ColumnCacheWriter,
-  MapboxVectorFeature,
   OProperties,
   Point,
   Point3D,
@@ -17,8 +18,7 @@ import type {
   VectorMultiPoly3D,
   VectorPoints,
   VectorPoints3D,
-} from '../';
-import { weave2D, weave3D, zigzag } from 'open-vector-tile/util';
+} from '../vectorTile.spec';
 
 /**
  * Base Vector Feature

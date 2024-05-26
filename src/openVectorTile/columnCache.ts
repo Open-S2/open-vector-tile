@@ -4,8 +4,6 @@ import {
   dequantizeBBox,
   dequantizeBBox3D,
   quantizeBBox,
-} from '../util';
-import {
   unweaveAndDeltaDecode3DArray,
   unweaveAndDeltaDecodeArray,
   weaveAndDeltaEncode3DArray,

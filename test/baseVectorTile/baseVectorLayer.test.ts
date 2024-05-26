@@ -1,4 +1,4 @@
-import { BaseVectorLayer, BaseVectorPointsFeature } from '../../src';
+import { BaseVectorLayer, BaseVectorPointsFeature } from '../../src/baseVectorTile';
 import { describe, expect, it } from 'bun:test';
 
 describe('BaseVectorLayer', () => {

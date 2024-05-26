@@ -1,6 +1,5 @@
-import fs from 'fs';
-import path from 'path';
-import { BaseVectorTile, VectorTile } from '../../src';
+import { BaseVectorTile } from '../../src/baseVectorTile';
+import { VectorTile } from '../../src';
 import { describe, expect, it } from 'bun:test';
 
 describe('BaseVectorTile', () => {
@@ -10,9 +9,10 @@ describe('BaseVectorTile', () => {
     expect(layer).toBeInstanceOf(BaseVectorTile);
   });
 
-  it('should parse a mapbox tile', () => {
-    const data = fs.readFileSync(path.join(__dirname, '../fixtures/lots-of-tags.vector.pbf'));
-    const tile = new VectorTile(data);
+  it('should parse a mapbox tile', async () => {
+    const data = await Bun.file(`${__dirname}/../fixtures/lots-of-tags.vector.pbf`).arrayBuffer();
+    const uint8 = new Uint8Array(data, 0, data.byteLength);
+    const tile = new VectorTile(uint8);
     const parsedTile = BaseVectorTile.fromVectorTile(tile);
     expect(parsedTile).toBeInstanceOf(BaseVectorTile);
     expect(Object.keys(parsedTile.layers)).toEqual(['stuttgart-rails']);

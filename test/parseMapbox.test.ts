@@ -1,17 +1,16 @@
 import MapboxProtobuf from 'pbf';
 import { VectorTile as MapboxVectorTile } from '@mapbox/vector-tile';
 import { Pbf as Protobuf } from '../src/pbf';
-import { VectorGeometry } from '../src/vectorTile.spec';
-import fs from 'fs';
-import path from 'path';
-import { MapboxVectorFeature, MapboxVectorLayer, VectorTile } from '../src';
+import { VectorTile } from '../src';
+import { MapboxVectorFeature, MapboxVectorLayer } from '../src/mapboxVectorTile';
 import { describe, expect, it, test } from 'bun:test';
 
-describe('parsing vector tiles', () => {
-  const data = fs.readFileSync(
-    path.join(__dirname, 'fixtures/14-8801-5371.vector.pbf'),
-  ) as Uint8Array;
-  const tile = new VectorTile(data);
+import type { VectorGeometry } from '../src/vectorTile.spec';
+
+describe('parsing vector tiles', async () => {
+  const data = await Bun.file(`${__dirname}/fixtures/14-8801-5371.vector.pbf`).arrayBuffer();
+  const uint8 = new Uint8Array(data, 0, data.byteLength);
+  const tile = new VectorTile(uint8);
 
   it('should have all layers', () => {
     expect(Object.keys(tile.layers)).toEqual([
@@ -190,18 +189,20 @@ test('VectorFeature', () => {
   });
 });
 
-test('https://github.com/mapbox/vector-tile-js/issues/15', () => {
-  const data = fs.readFileSync(path.join(__dirname, 'fixtures/lots-of-tags.vector.pbf'));
-  const tile = new VectorTile(data);
+test('https://github.com/mapbox/vector-tile-js/issues/15', async () => {
+  const data = await Bun.file(`${__dirname}/fixtures/lots-of-tags.vector.pbf`).arrayBuffer();
+  const uint8 = new Uint8Array(data, 0, data.byteLength);
+  const tile = new VectorTile(uint8);
   const feature = tile.layers['stuttgart-rails'].feature(0);
   expect(feature.id).toEqual(22);
   expect(feature.type).toEqual(2);
   expect(feature.extent).toEqual(4096);
 });
 
-test('https://github.com/mapbox/mapbox-gl-js/issues/1019', () => {
-  const data = fs.readFileSync(path.join(__dirname, 'fixtures/12-1143-1497.vector.pbf'));
-  const tile = new VectorTile(data);
+test('https://github.com/mapbox/mapbox-gl-js/issues/1019', async () => {
+  const data = await Bun.file(`${__dirname}/fixtures/12-1143-1497.vector.pbf`).arrayBuffer();
+  const uint8 = new Uint8Array(data, 0, data.byteLength);
+  const tile = new VectorTile(uint8);
   const waterLayer = tile.layers.water;
   const waterFeature = waterLayer.feature(1);
   const waterGeometry = waterFeature.loadGeometry();
@@ -209,9 +210,12 @@ test('https://github.com/mapbox/mapbox-gl-js/issues/1019', () => {
   expect(waterLayer.feature(1).loadGeometry()).toHaveLength(1);
 });
 
-test('https://github.com/mapbox/vector-tile-js/issues/60', () => {
-  const data = fs.readFileSync(path.join(__dirname, 'fixtures/multipolygon-with-closepath.pbf'));
-  const tile = new VectorTile(data);
+test('https://github.com/mapbox/vector-tile-js/issues/60', async () => {
+  const data = await Bun.file(
+    `${__dirname}/fixtures/multipolygon-with-closepath.pbf`,
+  ).arrayBuffer();
+  const uint8 = new Uint8Array(data, 0, data.byteLength);
+  const tile = new VectorTile(uint8);
   for (const id in tile.layers) {
     const layer = tile.layers[id];
     for (let i = 0; i < layer.length; i++) {
@@ -220,12 +224,13 @@ test('https://github.com/mapbox/vector-tile-js/issues/60', () => {
   }
 });
 
-describe('parsing multi polygons are the same', () => {
-  const data = fs.readFileSync(path.join(__dirname, 'fixtures/1-1-0.vector.pbf')) as Uint8Array;
+describe('parsing multi polygons are the same', async () => {
+  const data = await Bun.file(`${__dirname}/fixtures/1-1-0.vector.pbf`).arrayBuffer();
+  const uint8 = new Uint8Array(data, 0, data.byteLength);
 
   it('should have all layers', () => {
-    const mTile = new MapboxVectorTile(new MapboxProtobuf(data));
-    const s2Tile = new VectorTile(data);
+    const mTile = new MapboxVectorTile(new MapboxProtobuf(uint8));
+    const s2Tile = new VectorTile(uint8);
 
     const { water: mWater } = mTile.layers;
     const { water: s2Water } = s2Tile.layers;

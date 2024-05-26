@@ -1,13 +1,7 @@
+import { MapboxVectorLayer } from './mapboxVectorTile';
 import { Pbf as Protobuf } from './pbf';
-import {
-  BaseVectorLayer,
-  BaseVectorTile,
-  ColumnCacheReader,
-  ColumnCacheWriter,
-  MapboxVectorLayer,
-  OVectorLayer,
-  writeOVLayer,
-} from './';
+import { BaseVectorLayer, BaseVectorTile } from './baseVectorTile';
+import { ColumnCacheReader, ColumnCacheWriter, OVectorLayer, writeOVLayer } from './openVectorTile';
 
 /**
  * Layers are a storage structure for the vector tile.

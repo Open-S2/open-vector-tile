@@ -1,5 +1,6 @@
 import { OColumnName } from './columnCache';
-import { Pbf as Protobuf, decodeOffset } from '..';
+import { Pbf as Protobuf } from '../pbf';
+import { decodeOffset } from '../baseVectorTile';
 import { encodeShape, readShape } from './vectorValue';
 
 import type { BaseVectorFeature } from '../baseVectorTile';

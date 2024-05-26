@@ -1,4 +1,5 @@
 import { Pbf } from '../src/pbf';
+import { VectorTile } from '../src';
 import {
   BaseVectorLayer,
   BaseVectorLine,
@@ -7,7 +8,7 @@ import {
   BaseVectorPolysFeature,
   BaseVectorTile,
 } from '../src/baseVectorTile';
-import { MapboxVectorFeature, MapboxVectorLayer, VectorTile, serializeS2 } from '../src';
+import { MapboxVectorFeature, MapboxVectorLayer, serializeS2 } from '../src/mapboxVectorTile';
 import { describe, expect, it, test } from 'bun:test';
 
 describe('serialize and parse vector tile points', () => {

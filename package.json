@@ -6,6 +6,7 @@
     "vector",
     "map",
     "tile",
+    "open",
     "S2",
     "spec"
   ],
@@ -19,7 +20,7 @@
     ".": "./dist/index.js"
   },
   "scripts": {
-    "lint+build+test+docs": "bun run lint && bun run build && bun run test && bun run docs",
+    "lint+build+test+docs+test:cov": "bun run lint && bun run build && bun run test && bun run docs && bun run test:cov",
     "lint": "eslint src test",
     "lint:fix": "bun run lint -- --fix",
     "prettier": "bunx prettier src test tools benchmarks --check",
@@ -33,7 +34,8 @@
     "test:dev": "bun test --watch",
     "test": "bun test",
     "test:cov": "bun run tools/buildCoverage.ts",
-    "docs": "typedoc"
+    "docs": "typedoc",
+    "dependencies": "bunx depcruise src --include-only \"^src\" --output-type dot | dot -T svg > ./assets/dependency-graph.svg"
   },
   "repository": {
     "type": "git",
@@ -55,6 +57,7 @@
     "@types/bun": "^1.1.1",
     "@types/node": "^20.12.11",
     "@types/pbf": "^3.0.5",
+    "dependency-cruiser": "^16.3.2",
     "eslint": "^9.2.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-jsdoc": "^48.2.4",

@@ -111,6 +111,7 @@
     "benchmarks/**/*.ts",
     "src/**/*.ts",
     "test/**/*.ts",
-    "tools/**/*.ts"
+    "tools/**/*.ts",
+    ".dependency-cruiser.cjs"
   ]
 }
