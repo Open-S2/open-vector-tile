@@ -2,7 +2,7 @@ import MapboxProtobuf from 'pbf';
 import { VectorTile as MapboxVectorTile } from '@mapbox/vector-tile';
 import { Pbf as Protobuf } from '../src/pbf';
 import { VectorTile } from '../src';
-import { MapboxVectorFeature, MapboxVectorLayer } from '../src/mapboxVectorTile';
+import { MapboxVectorFeature, MapboxVectorLayer } from '../src/mapbox';
 import { describe, expect, it, test } from 'bun:test';
 
 import type { VectorGeometry } from '../src/vectorTile.spec';

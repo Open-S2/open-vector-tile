@@ -1,7 +1,7 @@
-export * from './baseVectorTile';
+export * from './base';
 export * from './vectorTile.spec';
 export * from './vectorTile';
 
-export type * from './openVectorTile';
-export type * from './mapboxVectorTile';
+export type * from './open';
+export type * from './mapbox';
 export type * from './pbf';

@@ -1,4 +1,4 @@
-import { BaseVectorTile } from '../../src/baseVectorTile';
+import { BaseVectorTile } from '../../src/base';
 import { VectorTile } from '../../src';
 import { describe, expect, it } from 'bun:test';
 

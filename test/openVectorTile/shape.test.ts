@@ -5,9 +5,9 @@ import {
   ColumnValue,
   OColumnBaseChunk,
   OColumnName,
-} from '../../src/openVectorTile/columnCache';
+} from '../../src/open/columnCache';
 import { describe, expect, it } from 'bun:test';
-import { encodeShape, readShape } from '../../src/openVectorTile/vectorValue';
+import { encodeShape, readShape } from '../../src/open/shape';
 
 import type { OValue } from '../../src/vectorTile.spec';
 

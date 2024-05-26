@@ -8,8 +8,8 @@ import {
   BaseVectorPointsFeature,
   BaseVectorPolys3DFeature,
   BaseVectorPolysFeature,
-} from '../../src/baseVectorTile';
-import { ColumnCacheReader, ColumnCacheWriter } from '../../src/openVectorTile/columnCache';
+} from '../../src/base';
+import { ColumnCacheReader, ColumnCacheWriter } from '../../src/open/columnCache';
 import {
   OVectorLines3DFeature,
   OVectorLinesFeature,
@@ -19,7 +19,7 @@ import {
   OVectorPolysFeature,
   readFeature,
   writeOVFeature,
-} from '../../src/openVectorTile/vectorFeature';
+} from '../../src/open/vectorFeature';
 import { describe, expect, it } from 'bun:test';
 
 describe('encodePointFeature and decodePointFeature', () => {

@@ -10,8 +10,8 @@ import {
   BaseVectorPolysFeature,
   decodeOffset,
   encodeOffset,
-} from '../../src/baseVectorTile';
-import { ColumnCacheReader, ColumnCacheWriter } from '../../src/openVectorTile/columnCache';
+} from '../../src/base';
+import { ColumnCacheReader, ColumnCacheWriter } from '../../src/open/columnCache';
 import { describe, expect, it } from 'bun:test';
 
 describe('encodeOffset and decodeOffset', () => {

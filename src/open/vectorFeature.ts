@@ -1,9 +1,10 @@
 import { OColumnName } from './columnCache';
 import { Pbf as Protobuf } from '../pbf';
-import { decodeOffset } from '../baseVectorTile';
-import { encodeShape, readShape } from './vectorValue';
+import { decodeOffset } from '../base';
+import { encodeShape, readShape } from './shape';
+import { unweave2D, unweave3D, zagzig } from '../util';
 
-import type { BaseVectorFeature } from '../baseVectorTile';
+import type { BaseVectorFeature } from '../base';
 import type { Extents } from './vectorLayer';
 import type {
   BBox,
@@ -24,7 +25,6 @@ import type {
   VectorPoints3D,
 } from '../vectorTile.spec';
 import type { ColumnCacheReader, ColumnCacheWriter } from './columnCache';
-import { unweave2D, unweave3D, zagzig } from 'open-vector-tile/util';
 
 /**
  * Vector Feature Base

@@ -1,5 +1,5 @@
-import BaseVectorLayer from './baseVectorLayer';
-import MapboxVectorLayer from '../mapboxVectorTile/vectorLayer';
+import BaseVectorLayer from './vectorLayer';
+import MapboxVectorLayer from '../mapbox/vectorLayer';
 import { VectorTile } from '../vectorTile';
 
 /**

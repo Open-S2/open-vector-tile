@@ -1,9 +1,9 @@
-import { OColumnName } from '../openVectorTile/columnCache';
-import { encodeShape } from '../openVectorTile/vectorValue';
-import { weave2D, weave3D, zigzag } from 'open-vector-tile/util';
+import { OColumnName } from '../open/columnCache';
+import { encodeShape } from '../open/shape';
+import { weave2D, weave3D, zigzag } from '../util';
 
-import type { ColumnCacheWriter } from '../openVectorTile/columnCache';
-import type MapboxVectorFeature from '../mapboxVectorTile/vectorFeature';
+import type { ColumnCacheWriter } from '../open/columnCache';
+import type MapboxVectorFeature from '../mapbox/vectorFeature';
 import type {
   BBox,
   BBox3D,

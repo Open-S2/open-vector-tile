@@ -1,6 +1,6 @@
 import MapboxProtobuf from 'pbf';
 import { VectorTile as MapboxVectorTile } from '@mapbox/vector-tile';
-import { OVectorLayer } from '../src/openVectorTile';
+import { OVectorLayer } from '../src/open';
 import { VectorGeometry } from '../src/vectorTile.spec';
 import { VectorTile, writeOVTile } from '../src';
 import { describe, expect, it, test } from 'bun:test';

@@ -7,8 +7,8 @@ import {
   BaseVectorPointsFeature,
   BaseVectorPolysFeature,
   BaseVectorTile,
-} from '../src/baseVectorTile';
-import { MapboxVectorFeature, MapboxVectorLayer, serializeS2 } from '../src/mapboxVectorTile';
+} from '../src/base';
+import { MapboxVectorFeature, MapboxVectorLayer, serializeS2 } from '../src/mapbox';
 import { describe, expect, it, test } from 'bun:test';
 
 describe('serialize and parse vector tile points', () => {

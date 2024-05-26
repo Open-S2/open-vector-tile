@@ -15,8 +15,6 @@ jobs:
     
     strategy:
       matrix:
-        # TODO: Re-add windows when bun matures
-        # os: [ubuntu-latest, macos-latest]
         os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:

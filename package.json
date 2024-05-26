@@ -1,6 +1,6 @@
 {
   "name": "open-vector-tile",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "This library reads/writes Vector Tiles 2.0",
   "keywords": [
     "vector",
@@ -59,7 +59,7 @@
     "@types/node": "^20.12.11",
     "@types/pbf": "^3.0.5",
     "dependency-cruiser": "^16.3.2",
-    "eslint": "^9.2.0",
+    "eslint": "^9.3.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-jsdoc": "^48.2.4",
     "eslint-plugin-prettier": "^5.1.3",
