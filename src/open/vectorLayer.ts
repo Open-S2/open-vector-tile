@@ -2,7 +2,7 @@ import { OColumnName } from './columnCache';
 import { Pbf as Protobuf } from '../pbf';
 import { OVectorFeature, readFeature, writeOVFeature } from './vectorFeature';
 
-import type { BaseVectorLayer } from '../baseVectorTile';
+import type { BaseVectorLayer } from '../base';
 import type { ColumnCacheReader, ColumnCacheWriter } from './columnCache';
 
 /**
