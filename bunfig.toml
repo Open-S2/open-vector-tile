@@ -7,4 +7,5 @@
 root = "./test"
 
 # always enable coverage
-coverage = true
+# windows tests fails when using coverage
+# coverage = true
