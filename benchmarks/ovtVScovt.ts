@@ -31,9 +31,7 @@ interface CompressionBenchmarks {
   brotli: SizeBenchmarks;
 }
 
-/**
- * Finding the averages for each format
- */
+/** Finding the averages for each format */
 interface AllSizeBenchmarks {
   covt: CompressionBenchmarks;
   mvt: CompressionBenchmarks;
@@ -41,10 +39,11 @@ interface AllSizeBenchmarks {
 }
 
 const RULES = [
-  // { folder: 'amazon', fileType: 'pbf' },
+  { folder: 'amazon', fileType: 'pbf' },
+  // { folder: 'test', fileType: 'pbf' },
   // { folder: 'amazon_here', fileType: 'pbf' },
   // { folder: 'bing', fileType: 'mvt' },
-  { folder: 'omt', fileType: 'mvt' },
+  // { folder: 'omt', fileType: 'mvt' },
 ];
 
 const sizeBenchmarks: AllSizeBenchmarks = {
@@ -119,9 +118,6 @@ function buildAverages(benchmarks: AllSizeBenchmarks) {
           benchmarks[tileFormat][compressionType][zoom].sum /
           benchmarks[tileFormat][compressionType][zoom].total;
       }
-      benchmarks[tileFormat][compressionType].all.average =
-        benchmarks[tileFormat][compressionType].all.sum /
-        benchmarks[tileFormat][compressionType].all.total;
     }
   }
 }
@@ -276,3 +272,136 @@ function buildTables(benchmarks: AllSizeBenchmarks): BenchTables {
 function formatBytes(bytes: number): string {
   return (bytes / 1024).toFixed(2) + ' kB';
 }
+
+// BING WITH GZIP FOR STRINGS:
+
+// RAW:
+
+// | zoom |       mvt |      covt |       ovt |
+// | :--- | --------: | --------: | --------: |
+// | 4    | 226.50 kB | 138.31 kB | 281.19 kB |
+// | 5    | 153.46 kB | 106.47 kB | 185.37 kB |
+// | 6    |  61.30 kB |  75.66 kB |  70.09 kB |
+// | 7    | 116.11 kB | 104.21 kB | 137.74 kB |
+// | 9    |  96.45 kB |  80.12 kB | 110.60 kB |
+// | 11   |  51.80 kB |  41.01 kB |  56.69 kB |
+// | all  | 128.73 kB |  99.71 kB | 154.29 kB |
+
+// BROTLI:
+
+// | zoom |       mvt |      covt |       ovt |
+// | :--- | --------: | --------: | --------: |
+// | 4    | 123.88 kB | 116.25 kB | 145.00 kB |
+// | 5    |  94.85 kB |  92.19 kB | 108.13 kB |
+// | 6    |  43.43 kB |  48.46 kB |  48.30 kB |
+// | 7    |  81.68 kB |  74.46 kB |  91.27 kB |
+// | 9    |  73.23 kB |  61.98 kB |  79.48 kB |
+// | 11   |  39.65 kB |  31.04 kB |  41.08 kB |
+// | all  |  82.87 kB |  77.94 kB |  93.63 kB |
+
+// BING WITHOUT GZIP FOR STRINGS:
+
+// RAW:
+
+// | zoom |       mvt |      covt |       ovt |
+// | :--- | --------: | --------: | --------: |
+// | 4    | 226.50 kB | 138.31 kB | 281.84 kB |
+// | 5    | 153.46 kB | 106.47 kB | 186.20 kB |
+// | 6    |  61.30 kB |  75.66 kB |  70.70 kB |
+// | 7    | 116.11 kB | 104.21 kB | 138.40 kB |
+// | 9    |  96.45 kB |  80.12 kB | 111.28 kB |
+// | 11   |  51.80 kB |  41.01 kB |  57.88 kB |
+// | all  | 128.73 kB |  99.71 kB | 155.01 kB |
+
+// BROTLI:
+
+// | zoom |       mvt |      covt |       ovt |
+// | :--- | --------: | --------: | --------: |
+// | 4    | 123.88 kB | 116.25 kB | 144.72 kB |
+// | 5    |  94.85 kB |  92.19 kB | 108.06 kB |
+// | 6    |  43.43 kB |  48.46 kB |  48.35 kB |
+// | 7    |  81.68 kB |  74.46 kB |  91.23 kB |
+// | 9    |  73.23 kB |  61.98 kB |  79.41 kB |
+// | 11   |  39.65 kB |  31.04 kB |  41.19 kB |
+// | all  |  82.87 kB |  77.94 kB |  93.56 kB |
+
+// ------------------------------------------------------
+
+// OMT WITH GZIP FOR STRINGS:
+// RAW:
+
+// | zoom |       mvt |      covt |       ovt |
+// | :--- | --------: | --------: | --------: |
+// | 2    | 564.99 kB | 302.85 kB | 307.40 kB |
+// | 3    | 385.14 kB | 261.98 kB | 207.72 kB |
+// | 4    | 942.42 kB | 226.45 kB | 745.77 kB |
+// | 5    | 817.49 kB | 189.61 kB | 592.92 kB |
+// | 6    | 588.45 kB | 156.18 kB | 438.18 kB |
+// | 7    | 524.11 kB | 154.58 kB | 385.31 kB |
+// | 8    | 421.56 kB | 115.47 kB | 299.91 kB |
+// | 9    | 298.35 kB |  97.19 kB | 304.78 kB |
+// | 10   | 150.17 kB |  59.64 kB | 146.18 kB |
+// | 11   |  93.95 kB |  38.03 kB |  89.20 kB |
+// | 12   | 165.01 kB |  59.31 kB | 142.50 kB |
+// | 13   |  93.35 kB |  47.59 kB |  89.49 kB |
+// | 14   | 627.96 kB | 310.42 kB | 516.24 kB |
+// | all  | 348.00 kB | 121.23 kB | 279.84 kB |
+
+// BROTLI:
+
+// | zoom |       mvt |      covt |       ovt |
+// | :--- | --------: | --------: | --------: |
+// | 2    | 165.15 kB | 162.54 kB | 170.38 kB |
+// | 3    | 128.56 kB | 119.23 kB | 124.37 kB |
+// | 4    | 189.59 kB | 155.75 kB | 184.92 kB |
+// | 5    | 149.38 kB | 113.93 kB | 141.56 kB |
+// | 6    | 119.55 kB | 110.58 kB | 119.84 kB |
+// | 7    | 112.47 kB |  92.03 kB | 112.60 kB |
+// | 8    |  89.51 kB |  72.89 kB |  88.92 kB |
+// | 9    | 124.31 kB |  75.95 kB | 125.72 kB |
+// | 10   |  70.74 kB |  47.94 kB |  69.14 kB |
+// | 11   |  45.58 kB |  30.03 kB |  43.26 kB |
+// | 12   |  70.61 kB |  47.95 kB |  68.49 kB |
+// | 13   |  50.47 kB |  39.23 kB |  49.69 kB |
+// | 14   | 289.42 kB | 217.45 kB | 271.89 kB |
+// | all  | 111.25 kB |  83.81 kB | 108.22 kB |
+
+// OMT WITHOUT GZIP FOR STRINGS:
+
+// RAW:
+
+// | zoom |       mvt |      covt |       ovt |
+// | :--- | --------: | --------: | --------: |
+// | 2    | 564.99 kB | 302.85 kB | 404.67 kB |
+// | 3    | 385.14 kB | 261.98 kB | 288.13 kB |
+// | 4    | 942.42 kB | 226.45 kB | 782.76 kB |
+// | 5    | 817.49 kB | 189.61 kB | 622.70 kB |
+// | 6    | 588.45 kB | 156.18 kB | 459.02 kB |
+// | 7    | 524.11 kB | 154.58 kB | 398.73 kB |
+// | 8    | 421.56 kB | 115.47 kB | 307.05 kB |
+// | 9    | 298.35 kB |  97.19 kB | 311.59 kB |
+// | 10   | 150.17 kB |  59.64 kB | 149.94 kB |
+// | 11   |  93.95 kB |  38.03 kB |  91.68 kB |
+// | 12   | 165.01 kB |  59.31 kB | 143.87 kB |
+// | 13   |  93.35 kB |  47.59 kB |  90.28 kB |
+// | 14   | 627.96 kB | 310.42 kB | 555.05 kB |
+// | all  | 348.00 kB | 121.23 kB | 293.08 kB |
+
+// BROTLI:
+
+// | zoom |       mvt |      covt |       ovt |
+// | :--- | --------: | --------: | --------: |
+// | 2    | 165.15 kB | 162.54 kB | 171.90 kB |
+// | 3    | 128.56 kB | 119.23 kB | 126.79 kB |
+// | 4    | 189.59 kB | 155.75 kB | 184.53 kB |
+// | 5    | 149.38 kB | 113.93 kB | 143.48 kB |
+// | 6    | 119.55 kB | 110.58 kB | 120.74 kB |
+// | 7    | 112.47 kB |  92.03 kB | 112.66 kB |
+// | 8    |  89.51 kB |  72.89 kB |  89.74 kB |
+// | 9    | 124.31 kB |  75.95 kB | 125.79 kB |
+// | 10   |  70.74 kB |  47.94 kB |  69.39 kB |
+// | 11   |  45.58 kB |  30.03 kB |  43.49 kB |
+// | 12   |  70.61 kB |  47.95 kB |  68.65 kB |
+// | 13   |  50.47 kB |  39.23 kB |  49.68 kB |
+// | 14   | 289.42 kB | 217.45 kB | 272.59 kB |
+// | all  | 111.25 kB |  83.81 kB | 108.63 kB |

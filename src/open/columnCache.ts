@@ -357,19 +357,21 @@ export class ColumnCacheWriter {
   /**
    * The whole column cache is a message at the tile level.
    * all columns are stored as fields in the message
-   * NOTE: You MUST write columns before any other data (layers and features)
    * @param column - the column cache we want to write from
    * @param pbf - the pbf protocol we are writing to
    */
   write(column: ColumnCacheWriter, pbf: Protobuf): void {
+    // setup
     const unsigned = sortColumn([...column[OColumnName.unsigned].values()]);
     const signed = sortColumn([...column[OColumnName.signed].values()]);
     const float = sortColumn([...column[OColumnName.float].values()]);
     const double = sortColumn([...column[OColumnName.double].values()]);
+    // strings
     // for each column, encode apropriately and send to pbf
     for (const [string] of column[OColumnName.string]) {
       pbf.writeStringField(OColumnName.string, string);
     }
+    // numbers
     for (const u of unsigned) {
       pbf.writeVarintField(OColumnName.unsigned, u.data);
     }
