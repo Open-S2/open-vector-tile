@@ -89,7 +89,7 @@ export function writeOVTile(tile: BaseVectorTile | VectorTile, verbose = false):
     pbf.writeMessage(4, writeOVLayer, { layer: baseLayer, cache, verbose });
   }
   // now we can write columns
-  pbf.writeMessage(5, cache.write, cache);
+  pbf.writeMessage(5, ColumnCacheWriter.write, cache);
 
   return pbf.commit();
 }

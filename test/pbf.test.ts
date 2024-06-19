@@ -94,7 +94,7 @@ test('writeVarint & readVarint LARGE', () => {
   const data = pbf.commit();
   expect(data).toEqual(new Uint8Array([168, 242, 138, 171, 153, 240, 190, 1]));
   const pbf2 = new Protobuf(data);
-  expect(pbf2.readVarint()).toEqual(839483929049384);
+  expect(pbf2.readVarint64()).toEqual(839483929049384);
 });
 
 // writeSVarint

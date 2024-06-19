@@ -1,9 +1,10 @@
 import { OColumnName } from '../open/columnCache';
-import { encodeShape } from '../open/shape';
+import { encodeValue } from '../open/shape';
 import { weave2D, weave3D, zigzag } from '../util';
 
 import type { ColumnCacheWriter } from '../open/columnCache';
 import type MapboxVectorFeature from '../mapbox/vectorFeature';
+import type { Shape } from '../open/shape';
 import type {
   BBox,
   BBox3D,
@@ -33,6 +34,13 @@ export class VectorFeatureBase {
     public properties: OProperties = {},
     public id?: number,
   ) {}
+
+  /**
+   * @returns - default function for getting the M-Values (empty for point types)
+   */
+  getMValues(): undefined | OProperties[] {
+    return undefined;
+  }
 }
 
 /**
@@ -164,9 +172,10 @@ export class BaseVectorLinesFeature extends VectorFeatureBase {
 
   /**
    * @param cache - the column cache to store the geometry
+   * @param mShape - the shape of the M-values to encode the values as
    * @returns the indexes in the points column where the geometry is stored
    */
-  addGeometryToCache(cache: ColumnCacheWriter): number {
+  addGeometryToCache(cache: ColumnCacheWriter, mShape: Shape = {}): number {
     const indices: number[] = [];
     // store number of lines
     if (this.geometry.length !== 1) indices.push(this.geometry.length);
@@ -179,7 +188,7 @@ export class BaseVectorLinesFeature extends VectorFeatureBase {
       if (this.hasMValues) {
         indices.push(line.geometry.length);
         for (const point of line.geometry) {
-          indices.push(...encodeShape(cache, point.m ?? {}));
+          indices.push(encodeValue(point.m ?? {}, mShape, cache));
         }
       }
     }
@@ -191,6 +200,14 @@ export class BaseVectorLinesFeature extends VectorFeatureBase {
    */
   loadGeometry(): VectorLines {
     return this.geometry.map((line) => line.geometry);
+  }
+
+  /**
+   * @returns the flattened M-values
+   */
+  getMValues(): undefined | OProperties[] {
+    if (!this.hasMValues) return undefined;
+    return this.geometry.flatMap((line) => line.geometry.map((point) => point.m ?? {}));
   }
 }
 
@@ -266,9 +283,10 @@ export class BaseVectorPolysFeature extends VectorFeatureBase {
 
   /**
    * @param cache - the column cache to store the geometry
+   * @param mShape - the shape of the M-values to encode the values as
    * @returns the indexes in the points column where the geometry is stored
    */
-  addGeometryToCache(cache: ColumnCacheWriter): number {
+  addGeometryToCache(cache: ColumnCacheWriter, mShape: Shape = {}): number {
     const indices: number[] = [];
     // store number of polygons
     if (this.geometry.length > 1) indices.push(this.geometry.length);
@@ -285,7 +303,7 @@ export class BaseVectorPolysFeature extends VectorFeatureBase {
         if (this.hasMValues) {
           indices.push(line.geometry.length);
           for (const point of line.geometry) {
-            indices.push(...encodeShape(cache, point.m ?? {}));
+            indices.push(encodeValue(point.m ?? {}, mShape, cache));
           }
         }
       }
@@ -298,6 +316,18 @@ export class BaseVectorPolysFeature extends VectorFeatureBase {
    */
   loadGeometry(): VectorMultiPoly {
     return this.geometry.map((poly) => poly.map((line) => line.geometry));
+  }
+
+  /**
+   * @returns the flattened M-values
+   */
+  getMValues(): undefined | OProperties[] {
+    if (!this.hasMValues) return undefined;
+    return this.geometry.flatMap((poly) => {
+      return poly.flatMap((line) => {
+        return line.geometry.map((point) => point.m ?? {});
+      });
+    });
   }
 }
 
@@ -427,9 +457,10 @@ export class BaseVectorLines3DFeature extends VectorFeatureBase {
 
   /**
    * @param cache - the column cache to store the geometry
+   * @param mShape - the shape of the M values
    * @returns the indexes in the points column where the geometry is stored
    */
-  addGeometryToCache(cache: ColumnCacheWriter): number {
+  addGeometryToCache(cache: ColumnCacheWriter, mShape: Shape = {}): number {
     const indices: number[] = [];
     // store number of lines
     if (this.geometry.length > 1) indices.push(this.geometry.length);
@@ -442,7 +473,7 @@ export class BaseVectorLines3DFeature extends VectorFeatureBase {
       if (this.hasMValues) {
         indices.push(line.geometry.length);
         for (const point of line.geometry) {
-          indices.push(...encodeShape(cache, point.m ?? {}));
+          indices.push(encodeValue(point.m ?? {}, mShape, cache));
         }
       }
     }
@@ -454,6 +485,14 @@ export class BaseVectorLines3DFeature extends VectorFeatureBase {
    */
   loadGeometry(): VectorLines3D {
     return this.geometry.map((line) => line.geometry);
+  }
+
+  /**
+   * @returns the flattened M values
+   */
+  getMValues(): undefined | OProperties[] {
+    if (!this.hasMValues) return undefined;
+    return this.geometry.flatMap((line) => line.geometry.map((point) => point.m ?? {}));
   }
 }
 
@@ -530,9 +569,10 @@ export class BaseVectorPolys3DFeature extends VectorFeatureBase {
 
   /**
    * @param cache - the column cache to store the geometry
+   * @param mShape - the shape of the M values
    * @returns the indexes in the points column where the geometry is stored
    */
-  addGeometryToCache(cache: ColumnCacheWriter): number {
+  addGeometryToCache(cache: ColumnCacheWriter, mShape: Shape = {}): number {
     const indices: number[] = [];
     // store number of polygons
     if (this.geometry.length > 1) indices.push(this.geometry.length);
@@ -549,7 +589,7 @@ export class BaseVectorPolys3DFeature extends VectorFeatureBase {
         if (this.hasMValues) {
           indices.push(line.geometry.length);
           for (const point of line.geometry) {
-            indices.push(...encodeShape(cache, point.m ?? {}));
+            indices.push(encodeValue(point.m ?? {}, mShape, cache));
           }
         }
       }
@@ -562,6 +602,18 @@ export class BaseVectorPolys3DFeature extends VectorFeatureBase {
    */
   loadGeometry(): VectorMultiPoly3D {
     return this.geometry.map((poly) => poly.map((line) => line.geometry));
+  }
+
+  /**
+   * @returns the flattened M values
+   */
+  getMValues(): undefined | OProperties[] {
+    if (!this.hasMValues) return undefined;
+    return this.geometry.flatMap((poly) => {
+      return poly.flatMap((line) => {
+        return line.geometry.map((point) => point.m ?? {});
+      });
+    });
   }
 }
 

@@ -1,7 +1,10 @@
 # TODO
 
+[ ] Resubmit all comments
+
+[ ] Conversion tool from s2json/geojson (todo build the spec) to BaseVectorFeature
+
 [ ] Write the specification page
-[ ] Build blog page
 
 [ ] Port to Rust
 [ ] Rust tests > 90%

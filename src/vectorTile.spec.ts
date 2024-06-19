@@ -29,7 +29,7 @@ export type Value = string | number | boolean | null;
 export type Properties = Record<string, Value>;
 
 /** The new OpenVectorTile type can create complex nested objects. */
-export type Shape = Record<string, OValue>;
+// export type Shape = Record<string, OValue>;
 /**
  * The new OpenVectorTile type can create complex nested objects.
  * May either be a string, number, boolean, null, an array of those types, or an object of those types

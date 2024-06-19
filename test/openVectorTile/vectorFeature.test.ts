@@ -22,9 +22,12 @@ import {
 } from '../../src/open/vectorFeature';
 import { describe, expect, it } from 'bun:test';
 
+import type { Shape } from '../../src/open/shape';
+
 describe('encodePointFeature and decodePointFeature', () => {
   const pbf = new Pbf();
   const col = new ColumnCacheWriter();
+  const shape: Shape = { name: 'string' };
   const basePointFeatureA = new BaseVectorPointsFeature([{ x: 3_805, y: 5_645 }], { name: 'a' }, 1);
   const basePointFeatureB = new BaseVectorPointsFeature(
     [
@@ -34,10 +37,10 @@ describe('encodePointFeature and decodePointFeature', () => {
     { name: 'b' },
     2,
   );
-  const dataA = writeOVFeature(basePointFeatureA, col);
-  const dataB = writeOVFeature(basePointFeatureB, col);
+  const dataA = writeOVFeature(basePointFeatureA, shape, undefined, col);
+  const dataB = writeOVFeature(basePointFeatureB, shape, undefined, col);
   // store column
-  pbf.writeMessage(5, col.write, col);
+  pbf.writeMessage(5, ColumnCacheWriter.write, col);
   // store features
   pbf.writeBytes(dataA);
   pbf.writeBytes(dataB);
@@ -53,8 +56,18 @@ describe('encodePointFeature and decodePointFeature', () => {
   expect(decodeBytesA).toEqual(new Uint8Array(dataA));
   expect(decodeBytesB).toEqual(new Uint8Array(dataB));
   // read out the features
-  const decodedPointFeatureA = readFeature(decodeBytesA, 4_096, cache) as OVectorPointsFeature;
-  const decodedPointFeatureB = readFeature(decodeBytesB, 4_096, cache) as OVectorPointsFeature;
+  const decodedPointFeatureA = readFeature(
+    decodeBytesA,
+    4_096,
+    cache,
+    shape,
+  ) as OVectorPointsFeature;
+  const decodedPointFeatureB = readFeature(
+    decodeBytesB,
+    4_096,
+    cache,
+    shape,
+  ) as OVectorPointsFeature;
 
   it('point features are decoded correctly', () => {
     // ensure data type is accurate:
@@ -95,6 +108,7 @@ describe('encodePointFeature and decodePointFeature', () => {
 describe('encodePoint3DFeature and decodePoint3DFeature', () => {
   const pbf = new Pbf();
   const col = new ColumnCacheWriter();
+  const shape: Shape = { name: 'string' };
   const basePointFeatureA = new BaseVectorPoint3DFeature(
     [{ x: 3_805, y: 5_645, z: 3_212 }],
     { name: 'a' },
@@ -108,10 +122,10 @@ describe('encodePoint3DFeature and decodePoint3DFeature', () => {
     { name: 'b' },
     2,
   );
-  const dataA = writeOVFeature(basePointFeatureA, col);
-  const dataB = writeOVFeature(basePointFeatureB, col);
+  const dataA = writeOVFeature(basePointFeatureA, shape, undefined, col);
+  const dataB = writeOVFeature(basePointFeatureB, shape, undefined, col);
   // store column
-  pbf.writeMessage(5, col.write, col);
+  pbf.writeMessage(5, ColumnCacheWriter.write, col);
   // store features
   pbf.writeBytes(dataA);
   pbf.writeBytes(dataB);
@@ -127,8 +141,18 @@ describe('encodePoint3DFeature and decodePoint3DFeature', () => {
   expect(decodeBytesA).toEqual(new Uint8Array(dataA));
   expect(decodeBytesB).toEqual(new Uint8Array(dataB));
   // read out the features
-  const decodedPointFeatureA = readFeature(decodeBytesA, 4_096, cache) as OVectorPoints3DFeature;
-  const decodedPointFeatureB = readFeature(decodeBytesB, 4_096, cache) as OVectorPoints3DFeature;
+  const decodedPointFeatureA = readFeature(
+    decodeBytesA,
+    4_096,
+    cache,
+    shape,
+  ) as OVectorPoints3DFeature;
+  const decodedPointFeatureB = readFeature(
+    decodeBytesB,
+    4_096,
+    cache,
+    shape,
+  ) as OVectorPoints3DFeature;
 
   it('point features are decoded correctly', () => {
     // ensure data type is accurate:
@@ -169,6 +193,8 @@ describe('encodePoint3DFeature and decodePoint3DFeature', () => {
 describe('encodeLineFeature and decodeLineFeature', () => {
   const pbf = new Pbf();
   const col = new ColumnCacheWriter();
+  const shape: Shape = { name: 'string' };
+  const mShape: Shape = { width: 'i64' };
   const basePointFeatureA = new BaseVectorLinesFeature(
     [
       new BaseVectorLine([
@@ -201,10 +227,10 @@ describe('encodeLineFeature and decodeLineFeature', () => {
     { name: 'b' },
     2,
   );
-  const dataA = writeOVFeature(basePointFeatureA, col);
-  const dataB = writeOVFeature(basePointFeatureB, col);
+  const dataA = writeOVFeature(basePointFeatureA, shape, mShape, col);
+  const dataB = writeOVFeature(basePointFeatureB, shape, mShape, col);
   // store column
-  pbf.writeMessage(5, col.write, col);
+  pbf.writeMessage(5, ColumnCacheWriter.write, col);
   // store features
   pbf.writeBytes(dataA);
   pbf.writeBytes(dataB);
@@ -220,8 +246,20 @@ describe('encodeLineFeature and decodeLineFeature', () => {
   expect(decodeBytesA).toEqual(new Uint8Array(dataA));
   expect(decodeBytesB).toEqual(new Uint8Array(dataB));
   // read out the features
-  const decodedPointFeatureA = readFeature(decodeBytesA, 4_096, cache) as OVectorLinesFeature;
-  const decodedPointFeatureB = readFeature(decodeBytesB, 4_096, cache) as OVectorLinesFeature;
+  const decodedPointFeatureA = readFeature(
+    decodeBytesA,
+    4_096,
+    cache,
+    shape,
+    mShape,
+  ) as OVectorLinesFeature;
+  const decodedPointFeatureB = readFeature(
+    decodeBytesB,
+    4_096,
+    cache,
+    shape,
+    mShape,
+  ) as OVectorLinesFeature;
 
   it('point features are decoded correctly', () => {
     // ensure data type is accurate:
@@ -249,8 +287,8 @@ describe('encodeLineFeature and decodeLineFeature', () => {
     expect(decodedPointFeatureB.loadPoints()).toEqual([
       { x: 1, y: 0, m: { width: 2 } },
       { x: 2, y: -1, m: { width: -3 } },
-      { x: 0, y: -2, m: {} },
-      { x: 300, y: 500, m: {} },
+      { x: 0, y: -2, m: { width: 0 } },
+      { x: 300, y: 500, m: { width: 0 } },
     ]);
     expect(decodedPointFeatureB.loadGeometry()).toEqual([
       [
@@ -258,8 +296,8 @@ describe('encodeLineFeature and decodeLineFeature', () => {
         { x: 2, y: -1, m: { width: -3 } },
       ],
       [
-        { x: 0, y: -2, m: {} },
-        { x: 300, y: 500, m: {} },
+        { x: 0, y: -2, m: { width: 0 } },
+        { x: 300, y: 500, m: { width: 0 } },
       ],
     ]);
     expect(decodedPointFeatureB.loadLines()).toEqual([
@@ -272,8 +310,8 @@ describe('encodeLineFeature and decodeLineFeature', () => {
       },
       {
         geometry: [
-          { m: {}, x: 0, y: -2 },
-          { m: {}, x: 300, y: 500 },
+          { m: { width: 0 }, x: 0, y: -2 },
+          { m: { width: 0 }, x: 300, y: 500 },
         ],
         offset: 102.2,
       },
@@ -287,6 +325,8 @@ describe('encodeLineFeature and decodeLineFeature', () => {
 describe('encodeLine3DFeature and decodeLine3DFeature', () => {
   const pbf = new Pbf();
   const col = new ColumnCacheWriter();
+  const shape: Shape = { name: 'string' };
+  const mShape: Shape = { width: 'i64' };
   const basePointFeatureA = new BaseVectorLines3DFeature(
     [
       new BaseVectorLine3D([
@@ -319,10 +359,10 @@ describe('encodeLine3DFeature and decodeLine3DFeature', () => {
     { name: 'b' },
     2,
   );
-  const dataA = writeOVFeature(basePointFeatureA, col);
-  const dataB = writeOVFeature(basePointFeatureB, col);
+  const dataA = writeOVFeature(basePointFeatureA, shape, mShape, col);
+  const dataB = writeOVFeature(basePointFeatureB, shape, mShape, col);
   // store column
-  pbf.writeMessage(5, col.write, col);
+  pbf.writeMessage(5, ColumnCacheWriter.write, col);
   // store features
   pbf.writeBytes(dataA);
   pbf.writeBytes(dataB);
@@ -338,8 +378,20 @@ describe('encodeLine3DFeature and decodeLine3DFeature', () => {
   expect(decodeBytesA).toEqual(new Uint8Array(dataA));
   expect(decodeBytesB).toEqual(new Uint8Array(dataB));
   // read out the features
-  const decodedPointFeatureA = readFeature(decodeBytesA, 4_096, cache) as OVectorLines3DFeature;
-  const decodedPointFeatureB = readFeature(decodeBytesB, 4_096, cache) as OVectorLines3DFeature;
+  const decodedPointFeatureA = readFeature(
+    decodeBytesA,
+    4_096,
+    cache,
+    shape,
+    mShape,
+  ) as OVectorLines3DFeature;
+  const decodedPointFeatureB = readFeature(
+    decodeBytesB,
+    4_096,
+    cache,
+    shape,
+    mShape,
+  ) as OVectorLines3DFeature;
 
   it('point features are decoded correctly', () => {
     // ensure data type is accurate:
@@ -370,15 +422,15 @@ describe('encodeLine3DFeature and decodeLine3DFeature', () => {
         { x: 2, y: -1, z: -3, m: { width: -3 } },
       ],
       [
-        { x: 0, y: -2, z: 200, m: {} },
-        { x: 300, y: 500, z: 502, m: {} },
+        { x: 0, y: -2, z: 200, m: { width: 0 } },
+        { x: 300, y: 500, z: 502, m: { width: 0 } },
       ],
     ]);
     expect(decodedPointFeatureB.loadPoints()).toEqual([
       { x: 1, y: 0, z: 2, m: { width: 2 } },
       { x: 2, y: -1, z: -3, m: { width: -3 } },
-      { x: 0, y: -2, z: 200, m: {} },
-      { x: 300, y: 500, z: 502, m: {} },
+      { x: 0, y: -2, z: 200, m: { width: 0 } },
+      { x: 300, y: 500, z: 502, m: { width: 0 } },
     ]);
     expect(decodedPointFeatureB.loadLines()).toEqual([
       {
@@ -390,8 +442,8 @@ describe('encodeLine3DFeature and decodeLine3DFeature', () => {
       },
       {
         geometry: [
-          { m: {}, x: 0, y: -2, z: 200 },
-          { m: {}, x: 300, y: 500, z: 502 },
+          { m: { width: 0 }, x: 0, y: -2, z: 200 },
+          { m: { width: 0 }, x: 300, y: 500, z: 502 },
         ],
         offset: 102.2,
       },
@@ -407,6 +459,7 @@ describe('encodeLine3DFeature and decodeLine3DFeature', () => {
 describe('encodePolysFeature and decodePolysFeature', () => {
   const pbf = new Pbf();
   const col = new ColumnCacheWriter();
+  const shape: Shape = { name: 'string' };
   const basePolyFeatureA = new BaseVectorPolysFeature(
     [
       [
@@ -489,10 +542,10 @@ describe('encodePolysFeature and decodePolysFeature', () => {
     5_555,
   );
 
-  const dataA = writeOVFeature(basePolyFeatureA, col);
-  const dataB = writeOVFeature(basePolyFeatureB, col);
+  const dataA = writeOVFeature(basePolyFeatureA, shape, undefined, col);
+  const dataB = writeOVFeature(basePolyFeatureB, shape, undefined, col);
   // store column
-  pbf.writeMessage(5, col.write, col);
+  pbf.writeMessage(5, ColumnCacheWriter.write, col);
   // store features
   pbf.writeBytes(dataA);
   pbf.writeBytes(dataB);
@@ -508,8 +561,8 @@ describe('encodePolysFeature and decodePolysFeature', () => {
   expect(decodeBytesA).toEqual(new Uint8Array(dataA));
   expect(decodeBytesB).toEqual(new Uint8Array(dataB));
   // read out the features
-  const decodedPolyFeatureA = readFeature(decodeBytesA, 4_096, cache) as OVectorPolysFeature;
-  const decodedPolyFeatureB = readFeature(decodeBytesB, 4_096, cache) as OVectorPolysFeature;
+  const decodedPolyFeatureA = readFeature(decodeBytesA, 4_096, cache, shape) as OVectorPolysFeature;
+  const decodedPolyFeatureB = readFeature(decodeBytesB, 4_096, cache, shape) as OVectorPolysFeature;
 
   it('point features are decoded correctly', () => {
     // ensure data type is accurate:
@@ -665,6 +718,7 @@ describe('encodePolysFeature and decodePolysFeature', () => {
 describe('encodePolys3DFeature and decodePolys3DFeature', () => {
   const pbf = new Pbf();
   const col = new ColumnCacheWriter();
+  const shape: Shape = { name: 'string' };
   const basePolyFeatureA = new BaseVectorPolys3DFeature(
     [
       [
@@ -747,10 +801,10 @@ describe('encodePolys3DFeature and decodePolys3DFeature', () => {
     5_555,
   );
 
-  const dataA = writeOVFeature(basePolyFeatureA, col);
-  const dataB = writeOVFeature(basePolyFeatureB, col);
+  const dataA = writeOVFeature(basePolyFeatureA, shape, undefined, col);
+  const dataB = writeOVFeature(basePolyFeatureB, shape, undefined, col);
   // store column
-  pbf.writeMessage(5, col.write, col);
+  pbf.writeMessage(5, ColumnCacheWriter.write, col);
   // store features
   pbf.writeBytes(dataA);
   pbf.writeBytes(dataB);
@@ -766,8 +820,18 @@ describe('encodePolys3DFeature and decodePolys3DFeature', () => {
   expect(decodeBytesA).toEqual(new Uint8Array(dataA));
   expect(decodeBytesB).toEqual(new Uint8Array(dataB));
   // read out the features
-  const decodedPolyFeatureA = readFeature(decodeBytesA, 4_096, cache) as OVectorPolys3DFeature;
-  const decodedPolyFeatureB = readFeature(decodeBytesB, 4_096, cache) as OVectorPolys3DFeature;
+  const decodedPolyFeatureA = readFeature(
+    decodeBytesA,
+    4_096,
+    cache,
+    shape,
+  ) as OVectorPolys3DFeature;
+  const decodedPolyFeatureB = readFeature(
+    decodeBytesB,
+    4_096,
+    cache,
+    shape,
+  ) as OVectorPolys3DFeature;
 
   it('point features are decoded correctly', () => {
     // ensure data type is accurate:

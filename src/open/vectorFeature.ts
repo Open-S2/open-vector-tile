@@ -1,11 +1,12 @@
 import { OColumnName } from './columnCache';
 import { Pbf as Protobuf } from '../pbf';
 import { decodeOffset } from '../base';
-import { encodeShape, readShape } from './shape';
+import { decodeValue, encodeValue } from './shape';
 import { unweave2D, unweave3D, zagzig } from '../util';
 
 import type { BaseVectorFeature } from '../base';
 import type { Extents } from './vectorLayer';
+import type { Shape } from './shape';
 import type {
   BBox,
   BBox3D,
@@ -35,6 +36,7 @@ export class OVectorFeatureBase {
    * @param cache - the column cache for future retrieval
    * @param id - the id of the feature
    * @param properties - the properties of the feature
+   * @param mShape - the shape of the feature's mValues if they exist
    * @param extent - the extent of the feature
    * @param geometryIndices - the indices of the geometry in the cache
    * @param single - if true, you know the initial length is 1
@@ -48,6 +50,7 @@ export class OVectorFeatureBase {
     readonly cache: ColumnCacheReader,
     readonly id: number | undefined,
     readonly properties: OProperties,
+    readonly mShape: Shape,
     readonly extent: Extents,
     readonly geometryIndices: number[],
     readonly single: boolean,
@@ -174,9 +177,8 @@ export class OVectorLinesFeature extends OVectorFeatureBase2D {
       if (hasMValues) {
         const length = indices[indexPos++];
         for (let j = 0; j < length; j++) {
-          const shapeIndex = indices[indexPos++];
           const valueIndex = indices[indexPos++];
-          geometry[j].m = readShape(shapeIndex, valueIndex, cache);
+          geometry[j].m = decodeValue(valueIndex, this.mShape, cache);
         }
       }
       lines.push({ offset, geometry });
@@ -227,9 +229,8 @@ export class OVectorPolysFeature extends OVectorFeatureBase2D {
         if (hasMValues) {
           const length = indices[indexPos++];
           for (let j = 0; j < length; j++) {
-            const shapeIndex = indices[indexPos++];
             const valueIndex = indices[indexPos++];
-            geometry[j].m = readShape(shapeIndex, valueIndex, cache);
+            geometry[j].m = decodeValue(valueIndex, this.mShape, cache);
           }
         }
         lines.push({ offset, geometry });
@@ -376,9 +377,8 @@ export class OVectorLines3DFeature extends OVectorFeatureBase3D {
       if (hasMValues) {
         const length = indices[indexPos++];
         for (let j = 0; j < length; j++) {
-          const shapeIndex = indices[indexPos++];
           const valueIndex = indices[indexPos++];
-          geometry[j].m = readShape(shapeIndex, valueIndex, cache);
+          geometry[j].m = decodeValue(valueIndex, this.mShape, cache);
         }
       }
       lines.push({ offset, geometry });
@@ -427,9 +427,8 @@ export class OVectorPolys3DFeature extends OVectorFeatureBase3D {
         if (hasMValues) {
           const length = indices[indexPos++];
           for (let j = 0; j < length; j++) {
-            const shapeIndex = indices[indexPos++];
             const valueIndex = indices[indexPos++];
-            geometry[j].m = readShape(shapeIndex, valueIndex, cache);
+            geometry[j].m = decodeValue(valueIndex, this.mShape, cache);
           }
         }
         lines.push({ offset, geometry });
@@ -518,6 +517,7 @@ export type OVectorFeature =
  * @param cache - the column cache to read from
  * @param id - the id of the feature
  * @param properties - the properties of the feature
+ * @param mShape - the shape of the feature's m-values if they exist
  * @param extent - the extent of the vector layer to help decode the geometry
  * @param geometryIndices - the indices of the geometry
  * @param single - whether the geometry is a single point
@@ -530,6 +530,7 @@ type Constructor<T> = new (
   cache: ColumnCacheReader,
   id: number | undefined,
   properties: OProperties,
+  mShape: Shape,
   extent: Extents,
   geometryIndices: number[],
   single: boolean,
@@ -544,12 +545,16 @@ type Constructor<T> = new (
  * @param bytes - the bytes to read from
  * @param extent - the extent of the vector layer to help decode the geometry
  * @param cache - the column cache to read from
+ * @param shape - the shape of the feature's properties data
+ * @param mShape - the shape of the feature's m-values if they exist
  * @returns - the decoded feature
  */
 export function readFeature(
   bytes: Uint8Array,
   extent: Extents,
   cache: ColumnCacheReader,
+  shape: Shape,
+  mShape: Shape = {},
 ): OVectorFeature {
   const pbf = new Protobuf(bytes);
   // pull in the type
@@ -565,9 +570,8 @@ export function readFeature(
   const hasMValues = (flags & (1 << 5)) > 0;
   const single: boolean = (flags & (1 << 6)) !== 0;
   // read the properties
-  const shapeIndex = pbf.readVarint();
   const valueIndex = pbf.readVarint();
-  const properties = readShape(shapeIndex, valueIndex, cache);
+  const properties = decodeValue(valueIndex, shape, cache);
   // if type is 1 or 4, read geometry as a single index, otherwise as an array
   let Constructor: Constructor<OVectorFeature>;
   let geometryIndices: number[];
@@ -596,6 +600,7 @@ export function readFeature(
     cache,
     id,
     properties,
+    mShape,
     extent,
     geometryIndices,
     single,
@@ -609,10 +614,17 @@ export function readFeature(
 
 /**
  * @param feature - BaseVectorFeature to build a buffer from
+ * @param shape - The shape of the feature's properties data
+ * @param mShape - The shape of the feature's m-values if they exist
  * @param cache - where to store all feature data to in columns
  * @returns - Compressed indexes for the feature
  */
-export function writeOVFeature(feature: BaseVectorFeature, cache: ColumnCacheWriter): Buffer {
+export function writeOVFeature(
+  feature: BaseVectorFeature,
+  shape: Shape,
+  mShape: Shape = {},
+  cache: ColumnCacheWriter,
+): Buffer {
   // write id, type, properties, bbox, geometry, indices, tesselation, mValues
   const pbf = new Protobuf();
   // type is just stored as a varint
@@ -637,11 +649,10 @@ export function writeOVFeature(feature: BaseVectorFeature, cache: ColumnCacheWri
   // id is stored in unsigned column
   if (hasID) pbf.writeVarint(feature.id as number);
   // index to values column
-  const [shapeIndex, valueIndex] = encodeShape(cache, feature.properties);
-  pbf.writeVarint(shapeIndex);
+  const valueIndex = encodeValue(feature.properties, shape, cache);
   pbf.writeVarint(valueIndex);
   // geometry
-  const storedGeo = feature.addGeometryToCache(cache);
+  const storedGeo = feature.addGeometryToCache(cache, mShape);
   pbf.writeVarint(storedGeo);
   // indices
   if ('indices' in feature && hasIndices)

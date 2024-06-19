@@ -76,6 +76,13 @@ export enum OColumnName {
   bbox,
 }
 
+/** Just the number types in the store */
+export type OColumnNumbers =
+  | OColumnName.signed
+  | OColumnName.unsigned
+  | OColumnName.float
+  | OColumnName.double;
+
 /**
  * Represents a reference to the position in the protobuf to deserialize.
  * @param pos - The position in the protobuf data.
@@ -187,6 +194,8 @@ export class ColumnCacheReader {
         return this.#pbf.readVarint() as T;
       case OColumnName.signed:
         return this.#pbf.readSVarint() as T;
+      case OColumnName.float:
+        return this.#pbf.readFloat() as T;
       case OColumnName.double:
         return this.#pbf.readDouble() as T;
       case OColumnName.points:
@@ -322,17 +331,20 @@ export class ColumnCacheWriter {
    * This function is specifically designed for number types as they will be sorted later
    * for better compression.
    * @param value - the number
+   * @param cType - the column type if we already know its classification
    * @returns - the ColumnValue reference which contains the index and data.
    * Will be sorted before stored.
    */
-  addNumber(value: number): ColumnValue {
+  addNumber(value: number, cType?: OColumnNumbers): ColumnValue {
     // get column
-    const columnType =
-      value % 1 === 0
-        ? value >= 0
-          ? OColumnName.unsigned
-          : OColumnName.signed
-        : OColumnName.double;
+    const columnType: OColumnNumbers =
+      cType !== undefined
+        ? cType
+        : value % 1 === 0
+          ? value >= 0
+            ? OColumnName.unsigned
+            : OColumnName.signed
+          : OColumnName.double;
 
     // get index
     const column = this[columnType];
@@ -360,7 +372,7 @@ export class ColumnCacheWriter {
    * @param column - the column cache we want to write from
    * @param pbf - the pbf protocol we are writing to
    */
-  write(column: ColumnCacheWriter, pbf: Protobuf): void {
+  static write(column: ColumnCacheWriter, pbf: Protobuf): void {
     // setup
     const unsigned = sortColumn([...column[OColumnName.unsigned].values()]);
     const signed = sortColumn([...column[OColumnName.signed].values()]);

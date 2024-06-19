@@ -1,8 +1,10 @@
 import { OColumnName } from './columnCache';
 import { Pbf as Protobuf } from '../pbf';
 import { OVectorFeature, readFeature, writeOVFeature } from './vectorFeature';
+import { decodeShape, encodeShape } from './shape';
 
 import type { BaseVectorLayer } from '../base';
+import type { Shape } from './shape';
 import type { ColumnCacheReader, ColumnCacheWriter } from './columnCache';
 
 /**
@@ -19,6 +21,8 @@ export class OVectorLayer {
   version: number = 1;
   name: string = '';
   extent: Extents = 4096;
+  #shapeIndex: number = -1;
+  #mShapeIndex: number = -1;
   #features = new Map<number, OVectorFeature>();
   #pbf: Protobuf;
   #cache: ColumnCacheReader;
@@ -45,6 +49,8 @@ export class OVectorLayer {
     else if (tag === 2) layer.name = layer.#cache.getColumn(OColumnName.string, pbf.readVarint());
     else if (tag === 3) layer.extent = decodeExtent(pbf.readVarint());
     else if (tag === 4) layer.#featuresPos.push(pbf.pos);
+    else if (tag === 5) layer.#shapeIndex = pbf.readVarint();
+    else if (tag === 6) layer.#mShapeIndex = pbf.readVarint();
   }
 
   /**
@@ -52,6 +58,21 @@ export class OVectorLayer {
    */
   get length(): number {
     return this.#featuresPos.length;
+  }
+
+  /**
+   * @returns - The shape of the features properties
+   */
+  get shape(): Shape {
+    return decodeShape(this.#shapeIndex, this.#cache);
+  }
+
+  /**
+   * @returns - The shape of the M-Values
+   */
+  get mShape(): Shape | undefined {
+    if (this.#mShapeIndex === -1) return undefined;
+    return decodeShape(this.#mShapeIndex, this.#cache);
   }
 
   /**
@@ -65,7 +86,7 @@ export class OVectorLayer {
     if (feature !== undefined) return feature;
 
     this.#pbf.pos = this.#featuresPos[i];
-    feature = readFeature(this.#pbf.readBytes(), this.extent, this.#cache);
+    feature = readFeature(this.#pbf.readBytes(), this.extent, this.#cache, this.shape, this.mShape);
 
     this.#features.set(i, feature);
     return feature;
@@ -93,11 +114,14 @@ export function writeOVLayer(
   pbf.writeVarintField(1, layer.version);
   pbf.writeVarintField(2, cache.addColumnData(OColumnName.string, layer.name));
   pbf.writeVarintField(3, encodeExtent(layer.extent as Extents));
+  pbf.writeVarintField(5, encodeShape(cache, layer.shape));
+  if (layer.mShape) pbf.writeVarintField(6, encodeShape(cache, layer.mShape));
 
   // sort by feature type
   layer.features = layer.features.sort((a, b) => a.type - b.type);
 
-  for (const feature of layer.features) pbf.writeBytesField(4, writeOVFeature(feature, cache));
+  for (const feature of layer.features)
+    pbf.writeBytesField(4, writeOVFeature(feature, layer.shape, layer.mShape, cache));
 
   if (verbose) {
     const totals = { points: 0, lines: 0, polys: 0, points3D: 0, lines3D: 0, polys3D: 0, all: 0 };

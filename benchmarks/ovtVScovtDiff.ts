@@ -5,29 +5,25 @@ import { brotliCompressSync } from 'zlib';
 import { markdownTable } from 'markdown-table';
 import { VectorTile, writeOVTile } from '../src';
 
-/**
- * Finding the averages for each zoom or all
- */
+/** Finding the averages for each zoom or all */
 interface AverageTracker {
   sum: number;
   total: number;
   average: number;
 }
 
-/**
- * Find the averages for each zoom and total
- */
+/** Find the averages for each zoom and total */
 interface SizeBenchmarks {
   all: AverageTracker;
   [zoom: number]: AverageTracker;
 }
 
 const RULES = [
-  // { folder: 'amazon', fileType: 'pbf' },
+  { folder: 'amazon', fileType: 'pbf' },
   // { folder: 'test', fileType: 'pbf' },
   // { folder: 'amazon_here', fileType: 'pbf' },
   // { folder: 'bing', fileType: 'mvt' },
-  { folder: 'omt', fileType: 'mvt' },
+  // { folder: 'omt', fileType: 'mvt' },
 ];
 
 const sizeBenchmarks: SizeBenchmarks = {

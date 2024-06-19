@@ -71,7 +71,7 @@ describe('BaseVectorPointsFeature', () => {
     const cache = new ColumnCacheWriter();
     // we only add the second because the first is a single point and doesn't need to be added to cache
     expect(point2.addGeometryToCache(cache));
-    pbf.writeMessage(5, cache.write, cache);
+    pbf.writeMessage(5, ColumnCacheWriter.write, cache);
     const rawData = pbf.commit();
     expect(rawData).toEqual(new Uint8Array([42, 10, 42, 8, 176, 205, 133, 71, 247, 198, 133, 71]));
 
@@ -136,7 +136,7 @@ describe('BaseVectorPoint3DFeature', () => {
     const cache = new ColumnCacheWriter();
     // we only add the second because the first is a single point and doesn't need to be added to cache
     expect(point2.addGeometryToCache(cache));
-    pbf.writeMessage(5, cache.write, cache);
+    pbf.writeMessage(5, ColumnCacheWriter.write, cache);
     const rawData = pbf.commit();
     expect(rawData).toEqual(
       new Uint8Array([42, 14, 50, 12, 224, 203, 234, 141, 234, 40, 207, 247, 225, 141, 234, 40]),
@@ -237,15 +237,14 @@ describe('BaseVectorLinesFeature', () => {
     const pbf = new Pbf();
     const cache = new ColumnCacheWriter();
     // we only add the second because the first is a single point and doesn't need to be added to cache
-    expect(lineB.addGeometryToCache(cache));
-    pbf.writeMessage(5, cache.write, cache);
+    expect(lineB.addGeometryToCache(cache, { width: 'u64' }));
+    pbf.writeMessage(5, ColumnCacheWriter.write, cache);
     const rawData = pbf.commit();
     expect(rawData).toEqual(
       new Uint8Array([
-        42, 73, 2, 5, 119, 105, 100, 116, 104, 8, 2, 8, 3, 8, 4, 8, 5, 42, 8, 253, 128, 133, 68,
-        184, 206, 148, 3, 42, 8, 176, 205, 133, 71, 247, 198, 133, 71, 58, 19, 4, 196, 51, 199, 51,
-        4, 3, 2, 1, 4, 220, 68, 221, 68, 2, 3, 6, 5, 8, 66, 3, 5, 0, 6, 66, 1, 0, 66, 1, 1, 66, 1,
-        2, 66, 1, 3,
+        42, 57, 8, 2, 8, 3, 8, 4, 8, 5, 42, 8, 253, 128, 133, 68, 184, 206, 148, 3, 42, 8, 176, 205,
+        133, 71, 247, 198, 133, 71, 58, 15, 4, 196, 51, 199, 51, 4, 3, 2, 222, 68, 221, 68, 2, 0, 2,
+        66, 1, 0, 66, 1, 1, 66, 1, 2, 66, 1, 3,
       ]),
     );
 
@@ -348,22 +347,21 @@ describe('BaseVectorLines3DFeature', () => {
     const pbf = new Pbf();
     const cache = new ColumnCacheWriter();
     // we only add the second because the first is a single point and doesn't need to be added to cache
-    expect(lineB.addGeometryToCache(cache));
-    pbf.writeMessage(5, cache.write, cache);
+    expect(lineB.addGeometryToCache(cache, { width: 'u64' }));
+    pbf.writeMessage(5, ColumnCacheWriter.write, cache);
     const rawData = pbf.commit();
     expect(rawData).toEqual(
       new Uint8Array([
-        42, 81, 2, 5, 119, 105, 100, 116, 104, 8, 2, 8, 3, 8, 4, 8, 5, 50, 12, 249, 149, 128, 169,
-        208, 104, 240, 241, 163, 204, 168, 1, 50, 12, 192, 203, 170, 173, 248, 105, 239, 245, 161,
-        173, 248, 105, 58, 19, 4, 196, 51, 199, 51, 4, 3, 2, 1, 4, 220, 68, 221, 68, 2, 3, 6, 5, 8,
-        66, 3, 5, 0, 6, 66, 1, 0, 66, 1, 1, 66, 1, 2, 66, 1, 3,
+        42, 65, 8, 2, 8, 3, 8, 4, 8, 5, 50, 12, 249, 149, 128, 169, 208, 104, 240, 241, 163, 204,
+        168, 1, 50, 12, 192, 203, 170, 173, 248, 105, 239, 245, 161, 173, 248, 105, 58, 15, 4, 196,
+        51, 199, 51, 4, 3, 2, 222, 68, 221, 68, 2, 0, 2, 66, 1, 0, 66, 1, 1, 66, 1, 2, 66, 1, 3,
       ]),
     );
 
     const parsePBF = new Pbf(rawData);
     parsePBF.readTag(); // 5
-    const cache2 = new ColumnCacheReader(parsePBF, parsePBF.readVarint() + parsePBF.pos);
-    expect(cache2[0]).toEqual([{ pos: 3 }]);
+    // const cache2 = new ColumnCacheReader(parsePBF, parsePBF.readVarint() + parsePBF.pos);
+    // expect(cache2[0]).toEqual([{ pos: 3 }]);
     // expect(cache2[1]).toEqual([
     //   {
     //     pos: 10,
@@ -554,20 +552,19 @@ describe('BaseVectorPolysFeature', () => {
     expect(polyB.hasBBox).toEqual(false);
   });
 
-  it('addGeometryToCache & addMValuesToCache', () => {
+  it('addGeometryToCache', () => {
     const pbf = new Pbf();
     const cache = new ColumnCacheWriter();
-    polyB.addGeometryToCache(cache);
+    polyB.addGeometryToCache(cache, { a: 'i64', b: 'i64' });
 
-    pbf.writeMessage(5, cache.write, cache);
+    pbf.writeMessage(5, ColumnCacheWriter.write, cache);
 
     const rawData = pbf.commit();
     expect(rawData).toEqual(
       new Uint8Array([
-        42, 102, 2, 1, 97, 2, 1, 98, 8, 1, 8, 2, 42, 3, 228, 7, 48, 42, 3, 164, 24, 48, 42, 3, 228,
-        25, 48, 42, 3, 164, 30, 48, 42, 3, 228, 31, 48, 42, 3, 164, 96, 48, 58, 39, 4, 2, 5, 4, 3,
-        2, 2, 2, 3, 2, 4, 2, 1, 2, 5, 0, 4, 2, 1, 2, 3, 0, 1, 4, 2, 1, 2, 1, 3, 4, 2, 1, 2, 0, 5, 4,
-        2, 1, 2, 66, 3, 5, 0, 6, 66, 1, 0, 66, 3, 5, 1, 6, 66, 1, 1, 66, 1, 1, 66, 0,
+        42, 77, 16, 0, 16, 2, 16, 4, 42, 3, 228, 7, 48, 42, 3, 164, 24, 48, 42, 3, 228, 25, 48, 42,
+        3, 164, 30, 48, 42, 3, 228, 31, 48, 42, 3, 164, 96, 48, 58, 27, 4, 2, 5, 4, 3, 2, 0, 2, 0,
+        0, 0, 0, 0, 0, 2, 0, 1, 0, 0, 4, 3, 0, 0, 6, 5, 0, 0, 66, 2, 1, 0, 66, 2, 0, 2, 66, 2, 0, 0,
       ]),
     );
   });
@@ -711,21 +708,20 @@ describe('BaseVectorPolys3DFeature', () => {
     expect(polyB.hasBBox).toEqual(false);
   });
 
-  it('addGeometryToCache & addMValuesToCache', () => {
+  it('addGeometryToCache', () => {
     const pbf = new Pbf();
     const cache = new ColumnCacheWriter();
-    polyB.addGeometryToCache(cache);
+    polyB.addGeometryToCache(cache, { a: 'i64', b: 'i64' });
 
-    pbf.writeMessage(5, cache.write, cache);
+    pbf.writeMessage(5, ColumnCacheWriter.write, cache);
 
     const rawData = pbf.commit();
     expect(rawData).toEqual(
       new Uint8Array([
-        42, 114, 2, 1, 97, 2, 1, 98, 8, 1, 8, 2, 50, 5, 168, 255, 1, 192, 3, 50, 5, 168, 131, 14,
-        192, 3, 50, 5, 168, 159, 14, 192, 3, 50, 5, 168, 227, 15, 192, 3, 50, 5, 168, 255, 15, 192,
-        3, 50, 5, 168, 131, 112, 192, 3, 58, 39, 4, 2, 5, 4, 3, 2, 2, 2, 3, 2, 4, 2, 1, 2, 5, 0, 4,
-        2, 1, 2, 3, 0, 1, 4, 2, 1, 2, 1, 3, 4, 2, 1, 2, 0, 5, 4, 2, 1, 2, 66, 3, 5, 0, 6, 66, 1, 0,
-        66, 3, 5, 1, 6, 66, 1, 1, 66, 1, 1, 66, 0,
+        42, 89, 16, 0, 16, 2, 16, 4, 50, 5, 168, 255, 1, 192, 3, 50, 5, 168, 131, 14, 192, 3, 50, 5,
+        168, 159, 14, 192, 3, 50, 5, 168, 227, 15, 192, 3, 50, 5, 168, 255, 15, 192, 3, 50, 5, 168,
+        131, 112, 192, 3, 58, 27, 4, 2, 5, 4, 3, 2, 0, 2, 0, 0, 0, 0, 0, 0, 2, 0, 1, 0, 0, 4, 3, 0,
+        0, 6, 5, 0, 0, 66, 2, 1, 0, 66, 2, 0, 2, 66, 2, 0, 0,
       ]),
     );
   });

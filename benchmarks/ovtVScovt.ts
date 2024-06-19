@@ -5,26 +5,20 @@ import { markdownTable } from 'markdown-table';
 import { VectorTile, writeOVTile } from '../src';
 import { brotliCompressSync, gzipSync } from 'zlib';
 
-/**
- * Finding the averages for each zoom or all
- */
+/** Finding the averages for each zoom or all */
 interface AverageTracker {
   sum: number;
   total: number;
   average: number;
 }
 
-/**
- * Find the averages for each zoom and total
- */
+/** Find the averages for each zoom and total */
 interface SizeBenchmarks {
   all: AverageTracker;
   [zoom: number]: AverageTracker;
 }
 
-/**
- * compression is either raw, gzip, or brotli
- */
+/** compression is either raw, gzip, or brotli */
 interface CompressionBenchmarks {
   raw: SizeBenchmarks;
   gzip: SizeBenchmarks;
