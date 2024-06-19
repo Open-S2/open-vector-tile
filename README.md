@@ -30,8 +30,8 @@ A Modified TypeScript implementation of the [Mapbox Vector Tile](https://github.
 * ♻️ Feature Properties & M-Values are stored as "Shapes" which reuses objects only needing to do lookups on values.
 * 🏛 Column encoding of data to make it more compact. Better gzip and brotli compression.
 * 🪺 Support nested objects in properties.
-* 📦 All features support first class BBOX data like IDs.
-* 😑 Lines support "offsets" to know the distance it's traveled.
+* 📦 All features support first class citizen `BBOX` data like IDs.
+* 😑 Lines support `offsets` to know the distance it's traveled (useful for rendering dashed lines).
 
 ## Inspiration
 
