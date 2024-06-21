@@ -73,7 +73,6 @@ describe('serialize and parse vector tile lines', () => {
         { x: 1879, y: 1879 },
       ]),
     ],
-    undefined,
     { name: 2.2 },
     100,
   );
@@ -91,7 +90,6 @@ describe('serialize and parse vector tile lines', () => {
         { x: 3469, y: 3469 },
       ]),
     ],
-    undefined,
     { name: true },
     200,
   );
@@ -208,7 +206,6 @@ describe('serialize and parse vector tile polygons', () => {
     ],
     undefined,
     undefined,
-    undefined,
     { a: -100, b: 500 },
     0,
   );
@@ -258,7 +255,6 @@ describe('serialize and parse vector tile polygons', () => {
     ],
     [0, 1, 2],
     [1, 2, 3, 4, 5, 6, 7, 8],
-    undefined,
     { name: 'c' },
     1234,
   );

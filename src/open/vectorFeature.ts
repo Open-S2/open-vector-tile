@@ -142,7 +142,7 @@ export class OVectorPointsFeature extends OVectorFeatureBase2D {
         this.geometry = cache.getColumn<VectorPoints>(OColumnName.points, geometryIndex);
         // load m values if they exist
         if (hasMValues) {
-          const length = indices[indexPos++];
+          const length = this.geometry.length;
           for (let j = 0; j < length; j++) {
             const valueIndex = indices[indexPos++];
             this.geometry[j].m = decodeValue(valueIndex, this.mShape, cache);
@@ -185,7 +185,7 @@ export class OVectorLinesFeature extends OVectorFeatureBase2D {
       const geometry: VectorLine = cache.getColumn(OColumnName.points, indices[indexPos++]);
       // inject m values if they exist
       if (hasMValues) {
-        const length = indices[indexPos++];
+        const length = geometry.length;
         for (let j = 0; j < length; j++) {
           const valueIndex = indices[indexPos++];
           geometry[j].m = decodeValue(valueIndex, this.mShape, cache);
@@ -237,7 +237,7 @@ export class OVectorPolysFeature extends OVectorFeatureBase2D {
         const geometry: VectorLine = cache.getColumn(OColumnName.points, indices[indexPos++]);
         // inject m values if they exist
         if (hasMValues) {
-          const length = indices[indexPos++];
+          const length = geometry.length;
           for (let j = 0; j < length; j++) {
             const valueIndex = indices[indexPos++];
             geometry[j].m = decodeValue(valueIndex, this.mShape, cache);
@@ -353,7 +353,7 @@ export class OVectorPoints3DFeature extends OVectorFeatureBase3D {
         this.geometry = cache.getColumn<VectorPoints3D>(OColumnName.points3D, geometryIndex);
         // load m values if they exist
         if (hasMValues) {
-          const length = indices[indexPos++];
+          const length = this.geometry.length;
           for (let j = 0; j < length; j++) {
             const valueIndex = indices[indexPos++];
             this.geometry[j].m = decodeValue(valueIndex, this.mShape, cache);
@@ -395,7 +395,7 @@ export class OVectorLines3DFeature extends OVectorFeatureBase3D {
       const geometry: VectorLine3D = cache.getColumn(OColumnName.points3D, indices[indexPos++]);
       // inject m values if they exist
       if (hasMValues) {
-        const length = indices[indexPos++];
+        const length = geometry.length;
         for (let j = 0; j < length; j++) {
           const valueIndex = indices[indexPos++];
           geometry[j].m = decodeValue(valueIndex, this.mShape, cache);
@@ -445,7 +445,7 @@ export class OVectorPolys3DFeature extends OVectorFeatureBase3D {
         const geometry: VectorLine3D = cache.getColumn(OColumnName.points3D, indices[indexPos++]);
         // inject m values if they exist
         if (hasMValues) {
-          const length = indices[indexPos++];
+          const length = geometry.length;
           for (let j = 0; j < length; j++) {
             const valueIndex = indices[indexPos++];
             geometry[j].m = decodeValue(valueIndex, this.mShape, cache);

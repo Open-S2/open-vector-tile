@@ -1,7 +1,6 @@
 import { Pbf } from '../../src/pbf';
 import {
   BaseVectorLine,
-  BaseVectorLine3D,
   BaseVectorLines3DFeature,
   BaseVectorLinesFeature,
   BaseVectorPoint3DFeature,
@@ -231,7 +230,6 @@ describe('encodeLineFeature and decodeLineFeature', () => {
         { x: 1, y: 0 },
       ]),
     ],
-    undefined,
     { name: 'a' },
     1,
   );
@@ -252,9 +250,9 @@ describe('encodeLineFeature and decodeLineFeature', () => {
         102.2,
       ),
     ],
-    [-120.22, -2, 102.111, 50.5],
     { name: 'b' },
     2,
+    [-120.22, -2, 102.111, 50.5],
   );
   const dataA = writeOVFeature(basePointFeatureA, shape, mShape, col);
   const dataB = writeOVFeature(basePointFeatureB, shape, mShape, col);
@@ -358,25 +356,24 @@ describe('encodeLine3DFeature and decodeLine3DFeature', () => {
   const mShape: Shape = { width: 'i64' };
   const basePointFeatureA = new BaseVectorLines3DFeature(
     [
-      new BaseVectorLine3D([
+      new BaseVectorLine([
         { x: 3_805, y: 5_645, z: 1_000 },
         { x: 1, y: 0, z: 2 },
       ]),
     ],
-    undefined,
     { name: 'a' },
     1,
   );
   const basePointFeatureB = new BaseVectorLines3DFeature(
     [
-      new BaseVectorLine3D(
+      new BaseVectorLine(
         [
           { x: 1, y: 0, z: 2, m: { width: 2 } },
           { x: 2, y: -1, z: -3, m: { width: -3 } },
         ],
         2.2,
       ),
-      new BaseVectorLine3D(
+      new BaseVectorLine(
         [
           { x: 0, y: -2, z: 200 },
           { x: 300, y: 500, z: 502 },
@@ -384,9 +381,9 @@ describe('encodeLine3DFeature and decodeLine3DFeature', () => {
         102.2,
       ),
     ],
-    [0.11, -2, 165.5, 45.5, -102.2, 30.667],
     { name: 'b' },
     2,
+    [0.11, -2, 165.5, 45.5, -102.2, 30.667],
   );
   const dataA = writeOVFeature(basePointFeatureA, shape, mShape, col);
   const dataB = writeOVFeature(basePointFeatureB, shape, mShape, col);
@@ -489,6 +486,7 @@ describe('encodePolysFeature and decodePolysFeature', () => {
   const pbf = new Pbf();
   const col = new ColumnCacheWriter();
   const shape: Shape = { name: 'string' };
+  const mShape: Shape = { width: 'i64' };
   const basePolyFeatureA = new BaseVectorPolysFeature(
     [
       [
@@ -508,7 +506,6 @@ describe('encodePolysFeature and decodePolysFeature', () => {
     ],
     undefined,
     undefined,
-    undefined,
     { name: 'a' },
     55,
   );
@@ -517,8 +514,8 @@ describe('encodePolysFeature and decodePolysFeature', () => {
       [
         new BaseVectorLine(
           [
-            { x: 1, y: 0 },
-            { x: 2, y: -1 },
+            { x: 1, y: 0, m: { width: 2 } },
+            { x: 2, y: -1, m: { width: -3 } },
           ],
           4.4,
         ),
@@ -533,8 +530,8 @@ describe('encodePolysFeature and decodePolysFeature', () => {
       [
         new BaseVectorLine(
           [
-            { x: 0, y: -2 },
-            { x: 300, y: 500 },
+            { x: 0, y: -2, m: { width: 0 } },
+            { x: 300, y: 500, m: { width: 55 } },
           ],
           102.2,
         ),
@@ -555,7 +552,7 @@ describe('encodePolysFeature and decodePolysFeature', () => {
           5.5,
         ),
         new BaseVectorLine([
-          { x: 300, y: 500 },
+          { x: 300, y: 500, m: { width: -1_222 } },
           { x: 0, y: -2 },
         ]),
         new BaseVectorLine([
@@ -566,13 +563,13 @@ describe('encodePolysFeature and decodePolysFeature', () => {
     ],
     [0, 1, 5, 2],
     [1, 2, 3, 4, 5, 6],
-    [0.1, 1.1, 2.3, 3.3],
     { name: 'b' },
     5_555,
+    [0.1, 1.1, 2.3, 3.3],
   );
 
   const dataA = writeOVFeature(basePolyFeatureA, shape, undefined, col);
-  const dataB = writeOVFeature(basePolyFeatureB, shape, undefined, col);
+  const dataB = writeOVFeature(basePolyFeatureB, shape, mShape, col);
   // store column
   pbf.writeMessage(5, ColumnCacheWriter.write, col);
   // store features
@@ -591,7 +588,13 @@ describe('encodePolysFeature and decodePolysFeature', () => {
   expect(decodeBytesB).toEqual(new Uint8Array(dataB));
   // read out the features
   const decodedPolyFeatureA = readFeature(decodeBytesA, 4_096, cache, shape) as OVectorPolysFeature;
-  const decodedPolyFeatureB = readFeature(decodeBytesB, 4_096, cache, shape) as OVectorPolysFeature;
+  const decodedPolyFeatureB = readFeature(
+    decodeBytesB,
+    4_096,
+    cache,
+    shape,
+    mShape,
+  ) as OVectorPolysFeature;
 
   it('point features are decoded correctly', () => {
     // ensure data type is accurate:
@@ -629,102 +632,102 @@ describe('encodePolysFeature and decodePolysFeature', () => {
     expect(decodedPolyFeatureB.loadGeometry()).toEqual([
       [
         [
-          { x: 1, y: 0 },
-          { x: 2, y: -1 },
+          { x: 1, y: 0, m: { width: 2 } },
+          { x: 2, y: -1, m: { width: -3 } },
         ],
         [
-          { x: 2, y: -1 },
-          { x: 0, y: -2 },
-        ],
-      ],
-      [
-        [
-          { x: 0, y: -2 },
-          { x: 300, y: 500 },
-        ],
-        [
-          { x: 300, y: 500 },
-          { x: 0, y: 0 },
+          { x: 2, y: -1, m: { width: 0 } },
+          { x: 0, y: -2, m: { width: 0 } },
         ],
       ],
       [
         [
-          { x: 0, y: 0 },
-          { x: 300, y: 500 },
+          { x: 0, y: -2, m: { width: 0 } },
+          { x: 300, y: 500, m: { width: 55 } },
         ],
         [
-          { x: 300, y: 500 },
-          { x: 0, y: -2 },
+          { x: 300, y: 500, m: { width: 0 } },
+          { x: 0, y: 0, m: { width: 0 } },
+        ],
+      ],
+      [
+        [
+          { x: 0, y: 0, m: { width: 0 } },
+          { x: 300, y: 500, m: { width: 0 } },
         ],
         [
-          { x: 0, y: -2 },
-          { x: 300, y: 500 },
+          { x: 300, y: 500, m: { width: -1_222 } },
+          { x: 0, y: -2, m: { width: 0 } },
+        ],
+        [
+          { x: 0, y: -2, m: { width: 0 } },
+          { x: 300, y: 500, m: { width: 0 } },
         ],
       ],
     ]);
     expect(decodedPolyFeatureB.loadPoints()).toEqual([
-      { x: 1, y: 0 },
-      { x: 2, y: -1 },
-      { x: 2, y: -1 },
-      { x: 0, y: -2 },
-      { x: 0, y: -2 },
-      { x: 300, y: 500 },
-      { x: 300, y: 500 },
-      { x: 0, y: 0 },
-      { x: 0, y: 0 },
-      { x: 300, y: 500 },
-      { x: 300, y: 500 },
-      { x: 0, y: -2 },
-      { x: 0, y: -2 },
-      { x: 300, y: 500 },
+      { x: 1, y: 0, m: { width: 2 } },
+      { x: 2, y: -1, m: { width: -3 } },
+      { x: 2, y: -1, m: { width: 0 } },
+      { x: 0, y: -2, m: { width: 0 } },
+      { x: 0, y: -2, m: { width: 0 } },
+      { x: 300, y: 500, m: { width: 55 } },
+      { x: 300, y: 500, m: { width: 0 } },
+      { x: 0, y: 0, m: { width: 0 } },
+      { x: 0, y: 0, m: { width: 0 } },
+      { x: 300, y: 500, m: { width: 0 } },
+      { x: 300, y: 500, m: { width: -1_222 } },
+      { x: 0, y: -2, m: { width: 0 } },
+      { x: 0, y: -2, m: { width: 0 } },
+      { x: 300, y: 500, m: { width: 0 } },
     ]);
     expect(decodedPolyFeatureB.loadLines()).toEqual([
       {
         geometry: [
-          { x: 1, y: 0 },
-          { x: 2, y: -1 },
+          { x: 1, y: 0, m: { width: 2 } },
+          { x: 2, y: -1, m: { width: -3 } },
         ],
         offset: 4.4,
       },
       {
         geometry: [
-          { x: 2, y: -1 },
-          { x: 0, y: -2 },
+          { x: 2, y: -1, m: { width: 0 } },
+          { x: 0, y: -2, m: { width: 0 } },
         ],
         offset: 1004,
       },
       {
         geometry: [
-          { x: 0, y: -2 },
-          { x: 300, y: 500 },
+          { x: 0, y: -2, m: { width: 0 } },
+          { x: 300, y: 500, m: { width: 55 } },
         ],
         offset: 102.2,
       },
       {
         geometry: [
-          { x: 300, y: 500 },
-          { x: 0, y: 0 },
+          { x: 300, y: 500, m: { width: 0 } },
+          { x: 0, y: 0, m: { width: 0 } },
         ],
         offset: 2.2,
       },
       {
         geometry: [
-          { x: 0, y: 0 },
-          { x: 300, y: 500 },
+          { x: 0, y: 0, m: { width: 0 } },
+          { x: 300, y: 500, m: { width: 0 } },
         ],
         offset: 5.5,
       },
       {
         geometry: [
-          { x: 300, y: 500 },
-          { x: 0, y: -2 },
+          { x: 300, y: 500, m: { width: -1_222 } },
+          { x: 0, y: -2, m: { width: 0 } },
         ],
         offset: 0,
       },
       {
         geometry: [
-          { x: 0, y: -2 },
-          { x: 300, y: 500 },
+          { x: 0, y: -2, m: { width: 0 } },
+          { x: 300, y: 500, m: { width: 0 } },
         ],
         offset: 0,
       },
@@ -748,24 +751,24 @@ describe('encodePolys3DFeature and decodePolys3DFeature', () => {
   const pbf = new Pbf();
   const col = new ColumnCacheWriter();
   const shape: Shape = { name: 'string' };
+  const mShape: Shape = { width: 'i64' };
   const basePolyFeatureA = new BaseVectorPolys3DFeature(
     [
       [
-        new BaseVectorLine3D([
+        new BaseVectorLine([
           { x: 3_805, y: 5_645, z: 4_001 },
           { x: 1, y: 0, z: 3 },
         ]),
-        new BaseVectorLine3D([
+        new BaseVectorLine([
           { x: 1, y: 0, z: 3 },
           { x: 2, y: -1, z: -9 },
         ]),
-        new BaseVectorLine3D([
+        new BaseVectorLine([
           { x: 2, y: -1, z: -9 },
           { x: 0, y: -2, z: 0 },
         ]),
       ],
     ],
-    undefined,
     undefined,
     undefined,
     { name: 'a' },
@@ -774,14 +777,14 @@ describe('encodePolys3DFeature and decodePolys3DFeature', () => {
   const basePolyFeatureB = new BaseVectorPolys3DFeature(
     [
       [
-        new BaseVectorLine3D(
+        new BaseVectorLine(
           [
-            { x: 1, y: 0, z: 3 },
+            { x: 1, y: 0, z: 3, m: { width: 55 } },
             { x: 2, y: -1, z: -9 },
           ],
           4.4,
         ),
-        new BaseVectorLine3D(
+        new BaseVectorLine(
           [
             { x: 2, y: -1, z: -3 },
             { x: 0, y: -2, z: 22 },
@@ -790,14 +793,14 @@ describe('encodePolys3DFeature and decodePolys3DFeature', () => {
         ),
       ],
       [
-        new BaseVectorLine3D(
+        new BaseVectorLine(
           [
             { x: 0, y: -2, z: 0 },
             { x: 300, y: 500, z: 300 },
           ],
           102.2,
         ),
-        new BaseVectorLine3D(
+        new BaseVectorLine(
           [
             { x: 300, y: 500, z: 100 },
             { x: 0, y: 0, z: 0 },
@@ -806,18 +809,18 @@ describe('encodePolys3DFeature and decodePolys3DFeature', () => {
         ),
       ],
       [
-        new BaseVectorLine3D(
+        new BaseVectorLine(
           [
             { x: 0, y: 0, z: 0 },
             { x: 300, y: 500, z: 300 },
           ],
           5.5,
         ),
-        new BaseVectorLine3D([
+        new BaseVectorLine([
           { x: 300, y: 500, z: 300 },
           { x: 0, y: -2, z: 0 },
         ]),
-        new BaseVectorLine3D([
+        new BaseVectorLine([
           { x: 0, y: -2, z: 0 },
           { x: 300, y: 500, z: 200 },
         ]),
@@ -825,13 +828,13 @@ describe('encodePolys3DFeature and decodePolys3DFeature', () => {
     ],
     [0, 1, 5, 2],
     [1, 2, 3, 4, 5, 6],
-    [0.1, 1.1, 2.3, 3.3, -50, 120],
     { name: 'b' },
     5_555,
+    [0.1, 1.1, 2.3, 3.3, -50, 120],
   );
 
   const dataA = writeOVFeature(basePolyFeatureA, shape, undefined, col);
-  const dataB = writeOVFeature(basePolyFeatureB, shape, undefined, col);
+  const dataB = writeOVFeature(basePolyFeatureB, shape, mShape, col);
   // store column
   pbf.writeMessage(5, ColumnCacheWriter.write, col);
   // store features
@@ -860,6 +863,7 @@ describe('encodePolys3DFeature and decodePolys3DFeature', () => {
     4_096,
     cache,
     shape,
+    mShape,
   ) as OVectorPolys3DFeature;
 
   it('point features are decoded correctly', () => {
@@ -898,102 +902,102 @@ describe('encodePolys3DFeature and decodePolys3DFeature', () => {
     expect(decodedPolyFeatureB.loadGeometry()).toEqual([
       [
         [
-          { x: 1, y: 0, z: 3 },
-          { x: 2, y: -1, z: -9 },
+          { x: 1, y: 0, z: 3, m: { width: 55 } },
+          { x: 2, y: -1, z: -9, m: { width: 0 } },
         ],
         [
-          { x: 2, y: -1, z: -3 },
-          { x: 0, y: -2, z: 22 },
-        ],
-      ],
-      [
-        [
-          { x: 0, y: -2, z: 0 },
-          { x: 300, y: 500, z: 300 },
-        ],
-        [
-          { x: 300, y: 500, z: 100 },
-          { x: 0, y: 0, z: 0 },
+          { x: 2, y: -1, z: -3, m: { width: 0 } },
+          { x: 0, y: -2, z: 22, m: { width: 0 } },
         ],
       ],
       [
         [
-          { x: 0, y: 0, z: 0 },
-          { x: 300, y: 500, z: 300 },
+          { x: 0, y: -2, z: 0, m: { width: 0 } },
+          { x: 300, y: 500, z: 300, m: { width: 0 } },
         ],
         [
-          { x: 300, y: 500, z: 300 },
-          { x: 0, y: -2, z: 0 },
+          { x: 300, y: 500, z: 100, m: { width: 0 } },
+          { x: 0, y: 0, z: 0, m: { width: 0 } },
+        ],
+      ],
+      [
+        [
+          { x: 0, y: 0, z: 0, m: { width: 0 } },
+          { x: 300, y: 500, z: 300, m: { width: 0 } },
         ],
         [
-          { x: 0, y: -2, z: 0 },
-          { x: 300, y: 500, z: 200 },
+          { x: 300, y: 500, z: 300, m: { width: 0 } },
+          { x: 0, y: -2, z: 0, m: { width: 0 } },
+        ],
+        [
+          { x: 0, y: -2, z: 0, m: { width: 0 } },
+          { x: 300, y: 500, z: 200, m: { width: 0 } },
         ],
       ],
     ]);
     expect(decodedPolyFeatureB.loadPoints()).toEqual([
-      { x: 1, y: 0, z: 3 },
-      { x: 2, y: -1, z: -9 },
-      { x: 2, y: -1, z: -3 },
-      { x: 0, y: -2, z: 22 },
-      { x: 0, y: -2, z: 0 },
-      { x: 300, y: 500, z: 300 },
-      { x: 300, y: 500, z: 100 },
-      { x: 0, y: 0, z: 0 },
-      { x: 0, y: 0, z: 0 },
-      { x: 300, y: 500, z: 300 },
-      { x: 300, y: 500, z: 300 },
-      { x: 0, y: -2, z: 0 },
-      { x: 0, y: -2, z: 0 },
-      { x: 300, y: 500, z: 200 },
+      { x: 1, y: 0, z: 3, m: { width: 55 } },
+      { x: 2, y: -1, z: -9, m: { width: 0 } },
+      { x: 2, y: -1, z: -3, m: { width: 0 } },
+      { x: 0, y: -2, z: 22, m: { width: 0 } },
+      { x: 0, y: -2, z: 0, m: { width: 0 } },
+      { x: 300, y: 500, z: 300, m: { width: 0 } },
+      { x: 300, y: 500, z: 100, m: { width: 0 } },
+      { x: 0, y: 0, z: 0, m: { width: 0 } },
+      { x: 0, y: 0, z: 0, m: { width: 0 } },
+      { x: 300, y: 500, z: 300, m: { width: 0 } },
+      { x: 300, y: 500, z: 300, m: { width: 0 } },
+      { x: 0, y: -2, z: 0, m: { width: 0 } },
+      { x: 0, y: -2, z: 0, m: { width: 0 } },
+      { x: 300, y: 500, z: 200, m: { width: 0 } },
     ]);
     expect(decodedPolyFeatureB.loadLines()).toEqual([
       {
         geometry: [
-          { x: 1, y: 0, z: 3 },
-          { x: 2, y: -1, z: -9 },
+          { x: 1, y: 0, z: 3, m: { width: 55 } },
+          { x: 2, y: -1, z: -9, m: { width: 0 } },
         ],
         offset: 4.4,
       },
       {
         geometry: [
-          { x: 2, y: -1, z: -3 },
-          { x: 0, y: -2, z: 22 },
+          { x: 2, y: -1, z: -3, m: { width: 0 } },
+          { x: 0, y: -2, z: 22, m: { width: 0 } },
         ],
         offset: 1004,
       },
       {
         geometry: [
-          { x: 0, y: -2, z: 0 },
-          { x: 300, y: 500, z: 300 },
+          { x: 0, y: -2, z: 0, m: { width: 0 } },
+          { x: 300, y: 500, z: 300, m: { width: 0 } },
         ],
         offset: 102.2,
       },
       {
         geometry: [
-          { x: 300, y: 500, z: 100 },
-          { x: 0, y: 0, z: 0 },
+          { x: 300, y: 500, z: 100, m: { width: 0 } },
+          { x: 0, y: 0, z: 0, m: { width: 0 } },
         ],
         offset: 2.2,
       },
       {
         geometry: [
-          { x: 0, y: 0, z: 0 },
-          { x: 300, y: 500, z: 300 },
+          { x: 0, y: 0, z: 0, m: { width: 0 } },
+          { x: 300, y: 500, z: 300, m: { width: 0 } },
         ],
         offset: 5.5,
       },
       {
         geometry: [
-          { x: 300, y: 500, z: 300 },
-          { x: 0, y: -2, z: 0 },
+          { x: 300, y: 500, z: 300, m: { width: 0 } },
+          { x: 0, y: -2, z: 0, m: { width: 0 } },
         ],
         offset: 0,
       },
       {
         geometry: [
-          { x: 0, y: -2, z: 0 },
-          { x: 300, y: 500, z: 200 },
+          { x: 0, y: -2, z: 0, m: { width: 0 } },
+          { x: 300, y: 500, z: 200, m: { width: 0 } },
         ],
         offset: 0,
       },

@@ -15,6 +15,8 @@ export type BBox3D = [
   near: number,
   far: number,
 ];
+/** A 2D or 3D Bounding Box */
+export type BBOX = BBox | BBox3D;
 
 /**
  * Value is the old type used by Mapbox vector tiles. Properties can not be nested, so we only

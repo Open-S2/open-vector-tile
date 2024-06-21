@@ -6,17 +6,15 @@ import type { ColumnCacheWriter } from '../open/columnCache';
 import type MapboxVectorFeature from '../mapbox/vectorFeature';
 import type { Shape } from '../open/shape';
 import type {
+  BBOX,
   BBox,
   BBox3D,
   OProperties,
   Point,
-  Point3D,
   VectorLine,
   VectorLine3D,
   VectorLines,
-  VectorLines3D,
   VectorMultiPoly,
-  VectorMultiPoly3D,
   VectorPoints,
   VectorPoints3D,
 } from '../vectorTile.spec';
@@ -25,40 +23,35 @@ import type {
  * Base Vector Feature
  * Common variables and methods shared by all vector features
  */
-export class VectorFeatureBase {
-  /**
-   * @param properties - the properties of the feature
-   * @param id - the id of the feature if there is one
-   */
-  constructor(
-    public properties: OProperties = {},
-    public id?: number,
-  ) {}
-}
-
-/**
- * Base Vector Points Feature
- * Type 1
- * Extends from @see {@link VectorFeatureBase}.
- * Store either a single point or a list of points
- */
-export class BaseVectorPointsFeature extends VectorFeatureBase {
-  type = 1;
+export class VectorFeatureBase<G, B = BBOX> {
+  type = 0;
   /**
    * @param geometry - the geometry of the feature
    * @param properties - the properties of the feature
-   * @param id - the id of the feature
+   * @param id - the id of the feature if there is one
    * @param bbox - the BBox of the feature
    */
   constructor(
-    public geometry: VectorPoints,
-    properties: OProperties = {},
-    id?: number,
-    public bbox: BBox = [0, 0, 0, 0],
-  ) {
-    super(properties, id);
-  }
+    public geometry: G,
+    public properties: OProperties = {},
+    public id?: number,
+    public bbox?: B,
+  ) {}
 
+  /** @returns - true if the feature has BBox */
+  get hasBBox(): boolean {
+    const bbox = this.bbox as BBOX | undefined;
+    return bbox !== undefined && bbox.some((v) => v !== 0);
+  }
+}
+
+//! Points & Points3D
+
+/** Base Vector Points Feature */
+export class VectorFeaturePointsBase<
+  G = VectorPoints | VectorPoints3D,
+  B = BBOX,
+> extends VectorFeatureBase<G, B> {
   /**
    * Points do not have this feature, so return false
    * @returns false always
@@ -72,14 +65,20 @@ export class BaseVectorPointsFeature extends VectorFeatureBase {
    * @returns false always
    */
   get hasMValues(): boolean {
-    return this.geometry.some(({ m }) => m !== undefined);
+    const geometry = this.geometry as VectorPoints | VectorPoints3D;
+    return geometry.some(({ m }) => m !== undefined);
   }
 
-  /**
-   * @returns - true if the feature has BBox
-   */
-  get hasBBox(): boolean {
-    return this.bbox.some((v) => v !== 0);
+  /** @returns the geometry */
+  loadGeometry(): G {
+    return this.geometry;
+  }
+
+  /** @returns the M-Values */
+  getMValues(): undefined | OProperties[] {
+    if (!this.hasMValues) return undefined;
+    const geometry = this.geometry as VectorPoints | VectorPoints3D;
+    return geometry.map(({ m }) => m ?? {});
   }
 
   /**
@@ -88,94 +87,96 @@ export class BaseVectorPointsFeature extends VectorFeatureBase {
    * @returns the index in the points column where the geometry is stored
    */
   addGeometryToCache(cache: ColumnCacheWriter, mShape: Shape = {}): number {
-    if (this.geometry.length === 1) {
-      const { x, y } = this.geometry[0];
-      return weave2D(zigzag(x), zigzag(y));
+    const { hasMValues } = this;
+    const geometry = this.geometry as VectorPoints | VectorPoints3D;
+    const is3D = this.type === 4;
+    const columnName = is3D ? OColumnName.points3D : OColumnName.points;
+    if (geometry.length === 1) {
+      if (is3D) {
+        const { x, y, z } = (geometry as VectorPoints3D)[0];
+        return weave3D(zigzag(x), zigzag(y), zigzag(z));
+      } else {
+        const { x, y } = geometry[0];
+        return weave2D(zigzag(x), zigzag(y));
+      }
     }
     // othwerise store the collection of points
     const indices: number[] = [];
-    indices.push(cache.addColumnData(OColumnName.points, this.geometry));
+    indices.push(cache.addColumnData(columnName, geometry));
     // store length of mvalues and the mvalues indexes if they exist
-    if (this.hasMValues) {
-      indices.push(this.geometry.length);
-      for (const { m } of this.geometry) {
+    if (hasMValues) {
+      for (const { m } of geometry) {
         indices.push(encodeValue(m ?? {}, mShape, cache));
       }
     }
     return cache.addColumnData(OColumnName.indices, indices);
   }
-
-  /** @returns the geometry */
-  loadGeometry(): VectorPoints {
-    return this.geometry;
-  }
-
-  /** @returns the M-Values */
-  getMValues(): undefined | OProperties[] {
-    if (!this.hasMValues) return undefined;
-    return this.geometry.map(({ m }) => m ?? {});
-  }
 }
+
+/**
+ * Base Vector Points Feature
+ * Type 1
+ * Extends from @see {@link VectorFeatureBase}.
+ * Store either a single point or a list of points
+ */
+export class BaseVectorPointsFeature extends VectorFeaturePointsBase<VectorPoints, BBox> {
+  type = 1;
+}
+/**
+ * Base Vector Point 3D Feature
+ */
+export class BaseVectorPoint3DFeature extends VectorFeaturePointsBase<VectorPoints3D, BBox3D> {
+  type = 4;
+}
+
+//! Lines & Lines3D
 
 /**
  * Base Vector Lines Feature
  * Common variables and methods shared by all vector lines and/or polygons features
  */
-export class BaseVectorLine {
+export class BaseVectorLine<L = VectorLine | VectorLine3D> {
   /**
    * @param geometry - the geometry of the feature
    * @param offset - the offset of the feature
    */
   constructor(
-    public geometry: VectorLine,
+    public geometry: L,
     public offset: number = 0,
   ) {}
 }
 
-/**
- * Base Vector Lines Feature
- * Type 2
- * Extends from @see {@link VectorFeatureBase}.
- * Store either a single line or a list of lines.
- */
-export class BaseVectorLinesFeature extends VectorFeatureBase {
-  type = 2;
-  /**
-   * @param geometry - the geometry of the feature
-   * @param bbox - the bbox of the feature if not provided will be [0, 0, 0, 0]
-   * @param properties - the properties of the feature
-   * @param id - the id of the feature if there is one
-   */
-  constructor(
-    public geometry: BaseVectorLine[],
-    public bbox: BBox = [0, 0, 0, 0],
-    properties: OProperties = {},
-    id?: number,
-  ) {
-    super(properties, id);
-  }
-
-  /**
-   * @returns - true if the feature has offsets
-   */
+/** Base Vector Lines Feature */
+export class VectorFeatureLinesBase<
+  G = VectorLine | VectorLine3D,
+  B = BBOX,
+> extends VectorFeatureBase<BaseVectorLine<G>[], B> {
+  /** @returns - true if the feature has offsets */
   get hasOffsets(): boolean {
-    return this.geometry.some(({ offset }) => offset > 0);
-  }
-
-  /**
-   * @returns - true if the feature has BBox
-   */
-  get hasBBox(): boolean {
-    return this.bbox.some((v) => v !== 0);
+    const geometry = this.geometry as BaseVectorLine<G>[];
+    return geometry.some(({ offset }) => offset > 0);
   }
 
   /**
    * @returns - true if the feature has M values
    */
   get hasMValues(): boolean {
-    return this.geometry.some((line) => {
-      return line.geometry.some(({ m }) => m !== undefined);
+    return this.geometry.some(({ geometry }) => {
+      return (geometry as VectorLine | VectorLine3D).some(({ m }) => m !== undefined);
     });
+  }
+
+  /** @returns the flattened geometry */
+  loadGeometry(): G[] {
+    return this.geometry.map(({ geometry }) => geometry);
+  }
+
+  /** @returns the flattened M values */
+  getMValues(): undefined | OProperties[] {
+    if (!this.hasMValues) return undefined;
+    return this.geometry.flatMap(({ geometry }) =>
+      (geometry as VectorLine | VectorLine3D).map(({ m }) => m ?? {}),
+    );
   }
 
   /**
@@ -184,17 +185,19 @@ export class BaseVectorLinesFeature extends VectorFeatureBase {
    * @returns the indexes in the points column where the geometry is stored
    */
   addGeometryToCache(cache: ColumnCacheWriter, mShape: Shape = {}): number {
+    const { hasOffsets, hasMValues } = this;
+    const geometry = this.geometry as BaseVectorLine<VectorLine | VectorLine3D>[];
+    const columnName = this.type === 5 ? OColumnName.points3D : OColumnName.points;
     const indices: number[] = [];
     // store number of lines
-    if (this.geometry.length !== 1) indices.push(this.geometry.length);
-    for (const line of this.geometry) {
+    if (geometry.length !== 1) indices.push(geometry.length);
+    for (const line of geometry) {
       // store offset for current line
-      if (this.hasOffsets) indices.push(encodeOffset(line.offset));
+      if (hasOffsets) indices.push(encodeOffset(line.offset));
       // store geometry data and track its index position
-      indices.push(cache.addColumnData(OColumnName.points, line.geometry));
+      indices.push(cache.addColumnData(columnName, line.geometry));
       // store length of mvalues and the mvalues indexes if they exist
-      if (this.hasMValues) {
-        indices.push(line.geometry.length);
+      if (hasMValues) {
         for (const { m } of line.geometry) {
           indices.push(encodeValue(m ?? {}, mShape, cache));
         }
@@ -202,49 +205,52 @@ export class BaseVectorLinesFeature extends VectorFeatureBase {
     }
     return cache.addColumnData(OColumnName.indices, indices);
   }
-
-  /**
-   * @returns the flattened geometry
-   */
-  loadGeometry(): VectorLines {
-    return this.geometry.map((line) => line.geometry);
-  }
-
-  /**
-   * @returns the flattened M-values
-   */
-  getMValues(): undefined | OProperties[] {
-    if (!this.hasMValues) return undefined;
-    return this.geometry.flatMap((line) => line.geometry.map((point) => point.m ?? {}));
-  }
 }
 
 /**
- * Base Vector Polys Feature
- * Type 3
+ * Base Vector Lines Feature
+ * Type 2
  * Extends from @see {@link VectorFeatureBase}.
- * Store either a single polygon or a list of polygons
+ * Store either a single line or a list of lines.
  */
-export class BaseVectorPolysFeature extends VectorFeatureBase {
-  type = 3;
+export class BaseVectorLinesFeature extends VectorFeatureLinesBase<VectorLine, BBox> {
+  type = 2;
+}
+/**
+ * Base Vector Lines 3D Feature
+ * Type 5
+ * Extends from @see {@link VectorFeatureBase}.
+ * Store either a single 3D line or a list of 3D lines
+ */
+export class BaseVectorLines3DFeature extends VectorFeatureLinesBase<VectorLine3D, BBox3D> {
+  type = 5;
+}
+
+//! Polys & Polys3D
+
+/** Base Vector Polys Feature */
+export class VectorFeaturePolysBase<
+  G = VectorLine | VectorLine3D,
+  B = BBOX,
+> extends VectorFeatureBase<BaseVectorLine<G>[][], B> {
   tesselation: Point[];
   /**
    * @param geometry - the geometry of the feature
    * @param indices - the indices of the geometry
    * @param tesselation - the tesselation of the geometry
-   * @param bbox - the bbox of the feature
    * @param properties - the properties of the feature
    * @param id - the id of the feature
+   * @param bbox - the bbox of the feature
    */
   constructor(
-    public geometry: BaseVectorLine[][],
+    public geometry: BaseVectorLine<G>[][],
     public indices: number[] = [],
     tesselation: number[] = [],
-    public bbox: BBox = [0, 0, 0, 0],
     properties: OProperties = {},
     id?: number,
+    public bbox?: B,
   ) {
-    super(properties, id);
+    super(geometry, properties, id, bbox);
     this.tesselation = this.#fixTesselation(tesselation);
   }
 
@@ -272,57 +278,20 @@ export class BaseVectorPolysFeature extends VectorFeatureBase {
   }
 
   /**
-   * @returns true if the feature has BBox
-   */
-  get hasBBox(): boolean {
-    return this.bbox.some((v) => v !== 0);
-  }
-
-  /**
    * @returns - true if the feature has M values
    */
   get hasMValues(): boolean {
     return this.geometry.some((poly) =>
-      poly.some((line) => {
-        return line.geometry.some(({ m }) => m !== undefined);
+      poly.some(({ geometry }) => {
+        return (geometry as VectorLine | VectorLine3D).some(({ m }) => m !== undefined);
       }),
     );
   }
 
   /**
-   * @param cache - the column cache to store the geometry
-   * @param mShape - the shape of the M-values to encode the values as
-   * @returns the indexes in the points column where the geometry is stored
-   */
-  addGeometryToCache(cache: ColumnCacheWriter, mShape: Shape = {}): number {
-    const indices: number[] = [];
-    // store number of polygons
-    if (this.geometry.length > 1) indices.push(this.geometry.length);
-    for (const poly of this.geometry) {
-      // store number of lines in the polygon
-      indices.push(poly.length);
-      // store each line
-      for (const line of poly) {
-        // store offset for current line
-        if (this.hasOffsets) indices.push(encodeOffset(line.offset));
-        // store geometry data and track its index position
-        indices.push(cache.addColumnData(OColumnName.points, line.geometry));
-        // store length of mvalues and the mvalues indexes if they exist
-        if (this.hasMValues) {
-          indices.push(line.geometry.length);
-          for (const { m } of line.geometry) {
-            indices.push(encodeValue(m ?? {}, mShape, cache));
-          }
-        }
-      }
-    }
-    return cache.addColumnData(OColumnName.indices, indices);
-  }
-
-  /**
    * @returns the flattened geometry
    */
-  loadGeometry(): VectorMultiPoly {
+  loadGeometry(): G[][] {
     return this.geometry.map((poly) => poly.map((line) => line.geometry));
   }
 
@@ -332,193 +301,53 @@ export class BaseVectorPolysFeature extends VectorFeatureBase {
   getMValues(): undefined | OProperties[] {
     if (!this.hasMValues) return undefined;
     return this.geometry.flatMap((poly) => {
-      return poly.flatMap((line) => {
-        return line.geometry.map((point) => point.m ?? {});
+      return poly.flatMap(({ geometry }) => {
+        return (geometry as VectorLine | VectorLine3D).map((point) => point.m ?? {});
       });
     });
-  }
-}
-
-/**
- * Base Vector Point 3D Feature
- */
-export class BaseVectorPoint3DFeature extends VectorFeatureBase {
-  type = 4;
-  /**
-   * @param geometry - the geometry of the feature
-   * @param properties - the properties of the feature
-   * @param id - the id of the feature
-   * @param bbox - the bbox of the feature
-   */
-  constructor(
-    public geometry: VectorPoints3D,
-    properties: OProperties = {},
-    id?: number,
-    public bbox: BBox3D = [0, 0, 0, 0, 0, 0],
-  ) {
-    super(properties, id);
-  }
-
-  /**
-   * Points do not have this feature, so return false
-   * @returns false always
-   */
-  get hasOffsets(): boolean {
-    return false;
-  }
-
-  /**
-   * Points do not have this feature, so return false
-   * @returns false always
-   */
-  get hasMValues(): boolean {
-    return this.geometry.some(({ m }) => m !== undefined);
-  }
-
-  /**
-   * @returns true if the feature has BBox
-   */
-  get hasBBox(): boolean {
-    return this.bbox.some((v) => v !== 0);
   }
 
   /**
    * @param cache - the column cache to store the geometry
    * @param mShape - the shape of the M-values to encode the values as
-   * @returns the index in the points column where the geometry is stored
-   */
-  addGeometryToCache(cache: ColumnCacheWriter, mShape: Shape = {}): number {
-    if (this.geometry.length === 1) {
-      const { x, y, z } = this.geometry[0];
-      return weave3D(zigzag(x), zigzag(y), zigzag(z));
-    }
-    // othwerise store the collection of points
-    const indices: number[] = [];
-    indices.push(cache.addColumnData(OColumnName.points3D, this.geometry));
-    // store length of mvalues and the mvalues indexes if they exist
-    if (this.hasMValues) {
-      indices.push(this.geometry.length);
-      for (const { m } of this.geometry) {
-        indices.push(encodeValue(m ?? {}, mShape, cache));
-      }
-    }
-    return cache.addColumnData(OColumnName.indices, indices);
-  }
-
-  /**
-   * @returns the geometry
-   */
-  loadGeometry(): VectorPoints3D {
-    return this.geometry;
-  }
-
-  /** @returns the M-Values */
-  getMValues(): undefined | OProperties[] {
-    if (!this.hasMValues) return undefined;
-    return this.geometry.map(({ m }) => m ?? {});
-  }
-}
-
-/**
- * Base Vector Line 3D
- * Common variables and methods shared by all 3D vector lines
- */
-export class BaseVectorLine3D {
-  /**
-   * @param geometry - the geometry of the feature
-   * @param offset - the offset of the feature
-   */
-  constructor(
-    public geometry: VectorLine3D,
-    public offset: number = 0,
-  ) {}
-}
-
-/**
- * Base Vector Lines 3D Feature
- * Type 5
- * Extends from @see {@link VectorFeatureBase}.
- * Store either a single 3D line or a list of 3D lines
- */
-export class BaseVectorLines3DFeature extends VectorFeatureBase {
-  type = 5;
-  /**
-   * @param geometry - the geometry of the feature
-   * @param bbox - the bbox of the feature
-   * @param properties - the properties of the feature
-   * @param id - the id of the feature
-   */
-  constructor(
-    public geometry: BaseVectorLine3D[],
-    public bbox: BBox3D = [0, 0, 0, 0, 0, 0],
-    properties: OProperties = {},
-    id?: number,
-  ) {
-    super(properties, id);
-  }
-
-  /**
-   * @returns true if the feature has offsets
-   */
-  get hasOffsets(): boolean {
-    return this.geometry.some(({ offset }) => offset > 0);
-  }
-
-  /**
-   * @returns true if the feature has BBox
-   */
-  get hasBBox(): boolean {
-    return this.bbox.some((v) => v !== 0);
-  }
-
-  /**
-   * @returns - true if the feature has M values
-   */
-  get hasMValues(): boolean {
-    return this.geometry.some((line) => {
-      return line.geometry.some(({ m }) => m !== undefined);
-    });
-  }
-
-  /**
-   * @param cache - the column cache to store the geometry
-   * @param mShape - the shape of the M values
    * @returns the indexes in the points column where the geometry is stored
    */
   addGeometryToCache(cache: ColumnCacheWriter, mShape: Shape = {}): number {
+    const { hasOffsets, hasMValues } = this;
+    const geometry = this.geometry as BaseVectorLine<G>[][];
+    const columnName = this.type === 6 ? OColumnName.points3D : OColumnName.points;
     const indices: number[] = [];
-    // store number of lines
-    if (this.geometry.length > 1) indices.push(this.geometry.length);
-    for (const line of this.geometry) {
-      // store offset for current line
-      if (this.hasOffsets) indices.push(encodeOffset(line.offset));
-      // store geometry data and track its index position
-      indices.push(cache.addColumnData(OColumnName.points3D, line.geometry));
-      // store length of mvalues and the mvalues indexes if they exist
-      if (this.hasMValues) {
-        indices.push(line.geometry.length);
-        for (const { m } of line.geometry) {
-          indices.push(encodeValue(m ?? {}, mShape, cache));
+    // store number of polygons
+    if (this.geometry.length > 1) indices.push(geometry.length);
+    for (const poly of geometry) {
+      // store number of lines in the polygon
+      indices.push(poly.length);
+      // store each line
+      for (const line of poly) {
+        // store offset for current line
+        if (hasOffsets) indices.push(encodeOffset(line.offset));
+        // store geometry data and track its index position
+        indices.push(cache.addColumnData(columnName, line.geometry));
+        // store length of mvalues and the mvalues indexes if they exist
+        if (hasMValues) {
+          for (const { m } of line.geometry as VectorLine | VectorLine3D) {
+            indices.push(encodeValue(m ?? {}, mShape, cache));
+          }
         }
       }
     }
     return cache.addColumnData(OColumnName.indices, indices);
   }
+}
 
-  /**
-   * @returns the flattened geometry
-   */
-  loadGeometry(): VectorLines3D {
-    return this.geometry.map(({ geometry }) => geometry);
-  }
-
-  /**
-   * @returns the flattened M values
-   */
-  getMValues(): undefined | OProperties[] {
-    if (!this.hasMValues) return undefined;
-    return this.geometry.flatMap((line) => line.geometry.map(({ m }) => m ?? {}));
-  }
+/**
+ * Base Vector Polys Feature
+ * Type 3
+ * Extends from @see {@link VectorFeatureBase}.
+ * Store either a single polygon or a list of polygons
+ */
+export class BaseVectorPolysFeature extends VectorFeaturePolysBase<VectorLine, BBox> {
+  type = 3;
 }
 
 /**
@@ -527,119 +356,8 @@ export class BaseVectorLines3DFeature extends VectorFeatureBase {
  * Extends from @see {@link VectorFeatureBase}.
  * Store either a single 3D poly or a list of 3D polys
  */
-export class BaseVectorPolys3DFeature extends VectorFeatureBase {
+export class BaseVectorPolys3DFeature extends VectorFeaturePolysBase<VectorLine3D, BBox3D> {
   type = 6;
-  tesselation: Point3D[];
-
-  /**
-   * @param geometry - the geometry of the feature
-   * @param indices - the indices of the geometry
-   * @param tesselation - the tesselation of the geometry
-   * @param bbox - the bbox of the feature
-   * @param properties - the properties of the feature
-   * @param id - the id of the feature
-   */
-  constructor(
-    public geometry: BaseVectorLine3D[][],
-    public indices: number[] = [],
-    tesselation: number[] = [],
-    public bbox: BBox3D = [0, 0, 0, 0, 0, 0],
-    properties: OProperties = {},
-    id?: number,
-  ) {
-    super(properties, id);
-    this.tesselation = this.#fixTesselation(tesselation);
-  }
-
-  /**
-   * @param tesselation - the tesselation of the geometry but flattened
-   * @returns - the tesselation of the geometry as a list of points
-   */
-  #fixTesselation(tesselation: number[]): Point3D[] {
-    if (tesselation.length % 3 !== 0) {
-      throw new Error('The input tesselation must have an even number of elements.');
-    }
-    return tesselation.reduce((acc, _, index, array) => {
-      if (index % 3 === 0) {
-        acc.push({ x: array[index], y: array[index + 1], z: array[index + 2] });
-      }
-      return acc;
-    }, [] as Point3D[]);
-  }
-
-  /**
-   * @returns true if the feature has BBox
-   */
-  get hasBBox(): boolean {
-    return this.bbox.some((v) => v !== 0);
-  }
-
-  /**
-   * @returns true if the feature has offsets
-   */
-  get hasOffsets(): boolean {
-    return this.geometry.some((poly) => poly.some(({ offset }) => offset > 0));
-  }
-
-  /**
-   * @returns - true if the feature has M values
-   */
-  get hasMValues(): boolean {
-    return this.geometry.some((poly) =>
-      poly.some(({ geometry }) => {
-        return geometry.some(({ m }) => m !== undefined);
-      }),
-    );
-  }
-
-  /**
-   * @param cache - the column cache to store the geometry
-   * @param mShape - the shape of the M values
-   * @returns the indexes in the points column where the geometry is stored
-   */
-  addGeometryToCache(cache: ColumnCacheWriter, mShape: Shape = {}): number {
-    const indices: number[] = [];
-    // store number of polygons
-    if (this.geometry.length > 1) indices.push(this.geometry.length);
-    for (const poly of this.geometry) {
-      // store number of lines in the polygon
-      indices.push(poly.length);
-      // store each line
-      for (const { offset, geometry } of poly) {
-        // store offset for current line
-        if (this.hasOffsets) indices.push(encodeOffset(offset));
-        // store geometry data and track its index position
-        indices.push(cache.addColumnData(OColumnName.points3D, geometry));
-        // store length of mvalues and the mvalues indexes if they exist
-        if (this.hasMValues) {
-          indices.push(geometry.length);
-          for (const { m } of geometry) {
-            indices.push(encodeValue(m ?? {}, mShape, cache));
-          }
-        }
-      }
-    }
-    return cache.addColumnData(OColumnName.indices, indices);
-  }
-
-  /**
-   * @returns the flattened geometry
-   */
-  loadGeometry(): VectorMultiPoly3D {
-    return this.geometry.map((poly) => poly.map(({ geometry }) => geometry));
-  }
-
-  /**
-   * @returns the flattened M values
-   */
-  getMValues(): undefined | OProperties[] {
-    if (!this.hasMValues) return undefined;
-    return this.geometry.flatMap((poly) => {
-      return poly.flatMap(({ geometry }) => {
-        return geometry.map(({ m }) => m ?? {});
-      });
-    });
-  }
 }
 
 /**
@@ -668,11 +386,11 @@ export function fromMapboxVectorFeature(feature: MapboxVectorFeature): BaseVecto
       return new BaseVectorPointsFeature(geometry as VectorPoints, properties, id);
     case 2: {
       const geo = geometry as VectorLines;
-      const baseLines: BaseVectorLine[] = [];
+      const baseLines: BaseVectorLine<VectorLine>[] = [];
       for (const line of geo) {
         baseLines.push(new BaseVectorLine(line));
       }
-      return new BaseVectorLinesFeature(baseLines, undefined, properties, id);
+      return new BaseVectorLinesFeature(baseLines, properties, id);
     }
     case 3:
     case 4: {
@@ -685,14 +403,7 @@ export function fromMapboxVectorFeature(feature: MapboxVectorFeature): BaseVecto
         }
         baseMultPoly.push(baseLines);
       }
-      return new BaseVectorPolysFeature(
-        baseMultPoly,
-        indices,
-        tesselation,
-        undefined,
-        properties,
-        id,
-      );
+      return new BaseVectorPolysFeature(baseMultPoly, indices, tesselation, properties, id);
     }
     default:
       throw new Error(`Unknown feature type: ${feature.type}`);
