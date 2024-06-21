@@ -25,8 +25,8 @@ describe('BaseVectorPointsFeature', () => {
   const point = new BaseVectorPointsFeature([{ x: 0, y: 0 }], { name: 'a' }, 1);
   const point2 = new BaseVectorPointsFeature(
     [
-      { x: 1_234, y: 5_678 },
-      { x: 2, y: 3 },
+      { x: 1_234, y: 5_678, m: { size: 1 } },
+      { x: 2, y: 3, m: { size: 2 } },
     ],
     { name: 'b' },
     2,
@@ -36,8 +36,8 @@ describe('BaseVectorPointsFeature', () => {
   it('geometry', () => {
     expect(point.geometry).toEqual([{ x: 0, y: 0 }]);
     expect(point2.geometry).toEqual([
-      { x: 1_234, y: 5_678 },
-      { x: 2, y: 3 },
+      { x: 1_234, y: 5_678, m: { size: 1 } },
+      { x: 2, y: 3, m: { size: 2 } },
     ]);
   });
 
@@ -53,72 +53,7 @@ describe('BaseVectorPointsFeature', () => {
 
   it('hasMValues', () => {
     expect(point.hasMValues).toBe(false);
-    expect(point2.hasMValues).toBe(false);
-  });
-
-  it('hasBBox', () => {
-    expect(point.hasBBox).toBe(false);
-    expect(point2.hasBBox).toBe(true);
-  });
-
-  it('has properties', () => {
-    expect(point.properties).toEqual({ name: 'a' });
-    expect(point2.properties).toEqual({ name: 'b' });
-  });
-
-  it('adds geometry to cache', () => {
-    const pbf = new Pbf();
-    const cache = new ColumnCacheWriter();
-    // we only add the second because the first is a single point and doesn't need to be added to cache
-    expect(point2.addGeometryToCache(cache));
-    pbf.writeMessage(5, ColumnCacheWriter.write, cache);
-    const rawData = pbf.commit();
-    expect(rawData).toEqual(new Uint8Array([42, 10, 42, 8, 176, 205, 133, 71, 247, 198, 133, 71]));
-
-    const parsePBF = new Pbf(rawData);
-    parsePBF.readTag(); // 5
-    const cache2 = new ColumnCacheReader(parsePBF, parsePBF.readVarint() + parsePBF.pos);
-    expect(cache2[5]).toEqual([{ pos: 3 }]);
-  });
-});
-
-describe('BaseVectorPoint3DFeature', () => {
-  const point = new BaseVectorPoint3DFeature([{ x: 0, y: 0, z: 1 }], { name: 'a' }, 1);
-  const point2 = new BaseVectorPoint3DFeature(
-    [
-      { x: 1_234, y: 5_678, z: 2_419 },
-      { x: 2, y: 3, z: 4 },
-    ],
-    { name: 'b' },
-    2,
-    [4, 3, 2, 1, -2.2, -3.3],
-  );
-
-  it('geometry', () => {
-    expect(point.geometry).toEqual([{ x: 0, y: 0, z: 1 }]);
-    expect(point2.geometry).toEqual([
-      { x: 1_234, y: 5_678, z: 2_419 },
-      { x: 2, y: 3, z: 4 },
-    ]);
-    expect(point2.loadGeometry()).toEqual([
-      { x: 1_234, y: 5_678, z: 2_419 },
-      { x: 2, y: 3, z: 4 },
-    ]);
-  });
-
-  it('has ids', () => {
-    expect(point.id).toBe(1);
-    expect(point2.id).toBe(2);
-  });
-
-  it('hasOffsets', () => {
-    expect(point.hasOffsets).toBe(false);
-    expect(point2.hasOffsets).toBe(false);
-  });
-
-  it('hasMValues', () => {
-    expect(point.hasMValues).toBe(false);
-    expect(point2.hasMValues).toBe(false);
+    expect(point2.hasMValues).toBe(true);
   });
 
   it('hasBBox', () => {
@@ -139,7 +74,79 @@ describe('BaseVectorPoint3DFeature', () => {
     pbf.writeMessage(5, ColumnCacheWriter.write, cache);
     const rawData = pbf.commit();
     expect(rawData).toEqual(
-      new Uint8Array([42, 14, 50, 12, 224, 203, 234, 141, 234, 40, 207, 247, 225, 141, 234, 40]),
+      new Uint8Array([
+        42, 18, 42, 8, 176, 205, 133, 71, 247, 198, 133, 71, 58, 4, 0, 4, 3, 0, 66, 0,
+      ]),
+    );
+
+    const parsePBF = new Pbf(rawData);
+    parsePBF.readTag(); // 5
+    const cache2 = new ColumnCacheReader(parsePBF, parsePBF.readVarint() + parsePBF.pos);
+    expect(cache2[5]).toEqual([{ pos: 3 }]);
+  });
+});
+
+describe('BaseVectorPoint3DFeature', () => {
+  const point = new BaseVectorPoint3DFeature([{ x: 0, y: 0, z: 1 }], { name: 'a' }, 1);
+  const point2 = new BaseVectorPoint3DFeature(
+    [
+      { x: 1_234, y: 5_678, z: 2_419, m: { width: 2 } },
+      { x: 2, y: 3, z: 4, m: { width: 3 } },
+    ],
+    { name: 'b' },
+    2,
+    [4, 3, 2, 1, -2.2, -3.3],
+  );
+
+  it('geometry', () => {
+    expect(point.geometry).toEqual([{ x: 0, y: 0, z: 1 }]);
+    expect(point2.geometry).toEqual([
+      { x: 1_234, y: 5_678, z: 2_419, m: { width: 2 } },
+      { x: 2, y: 3, z: 4, m: { width: 3 } },
+    ]);
+    expect(point2.loadGeometry()).toEqual([
+      { x: 1_234, y: 5_678, z: 2_419, m: { width: 2 } },
+      { x: 2, y: 3, z: 4, m: { width: 3 } },
+    ]);
+  });
+
+  it('has ids', () => {
+    expect(point.id).toBe(1);
+    expect(point2.id).toBe(2);
+  });
+
+  it('hasOffsets', () => {
+    expect(point.hasOffsets).toBe(false);
+    expect(point2.hasOffsets).toBe(false);
+  });
+
+  it('hasMValues', () => {
+    expect(point.hasMValues).toBe(false);
+    expect(point2.hasMValues).toBe(true);
+  });
+
+  it('hasBBox', () => {
+    expect(point.hasBBox).toBe(false);
+    expect(point2.hasBBox).toBe(true);
+  });
+
+  it('has properties', () => {
+    expect(point.properties).toEqual({ name: 'a' });
+    expect(point2.properties).toEqual({ name: 'b' });
+  });
+
+  it('adds geometry to cache', () => {
+    const pbf = new Pbf();
+    const cache = new ColumnCacheWriter();
+    // we only add the second because the first is a single point and doesn't need to be added to cache
+    expect(point2.addGeometryToCache(cache));
+    pbf.writeMessage(5, ColumnCacheWriter.write, cache);
+    const rawData = pbf.commit();
+    expect(rawData).toEqual(
+      new Uint8Array([
+        42, 22, 50, 12, 224, 203, 234, 141, 234, 40, 207, 247, 225, 141, 234, 40, 58, 4, 0, 4, 3, 0,
+        66, 0,
+      ]),
     );
 
     const parsePBF = new Pbf(rawData);

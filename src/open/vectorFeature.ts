@@ -131,13 +131,23 @@ export class OVectorPointsFeature extends OVectorFeatureBase2D {
 
   /** @returns the geometry as an array of points */
   loadGeometry(): VectorPoints {
-    const geometryIndex = this.geometryIndices[0];
+    const { cache, hasMValues, single, geometryIndices: indices } = this;
+    let indexPos = 0;
+    const geometryIndex = indices[indexPos++];
     if (!this.geometry) {
-      if (this.single) {
+      if (single) {
         const { a, b } = unweave2D(geometryIndex);
         this.geometry = [{ x: zagzig(a), y: zagzig(b) }];
       } else {
-        this.geometry = this.cache.getColumn(OColumnName.points, geometryIndex) as VectorPoints;
+        this.geometry = cache.getColumn<VectorPoints>(OColumnName.points, geometryIndex);
+        // load m values if they exist
+        if (hasMValues) {
+          const length = indices[indexPos++];
+          for (let j = 0; j < length; j++) {
+            const valueIndex = indices[indexPos++];
+            this.geometry[j].m = decodeValue(valueIndex, this.mShape, cache);
+          }
+        }
       }
     }
 
@@ -332,13 +342,23 @@ export class OVectorPoints3DFeature extends OVectorFeatureBase3D {
    * @returns the 3D Point Geometry
    */
   loadGeometry(): VectorPoints3D {
-    const geometryIndex = this.geometryIndices[0];
+    const { cache, hasMValues, single, geometryIndices: indices } = this;
+    let indexPos = 0;
+    const geometryIndex = indices[indexPos++];
     if (!this.geometry) {
-      if (this.single) {
+      if (single) {
         const { a, b, c } = unweave3D(geometryIndex);
         this.geometry = [{ x: zagzig(a), y: zagzig(b), z: zagzig(c) }];
       } else {
-        this.geometry = this.cache.getColumn(OColumnName.points3D, geometryIndex);
+        this.geometry = cache.getColumn<VectorPoints3D>(OColumnName.points3D, geometryIndex);
+        // load m values if they exist
+        if (hasMValues) {
+          const length = indices[indexPos++];
+          for (let j = 0; j < length; j++) {
+            const valueIndex = indices[indexPos++];
+            this.geometry[j].m = decodeValue(valueIndex, this.mShape, cache);
+          }
+        }
       }
     }
 
@@ -578,7 +598,8 @@ export function readFeature(
   let indices = -1;
   let tesselationIndex = -1;
   if (type === 1 || type === 4) {
-    geometryIndices = [pbf.readVarint()];
+    if (single) geometryIndices = [pbf.readVarint()];
+    else geometryIndices = cache.getColumn(OColumnName.indices, pbf.readVarint());
     if (type === 1) Constructor = OVectorPointsFeature;
     else Constructor = OVectorPoints3DFeature;
   } else {
@@ -647,7 +668,7 @@ export function writeOVFeature(
   if (single) flags += 1 << 6;
   pbf.writeVarint(flags); // just 1 byte
   // id is stored in unsigned column
-  if (hasID) pbf.writeVarint(feature.id as number);
+  if (hasID) pbf.writeVarint(feature.id ?? 0);
   // index to values column
   const valueIndex = encodeValue(feature.properties, shape, cache);
   pbf.writeVarint(valueIndex);

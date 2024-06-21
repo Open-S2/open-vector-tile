@@ -11,6 +11,7 @@ import {
 } from '../../src/base';
 import { ColumnCacheReader, ColumnCacheWriter } from '../../src/open/columnCache';
 import {
+  OVectorFeatureBase,
   OVectorLines3DFeature,
   OVectorLinesFeature,
   OVectorPoints3DFeature,
@@ -24,21 +25,44 @@ import { describe, expect, it } from 'bun:test';
 
 import type { Shape } from '../../src/open/shape';
 
+describe('OVectorFeatureBase', () => {
+  const pbf = new Pbf();
+  const col = new ColumnCacheReader(pbf);
+  it('basic creation', () => {
+    const feature = new OVectorFeatureBase(
+      col,
+      22,
+      { name: 'a' },
+      { width: 'u64' },
+      4096,
+      [],
+      true,
+      0,
+      false,
+      false,
+      0,
+      0,
+    );
+    expect(feature).toBeInstanceOf(OVectorFeatureBase);
+  });
+});
+
 describe('encodePointFeature and decodePointFeature', () => {
   const pbf = new Pbf();
   const col = new ColumnCacheWriter();
   const shape: Shape = { name: 'string' };
+  const mShape: Shape = { size: 'i64' };
   const basePointFeatureA = new BaseVectorPointsFeature([{ x: 3_805, y: 5_645 }], { name: 'a' }, 1);
   const basePointFeatureB = new BaseVectorPointsFeature(
     [
-      { x: 1, y: 0 },
+      { x: 1, y: 0, m: { size: 1 } },
       { x: 2, y: -1 },
     ],
     { name: 'b' },
     2,
   );
   const dataA = writeOVFeature(basePointFeatureA, shape, undefined, col);
-  const dataB = writeOVFeature(basePointFeatureB, shape, undefined, col);
+  const dataB = writeOVFeature(basePointFeatureB, shape, mShape, col);
   // store column
   pbf.writeMessage(5, ColumnCacheWriter.write, col);
   // store features
@@ -67,6 +91,7 @@ describe('encodePointFeature and decodePointFeature', () => {
     4_096,
     cache,
     shape,
+    mShape,
   ) as OVectorPointsFeature;
 
   it('point features are decoded correctly', () => {
@@ -86,13 +111,14 @@ describe('encodePointFeature and decodePointFeature', () => {
     expect(decodedPointFeatureB.properties).toEqual({ name: 'b' });
     expect(decodedPointFeatureB.extent).toBe(4_096);
     expect(decodedPointFeatureB.type).toBe(1);
+    expect(decodedPointFeatureB.hasMValues).toBe(true);
     expect(decodedPointFeatureB.loadGeometry()).toEqual([
-      { x: 1, y: 0 },
-      { x: 2, y: -1 },
+      { x: 1, y: 0, m: { size: 1 } },
+      { x: 2, y: -1, m: { size: 0 } },
     ]);
     expect(decodedPointFeatureB.loadPoints()).toEqual([
-      { x: 1, y: 0 },
-      { x: 2, y: -1 },
+      { x: 1, y: 0, m: { size: 1 } },
+      { x: 2, y: -1, m: { size: 0 } },
     ]);
     expect(decodedPointFeatureB.loadLines()).toEqual([]);
     // dead code
@@ -109,6 +135,7 @@ describe('encodePoint3DFeature and decodePoint3DFeature', () => {
   const pbf = new Pbf();
   const col = new ColumnCacheWriter();
   const shape: Shape = { name: 'string' };
+  const mShape: Shape = { size: 'u64' };
   const basePointFeatureA = new BaseVectorPoint3DFeature(
     [{ x: 3_805, y: 5_645, z: 3_212 }],
     { name: 'a' },
@@ -116,14 +143,14 @@ describe('encodePoint3DFeature and decodePoint3DFeature', () => {
   );
   const basePointFeatureB = new BaseVectorPoint3DFeature(
     [
-      { x: 1, y: 0, z: 5 },
+      { x: 1, y: 0, z: 5, m: { size: 1 } },
       { x: 2, y: -1, z: 6 },
     ],
     { name: 'b' },
     2,
   );
   const dataA = writeOVFeature(basePointFeatureA, shape, undefined, col);
-  const dataB = writeOVFeature(basePointFeatureB, shape, undefined, col);
+  const dataB = writeOVFeature(basePointFeatureB, shape, mShape, col);
   // store column
   pbf.writeMessage(5, ColumnCacheWriter.write, col);
   // store features
@@ -152,6 +179,7 @@ describe('encodePoint3DFeature and decodePoint3DFeature', () => {
     4_096,
     cache,
     shape,
+    mShape,
   ) as OVectorPoints3DFeature;
 
   it('point features are decoded correctly', () => {
@@ -171,13 +199,14 @@ describe('encodePoint3DFeature and decodePoint3DFeature', () => {
     expect(decodedPointFeatureB.properties).toEqual({ name: 'b' });
     expect(decodedPointFeatureB.extent).toBe(4_096);
     expect(decodedPointFeatureB.type).toBe(4);
+    expect(decodedPointFeatureB.hasMValues).toBe(true);
     expect(decodedPointFeatureB.loadGeometry()).toEqual([
-      { x: 1, y: 0, z: 5 },
-      { x: 2, y: -1, z: 6 },
+      { x: 1, y: 0, z: 5, m: { size: 1 } },
+      { x: 2, y: -1, z: 6, m: { size: 0 } },
     ]);
     expect(decodedPointFeatureB.loadPoints()).toEqual([
-      { x: 1, y: 0, z: 5 },
-      { x: 2, y: -1, z: 6 },
+      { x: 1, y: 0, z: 5, m: { size: 1 } },
+      { x: 2, y: -1, z: 6, m: { size: 0 } },
     ]);
     expect(decodedPointFeatureB.loadLines()).toEqual([]);
     // dead code
