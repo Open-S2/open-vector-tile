@@ -10,3 +10,4 @@ tools/fetchBingTiles.ts
 tools/fetchOMT.ts
 vector-tile-spec/1.0.0/README.bak.md
 coverage/
+*.profraw

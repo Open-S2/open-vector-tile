@@ -12,7 +12,7 @@ categories = ["encoding", "wasm", "embedded", "no-std"]
 keywords = ["open", "vector", "tile", "gis", "low-cost-code"]
 license = "MIT"
 # Include only specific files and directories
-# include = ["/ovtile", "Cargo.toml", "Cargo.lock", "README.md", "LICENSE"]
+# include = ["Cargo.toml", "Cargo.lock", "README.md", "LICENSE"]
 exclude = [
     "/assets",
     "/benchmarks",
@@ -23,8 +23,8 @@ exclude = [
 ]
 
 [lib]
-name = "ovtile"
-path = "ovtile/lib.rs"
+name = "rust"
+path = "rust/lib.rs"
 bench = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

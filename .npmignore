@@ -13,3 +13,5 @@ ovtile/
 docs/
 benchmarks/
 tools/
+*.profraw
+coverage/

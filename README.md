@@ -1,4 +1,4 @@
-# open-vector-tile ![GitHub Actions Workflow Status][test-workflow] [![npm][npm-image]][npm-url] [![crate][crate-image]][crate-url] [![downloads][downloads-image]][downloads-url] [![bundle][bundle-image]][bundle-url] [![docs-ts][docs-ts-image]][docs-ts-url] [![docs-rust][docs-rust-image]][docs-rust-url] ![doc-coverage][doc-coverage-image] ![code-coverage][code-coverage-image] [![Discord][discord-image]][discord-url]
+# open-vector-tile ![GitHub Actions Workflow Status][test-workflow] [![npm][npm-image]][npm-url] [![crate][crate-image]][crate-url] [![downloads][downloads-image]][downloads-url] [![bundle][bundle-image]][bundle-url] [![docs-ts][docs-ts-image]][docs-ts-url] [![docs-rust][docs-rust-image]][docs-rust-url] ![doc-coverage][doc-coverage-image] [![code-coverage][code-coverage-image]][code-coverage-url] [![Discord][discord-image]][discord-url]
 
 [test-workflow]: https://img.shields.io/github/actions/workflow/status/Open-S2/open-vector-tile/test.yml?logo=github
 [npm-image]: https://img.shields.io/npm/v/open-vector-tile.svg?logo=npm&logoColor=white
@@ -14,7 +14,8 @@
 [docs-rust-image]: https://img.shields.io/badge/docs-rust-yellow.svg
 [docs-rust-url]: https://docs.rs/open-vector-tile
 [doc-coverage-image]: https://raw.githubusercontent.com/Open-S2/open-vector-tile/master/assets/doc-coverage.svg
-[code-coverage-image]: https://raw.githubusercontent.com/Open-S2/open-vector-tile/master/assets/code-coverage.svg
+[code-coverage-url]: https://coveralls.io/github/Open-S2/open-vector-tile?branch=master
+[code-coverage-image]: https://coveralls.io/repos/github/Open-S2/open-vector-tile/badge.svg?branch=master
 [discord-image]: https://img.shields.io/discord/953563031701426206?logo=discord&logoColor=white
 [discord-url]: https://discord.opens2.com
 
