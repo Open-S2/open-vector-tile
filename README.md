@@ -59,7 +59,13 @@ npm install open-vector-tile
 cargo install open-vector-tile
 ```
 
-### Example use
+## Project Structure
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Open-S2/open-vector-tile/master/assets/dependency-graph.svg" alt="Dependency Graph">
+</p>
+
+## Example use
 
 ```ts
 const fs = from 'fs'
