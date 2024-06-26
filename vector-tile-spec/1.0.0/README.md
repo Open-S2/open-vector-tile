@@ -133,7 +133,7 @@ Refer to Section `5.` for the `zigzag` and `weave2D` functions.
 
 **Weave (X, Y)**: This process interweaves the x and y coordinates of the points into a single 32-bit number. Each coordinate is treated as a 16-bit unsigned number. The function `weave2D` combines these two 16-bit numbers into a single 32-bit number.
 
-![weave](https://raw.githubusercontent.com/Open-S2/open-vector-tile/assets/weave-technique.png)
+![weave](https://github.com/Open-S2/open-vector-tile/blob/master/assets/weave-technique.png?raw=true)
 
 ```pscript
 function weaveAndDeltaEncodeArray(array):
