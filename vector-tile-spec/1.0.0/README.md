@@ -715,6 +715,8 @@ If the geometry includes only a single point, the `single` flag MUST be set.
 
 If the geometry includes M-Values, the `mvalues` flag MUST be set.
 
+NOTE: If the geometry is a single point(3D), the `mValue` flag will SHOULD NOT be set and will not be encoded.
+
 **Encoding**:
 
 A singular point has a unique encoding that returns it's coordinate shape as a single value to the feature encoding.
