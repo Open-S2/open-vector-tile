@@ -408,6 +408,8 @@ A Layer MAY contain a `mShape` field, but MUST contain a `mShape` field if a `fe
 
 Shapes are designed to compliment the [s2json specification's properties](https://github.com/Open-S2/s2json/tree/master/s2json-spec/1.0.0#6-properties), which you can find it's clearly defined schema [here](https://github.com/Open-S2/s2json/blob/ec62909e3ae76807babd7428afec4ad79260a9cd/src/s2json.schema.json#L63). Shapes are almost as powerful as full blown objects, but have certain boundaries to ensure they are easy to encode/decode.
 
+You can see the schematic of a shape in the [src folder](https://github.com/Open-S2/open-vector-tile/blob/master/src/open/shape.schema.json).
+
 A Shape defines how to encode/decode a JSON object, including nested objects, arrays, and primitives.
 
 #### 4.4.1. Shape Structure
