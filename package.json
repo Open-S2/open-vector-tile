@@ -47,6 +47,7 @@
     "url": "https://github.com/Open-S2/open-vector-tile/issues"
   },
   "files": [
+    "assets",
     "dist",
     "vector-tile-spec"
   ],
