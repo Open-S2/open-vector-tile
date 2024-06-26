@@ -1,12 +1,6 @@
 name: test-workflow
 
-on:
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
+on: push
 
 jobs:
   test:
@@ -31,6 +25,14 @@ jobs:
 
     - name: Run JavaScript/TypeScript tests
       run: bun run test
+
+    - name: Upload coverage to Coveralls
+      run: |
+        if [ -f ./coverage/lcov.info ]; then
+          bun run coveralls < ./coverage/lcov.info
+        fi
+      env:
+        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
 
     - name: Set up Rust
       uses: actions-rs/toolchain@v1
