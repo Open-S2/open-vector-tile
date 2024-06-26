@@ -18,12 +18,22 @@ import type { OProperties, OValue, Primitive, Properties, ValueArray } from '../
  */
 export type PrimitiveShapes = 'string' | 'f32' | 'f64' | 'u64' | 'i64' | 'bool' | 'null';
 
+/** The Shape Object But the values can only be primitives */
+export interface ShapePrimitive {
+  [key: string]: PrimitiveShapes;
+}
+
+/**
+ * Arrays may contain either a primitive or an object whose values are primitives
+ */
+export type ShapePrimitiveType = PrimitiveShapes | ShapePrimitive;
+
 /**
  * Shape types that can be found in a shapes object.
  * Either a primitive, an array containing any type, or a nested shape.
  * If the type is an array, all elements must be the same type
  */
-export type ShapeType = PrimitiveShapes | [ShapeType] | Shape;
+export type ShapeType = PrimitiveShapes | [ShapePrimitiveType] | Shape;
 
 /** The Shape Object */
 export interface Shape {
@@ -94,7 +104,7 @@ function _decodeShape(cache: ColumnCacheReader, shapeStore: number[]): ShapeType
 
   if (attribute.type === 0) {
     // Array
-    return [_decodeShape(cache, shapeStore)];
+    return [_decodeShape(cache, shapeStore) as ShapePrimitiveType];
   } else if (attribute.type === 1) {
     // Object
     const length = attribute.countOrCol;
@@ -314,7 +324,7 @@ function getShapesValueType(value: OValue): ShapeType {
     // If it's a number type and the first number is a u64 but the second is an i64 or f64?
     // otherwise just return the first case in the array
     const types = value.map(getShapesValueType);
-    return [validateTypes(types)];
+    return [validateTypes(types) as ShapePrimitiveType];
   } else if (typeof value === 'object' && value !== null) {
     return createShapeFromData([value]);
   } else {

@@ -1,4 +1,6 @@
+import Ajv from 'ajv';
 import { Pbf } from '../../src/pbf';
+import { ShapeSchema } from '../../src';
 import { ColumnCacheReader, ColumnCacheWriter } from '../../src/open/columnCache';
 import {
   createShapeFromData,
@@ -200,5 +202,51 @@ describe('test validateTypes failures', () => {
     expect(() => {
       validateTypes(['null', ['null']]);
     }).toThrowError('All types must be the same');
+  });
+});
+
+describe('validate Shapes', () => {
+  const ajv = new Ajv();
+  const validate = ajv.compile(ShapeSchema);
+
+  it('validate first test shape', () => {
+    const shape: Shape = {
+      a: 'i64',
+      b: ['string'],
+      c: {
+        d: 'f64',
+        e: 'bool',
+        f: 'null',
+      },
+    };
+    const valid = validate(shape);
+    expect(valid).toBeTruthy();
+  });
+
+  it('fails if using array with multiple values', () => {
+    const shape: Shape = {
+      // @ts-expect-error - this is just for testing purposes
+      arr: ['f32', 'string', 'bool'],
+    };
+    const valid = validate(shape);
+    expect(valid).toBeFalsy();
+  });
+
+  it('fails if the array contains a nested object whose values are not primtives', () => {
+    const shape: Shape = {
+      // @ts-expect-error - this is just for testing purposes
+      arr: [{ a: 'f32', b: { c: 'bool' }, c: 'bool' }],
+    };
+    const valid = validate(shape);
+    expect(valid).toBeFalsy();
+  });
+
+  it('fails if the array of arrays', () => {
+    const shape: Shape = {
+      // @ts-expect-error - this is just for testing purposes
+      arr: [['f32', 'string', 'bool']],
+    };
+    const valid = validate(shape);
+    expect(valid).toBeFalsy();
   });
 });

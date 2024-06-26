@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "PrimitiveShapes": {
+      "enum": ["string", "f32", "f64", "u64", "i64", "bool", "null"]
+    },
+    "ShapePrimitive": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/definitions/PrimitiveShapes" }
+    },
+    "ShapePrimitiveType": {
+      "anyOf": [
+        { "$ref": "#/definitions/PrimitiveShapes" },
+        { "$ref": "#/definitions/ShapePrimitive" }
+      ]
+    },
+    "ShapeType": {
+      "anyOf": [
+        { "$ref": "#/definitions/PrimitiveShapes" },
+        {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": { "$ref": "#/definitions/ShapePrimitiveType" }
+        },
+        { "$ref": "#/definitions/Shape" }
+      ]
+    },
+    "Shape": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/definitions/ShapeType" }
+    }
+  },
+  "type": "object",
+  "additionalProperties": { "$ref": "#/definitions/ShapeType" }
+}

@@ -33,11 +33,11 @@ A Modified TypeScript implementation of the [Mapbox Vector Tile](https://github.
 * 🏛 Column encoding of data to make it more compact. Better gzip and brotli compression.
 * 🪺 Support nested objects in properties and m-values.
 * 📦 All features support first class citizen `BBOX` data like IDs.
-* 😑 Lines support `offsets` to know the distance it's traveled (useful for rendering dashed lines).
+* 🫥 Lines support `offsets` to know the distance it's traveled (useful for correctly rendering dashed lines across tiles).
 
 ## Inspiration
 
-A very talented [Markus Tremmel](https://github.com/mactrem) came up with the idea of migrating away from a row based approach to a column based approach with his [COVTiles](https://github.com/mactrem/cov-tiles). I wanted to test the idea of simplifying his approach and see if it was worth the effort. Once I saw brotli compression had comperable results, I decided to finish the project.
+A very talented [Markus Tremmel](https://github.com/mactrem) came up with the idea of migrating away from a row based approach to a column based approach with his [COVTiles](https://github.com/mactrem/cov-tiles). I wanted to test the idea of simplifying his project and see if it was worth the effort. Once I saw brotli compression had comperable results, I decided to finish the project.
 
 ## Read The Spec
 
@@ -213,6 +213,38 @@ const poly3DFeature: VectorPoly3D[] = (feature as OVectorPolys3DFeature).loadGeo
 // works for any polygon or polygon3D type.
 // NOTE: If the indices is empty, then the geometry was never pre-earcut and you need to fallback to `loadGeometry` instead.
 const geometry: [geometry: number[], indices: number[]] = feature.loadGeometryFlat()
+```
+
+### Creating and Validating your Shapes
+
+Shapes define the type of data that can be stored in the vector tile. They are explained in the [specification](https://github.com/Open-S2/open-vector-tile/tree/master/vector-tile-spec/1.0.0#44-shapes).
+
+If you'd like to validate the shape, feel free to use the [Ajv](https://github.com/epoberezkin/ajv) library.
+
+```ts
+import Ajv from 'ajv';
+import { ShapeSchema } from 'open-vector-tile'; // Path to the schema
+
+import type { Shape } from 'open-vector-tile';
+
+const ajv = new Ajv();
+const validate = ajv.compile(ShapeSchema);
+
+const shape: Shape = {
+  a: 'i64',
+  b: ['string'],
+  c: {
+    d: 'f64',
+    e: 'bool',
+    f: 'null',
+    g: 'f32',
+    h: {
+      i: 'u64',
+    },
+  },
+};
+
+validate(shape); // true
 ```
 
 ---
