@@ -103,7 +103,7 @@ export class VectorFeaturePointsBase<
     // othwerise store the collection of points
     const indices: number[] = [];
     indices.push(cache.addColumnData(columnName, geometry));
-    // store length of mvalues and the mvalues indexes if they exist
+    // store the mvalues indexes if they exist
     if (hasMValues) {
       for (const { m } of geometry) {
         indices.push(encodeValue(m ?? {}, mShape, cache));
@@ -196,7 +196,7 @@ export class VectorFeatureLinesBase<
       if (hasOffsets) indices.push(encodeOffset(line.offset));
       // store geometry data and track its index position
       indices.push(cache.addColumnData(columnName, line.geometry));
-      // store length of mvalues and the mvalues indexes if they exist
+      // store the mvalues indexes if they exist
       if (hasMValues) {
         for (const { m } of line.geometry) {
           indices.push(encodeValue(m ?? {}, mShape, cache));
@@ -328,7 +328,7 @@ export class VectorFeaturePolysBase<
         if (hasOffsets) indices.push(encodeOffset(line.offset));
         // store geometry data and track its index position
         indices.push(cache.addColumnData(columnName, line.geometry));
-        // store length of mvalues and the mvalues indexes if they exist
+        // store the mvalues indexes if they exist
         if (hasMValues) {
           for (const { m } of line.geometry as VectorLine | VectorLine3D) {
             indices.push(encodeValue(m ?? {}, mShape, cache));

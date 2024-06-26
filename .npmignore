@@ -10,8 +10,6 @@ CONTRIBUTE.md
 target/
 ovtile/
 .helix/
-vector-tile-spec/
 docs/
 benchmarks/
 tools/
-vector-tile-spec/

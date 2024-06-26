@@ -25,7 +25,7 @@ import type {
  * ColumnNames define various common data structures to be stored in a column fashion
  */
 export enum OColumnName {
-  /** stores */
+  /** stores string values */
   string,
   /**
    * Note: IDs are stored in unsigned
@@ -275,7 +275,7 @@ export class ColumnCacheWriter {
   [OColumnName.signed] = new Map<number, OColumnBaseChunk<number>>();
   /** 32-bit partial values are sorted prior to storing */
   [OColumnName.float] = new Map<number, OColumnBaseChunk<number>>();
-  /** 64-bit partial  values are sorted prior to storing */
+  /** 64-bit partial values are sorted prior to storing */
   [OColumnName.double] = new Map<number, OColumnBaseChunk<number>>();
   /** for geometry types each column is individually weaved and delta encoded */
   [OColumnName.points] = new Map<string, OColumnBaseChunk<Point[]>>();

@@ -140,6 +140,7 @@ describe('weave2D and unweave2D', () => {
     expect(weave2D(1, 0)).toBe(1);
     expect(weave2D(0, 1)).toBe(2);
     expect(weave2D(1, 1)).toBe(3);
+    expect(weave2D(3, 5)).toBe(39);
   });
   test('unweave2D', () => {
     expect(unweave2D(0)).toEqual({ a: 0, b: 0 });
@@ -173,6 +174,7 @@ describe('weave3D and unweave3D', () => {
     expect(weave3D(1, 0, 1)).toBe(5);
     expect(weave3D(0, 1, 1)).toBe(6);
     expect(weave3D(1, 1, 1)).toBe(7);
+    expect(weave3D(3, 5, 6)).toBe(427);
   });
   test('unweave3D', () => {
     expect(unweave3D(0)).toEqual({ a: 0, b: 0, c: 0 });

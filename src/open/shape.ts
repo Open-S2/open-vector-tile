@@ -1,7 +1,7 @@
 import { OColumnName } from './columnCache';
 
 import type { ColumnCacheReader, ColumnCacheWriter, ColumnValue } from './columnCache';
-import type { OProperties, OValue, Properties } from '../vectorTile.spec';
+import type { OProperties, OValue, Primitive, Properties, ValueArray } from '../vectorTile.spec';
 
 //? Shapes exist solely to deconstruct and rebuild objects.
 //?
@@ -137,7 +137,7 @@ function _encodeValue(
 ): void {
   // we follow the rules of the shape
   if (Array.isArray(shape)) {
-    value = value as OValue[];
+    value = value as ValueArray;
     valueStore.push(value.length);
     for (const v of value) {
       _encodeValue(v, shape[0], valueStore, cache);
@@ -191,9 +191,11 @@ export function decodeValue(
 function _decodeValue(valueStore: number[], shape: ShapeType, cache: ColumnCacheReader): OValue {
   if (Array.isArray(shape)) {
     const length = valueStore.shift() ?? 0;
-    const arr: OValue[] = [];
+    const arr: ValueArray = [];
     for (let i = 0; i < length; i++) {
-      arr.push(_decodeValue(valueStore, shape[0], cache));
+      arr.push(
+        _decodeValue(valueStore, shape[0], cache) as Primitive | { [key: string]: Primitive },
+      );
     }
     return arr;
   } else if (typeof shape === 'object') {

@@ -30,14 +30,22 @@ export type Value = string | number | boolean | null;
  */
 export type Properties = Record<string, Value>;
 
-/** The new OpenVectorTile type can create complex nested objects. */
-// export type Shape = Record<string, OValue>;
+/** Primitive types supported by Properties */
+export type Primitive = string | number | boolean | null;
+
+/**
+ * When an array is used, it must be an array of the same type.
+ * Arrays are also limited to primitives and objects of primitives
+ */
+export type ValueArray =
+  Array<Primitive | { [key: string]: Primitive }> extends (infer U)[] ? U[] : never;
+
 /**
  * The new OpenVectorTile type can create complex nested objects.
  * May either be a string, number, boolean, null, an array of those types, or an object of those types
  * Object keys are always strings, values can be any basic type, an array, or a nested object.
  */
-export type OValue = string | number | boolean | null | OValue[] | { [key: string]: OValue };
+export type OValue = Primitive | ValueArray | { [key: string]: OValue };
 
 /**
  * Some components inside the OpenVectorTile spec require the starting with an object of key-value pairs.
