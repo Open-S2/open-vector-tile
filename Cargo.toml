@@ -23,7 +23,7 @@ exclude = [
 ]
 
 [lib]
-name = "rust"
+name = "ovtile"
 path = "rust/lib.rs"
 bench = true
 

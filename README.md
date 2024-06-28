@@ -1,4 +1,6 @@
-<h1 style="text-align: center;">open-vector-tile</h1>
+<h1 style="text-align: center;">
+<div align="center">open-vector-tile</div>
+</h1>
 
 <p align="center">
   <a href="https://img.shields.io/github/actions/workflow/status/Open-S2/open-vector-tile/test.yml?logo=github">
