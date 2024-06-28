@@ -1,23 +1,34 @@
-# open-vector-tile ![GitHub Actions Workflow Status][test-workflow] [![npm][npm-image]][npm-url] [![crate][crate-image]][crate-url] [![downloads][downloads-image]][downloads-url] [![bundle][bundle-image]][bundle-url] [![docs-ts][docs-ts-image]][docs-ts-url] [![docs-rust][docs-rust-image]][docs-rust-url] ![doc-coverage][doc-coverage-image] [![code-coverage][code-coverage-image]][code-coverage-url] [![Discord][discord-image]][discord-url]
+<h1 style="text-align: center;">open-vector-tile</h1>
 
-[test-workflow]: https://img.shields.io/github/actions/workflow/status/Open-S2/open-vector-tile/test.yml?logo=github
-[npm-image]: https://img.shields.io/npm/v/open-vector-tile.svg?logo=npm&logoColor=white
-[npm-url]: https://npmjs.org/package/open-vector-tile
-[crate-image]: https://img.shields.io/crates/v/open-vector-tile.svg?logo=rust&logoColor=white
-[crate-url]: https://crates.io/crates/open-vector-tile
-[bundle-image]: https://img.shields.io/bundlejs/size/open-vector-tile?exports=VectorTile
-[bundle-url]: https://bundlejs.com/?q=open-vector-tile&treeshake=%5B%7B+VectorTile+%7D%5D
-[downloads-image]: https://img.shields.io/npm/dm/open-vector-tile.svg
-[downloads-url]: https://www.npmjs.com/package/open-vector-tile
-[docs-ts-image]: https://img.shields.io/badge/docs-typescript-yellow.svg
-[docs-ts-url]: https://open-s2.github.io/open-vector-tile/
-[docs-rust-image]: https://img.shields.io/badge/docs-rust-yellow.svg
-[docs-rust-url]: https://docs.rs/open-vector-tile
-[doc-coverage-image]: https://raw.githubusercontent.com/Open-S2/open-vector-tile/master/assets/doc-coverage.svg
-[code-coverage-url]: https://coveralls.io/github/Open-S2/open-vector-tile?branch=master
-[code-coverage-image]: https://coveralls.io/repos/github/Open-S2/open-vector-tile/badge.svg?branch=master
-[discord-image]: https://img.shields.io/discord/953563031701426206?logo=discord&logoColor=white
-[discord-url]: https://discord.opens2.com
+<p align="center">
+  <a href="https://img.shields.io/github/actions/workflow/status/Open-S2/open-vector-tile/test.yml?logo=github">
+    <img src="https://img.shields.io/github/actions/workflow/status/Open-S2/open-vector-tile/test.yml?logo=github" alt="GitHub Actions Workflow Status">
+  </a>
+  <a href="https://npmjs.org/package/open-vector-tile">
+    <img src="https://img.shields.io/npm/v/open-vector-tile.svg?logo=npm&logoColor=white" alt="npm">
+  </a>
+  <a href="https://crates.io/crates/open-vector-tile">
+    <img src="https://img.shields.io/crates/v/open-vector-tile.svg?logo=rust&logoColor=white" alt="crate">
+  </a>
+  <a href="https://bundlejs.com/?q=open-vector-tile&treeshake=%5B%7B+VectorTile+%7D%5D">
+    <img src="https://img.shields.io/bundlejs/size/open-vector-tile?exports=VectorTile" alt="bundle">
+  </a>
+  <a href="https://www.npmjs.com/package/open-vector-tile">
+    <img src="https://img.shields.io/npm/dm/open-vector-tile.svg" alt="downloads">
+  </a>
+  <a href="https://open-s2.github.io/open-vector-tile/">
+    <img src="https://img.shields.io/badge/docs-typescript-yellow.svg" alt="docs-ts">
+  </a>
+  <a href="https://docs.rs/open-vector-tile">
+    <img src="https://img.shields.io/badge/docs-rust-yellow.svg" alt="docs-rust">
+  </a>
+  <a href="https://coveralls.io/github/Open-S2/open-vector-tile?branch=master">
+    <img src="https://coveralls.io/repos/github/Open-S2/open-vector-tile/badge.svg?branch=master" alt="code-coverage">
+  </a>
+  <a href="https://discord.opens2.com">
+    <img src="https://img.shields.io/discord/953563031701426206?logo=discord&logoColor=white" alt="Discord">
+  </a>
+</p>
 
 ## About
 
