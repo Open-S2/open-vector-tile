@@ -1,7 +1,5 @@
 # TODO
 
-[ ] Write the specification page
-
 [ ] Port to Rust
 [ ] Rust tests > 90%
 [ ] Rust Documentation complete

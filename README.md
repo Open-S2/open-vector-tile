@@ -46,11 +46,15 @@ A Modified TypeScript implementation of the [Mapbox Vector Tile](https://github.
 * 🏛 Column encoding of data to make it more compact. Better gzip and brotli compression.
 * 🪺 Support nested objects in properties and m-values.
 * 📦 All features support first class citizen `BBOX` data like IDs.
-* 🫥 Lines support `offsets` to know the distance it's traveled (useful for correctly rendering dashed lines across tiles).
+* 🫥 Lines and Polygons support `offsets` to know the distance it's traveled (useful for correctly rendering dashed lines across tiles).
 
 ## Inspiration
 
 A very talented [Markus Tremmel](https://github.com/mactrem) came up with the idea of migrating away from a row based approach to a column based approach with his [COVTiles](https://github.com/mactrem/cov-tiles). I wanted to test the idea of simplifying his project and see if it was worth the effort. Once I saw brotli compression had comperable results, I decided to finish the project.
+
+## Motivations
+
+Since another spec is being built at the same time, you may think this is a waste of time or creating an unnecessary conflict of interest. [So I wrote my thoughts on this topic and why this spec is being created](/motivation.md).
 
 ## Read The Spec
 
