@@ -232,7 +232,7 @@ The crazy thing is OVT isn't even designed to make the most out of converting MV
 
 My hypothesis when I started this project was that we can leave the heavy lifting of compression to external tools, migrate to a column based approach, and then let the server/browser do the heavy lifting of compressing/decompressing files.
 
-I'd argue my hypothesis is correct. We will go deeper later in how it has simplified the codebase, but at face value I think it's worth noting that solving compression at the spec level isn't worth the effort, or at least it's still a work in progress that needs more research.
+I'd argue my hypothesis is correct. We will go deeper later in how it has simplified the codebase, but at face value I think it's worth noting that solving compression at the spec level may not be worth the effort, or at least it's still a work in progress that needs more research.
 
 ### Performance
 
@@ -241,7 +241,7 @@ Yet another interesting topic. I found on the `maplibre-tile-format` slack chann
 > NOTE:
 > I will be using a chromium based browser on an M3 Macbook Pro for this. Not convinced we would see much difference with any other browser.
 
-My goal is to full screen both maps, wait for a full rendering, then check the performance of loading new tiles as we are zooming in and showcase the **average** performance, not worst or best case scenerios. Since the data isn't 1-to-1 there is nothing entirely fair about comparing these two, but I think it helps shed light on what an average rending experience would look like to form more meaningful hypotheses.
+I want to note that I think performance metrics can and will always be gamed. I feel like the best way to measure performance is to just see how it works in real world scenarios. So my goal is to full screen both maps, wait for a full rendering, then check the performance of loading new tiles as we are zooming in and showcase the **average** performance, not worst or best case scenerios. Since the data isn't 1-to-1 there is nothing entirely fair about comparing these two, but I think it helps shed light on what an average rending experience would look like to form more meaningful hypotheses.
 
 I really struggled to get the test website to load lots of MLT tiles for me. But regardless, what was most import is to checkout lower zoom tiles where there is a lot more polygon data. You will notice right away that getting the data out of the spec isn't too time intensive, but that the cost of converting polygons to triangles is:
 
@@ -263,7 +263,7 @@ We also see that decoding the data out of the tile is suprisingly cheaper as wel
 
 I'd argue that the decoding solution is very similar to MVT, no tricks or coding solutions outside column encoding fused with protobuffers were used to achieve these results.
 
-You can see that not having to earclip the polygons is a monsterous win. But also, I would argue overall complexity to decode data from protobuffers has never really been a performance issue to begin with. I'm still at a loss where this 10x performance is coming from? Maybe it's refering to tests done with poly indices already stored?
+You can see that not having to earclip the polygons is a monsterous win. But also, I would argue overall complexity to decode data from protobuffers has never really been a performance issue to begin with. I'm still at a loss where this 10x performance is coming from? Maybe it's refering to tests done with poly indices already stored? But even comparing my solution with indices added, I still don't get 10x performance, so maybe there is some feature not being utilized. I'm definitely skeptical for now though.
 
 Was performance an issue with MVT? My argument is that outside their technique for storing polygons (as explained near the beginning of this article), there were no meaningful performance issues.
 
@@ -277,7 +277,7 @@ It's always hard to know the right answers but I can definitely try to simplify 
 
 One thing we can do easily is look at Mapbox's original spec as a baseline to compare against. The client tool used by their rendering engine is [`7.26 kB` (`2.36 kB` gzip compressed)](https://bundlejs.com/?q=%40mapbox%2Fvector-tile&treeshake=%5B%7B+VectorTile+%7D%5D). It offers extremely basic parsing support leaving the rest for the renderer. Again, I'm absolutely blown away with how well Mapbox can achieve long lasting results for so little.
 
-Moving to malibre's current spec implementation, the results are [`174 kB` (`41.1 kB` gzip compressed)](https://bundlejs.com/?q=%40maplibre%2Fmaplibre-tile-spec&treeshake=%5B%7B+MltDecoder%2CTileSetMetadata+%7D%5D). Keep in mind that this does not include backwards compatibility for the old spec. It's also important to mention that the long term solution of parsing and utilizing the data from the spec won't match with the old spec either. This means the renderer will also become more bloated and complex as well to manage multiple specs. To give some perspective on this new size, this is a `23.966x` increase in size! Also note that the maplibre render engine itself at the time of writing is [`794 kB` (`216 kB` gzip compressed)](https://bundlejs.com/?q=maplibre-gl&treeshake=%5B*%5D). The data management tool manages to be `21.91%` the size of the entire rendering engine. The discussion is to eventually move to a rust solution for the module. Is the size cost going to get even worse? Are we expected to see much of a performance improvement either?
+Moving to malibre's current spec implementation, the results are [`174 kB` (`41.1 kB` gzip compressed)](https://bundlejs.com/?q=%40maplibre%2Fmaplibre-tile-spec&treeshake=%5B%7B+MltDecoder%2CTileSetMetadata+%7D%5D). Keep in mind that this does not include backwards compatibility for the old spec. It's also important to mention that the long term solution of parsing and utilizing the data from the spec won't match with the old spec either. This means the renderer will also become more bloated and complex as well to manage multiple specs. To give some perspective on this new size, this is a `23.966x` increase in size! Also note that the maplibre render engine itself at the time of writing is [`794 kB` (`216 kB` gzip compressed)](https://bundlejs.com/?q=maplibre-gl&treeshake=%5B*%5D). The data management tool manages to be `21.91%` the size of the entire rendering engine. The discussion is to eventually move to a rust solution for the module. Wouldn't then the size cost going to get even worse? Are we expected to see much of a performance improvement either?
 
 Lastly the OVT spec I have released is [`27 kB` (`7.8 kB` gzip compressed)](https://bundlejs.com/?q=open-vector-tile&treeshake=%5B%7B+VectorTile+%7D%5D). This is a `3.72x` increase in size. This includes backwards compatibility for the old spec. This spec also adds more convenience functions for the renderer including `loadPoints`, `loadLines`, and `loadGeometry`, `loadGeometryFlat`, `readIndices` and `addTesselation`. I'd also argue OVT is simple, fast, and lightweight enough that it's uncecessary to use a lower level language to utilize it.
 
@@ -285,21 +285,21 @@ I also want to bring up an interesting tidbit I discovered when studying pmtiles
 
 ### Blunt Thoughts on what would Drastically Improve Maplibre's Spec with little Effort
 
-After studying Maplibre's spec I want to honestly say I think it has a ton of potential. I want to just point out some things I think would help:
+After studying Maplibre's spec I want to honestly say I think it has a ton of potential but that I'm not yet convinced its the correct step forward for vector tiles. However, I do want to add some things I think would help move it forward:
 
 #### Dependency Management
 
-I am a firm believer that projects should avoid dependencies as much as possible, more-so in specification modules. I'd argue if MLT cleans up it's need for external dependencies, it would not only drastically reduce it's size complexity but also improve it's maintenance and ease of use.
+I am a firm believer that projects should avoid dependencies as much as possible, more-so in specification modules. I'd argue if MLT cleans up it's need for external dependencies, it would not only drastically reduce it's size complexity but also improve it's maintenance, ease of use, and adoptability.
 
 As of writing I will explain the current dependencies and how they could be removed/replaced:
 
-* `@bufbuild/protobuf` - this has a weight of [`33.7 kB`](https://bundlejs.com/?q=%40bufbuild%2Fprotobuf&treeshake=%5B%7B+Message%2Cproto3+%7D%5D) in the spec. The java implementation seems to write these components by hand, so I believe the JS implementation could do the same and be smaller and simpler.
+* `@bufbuild/protobuf` - this has a weight of [`33.7 kB`](https://bundlejs.com/?q=%40bufbuild%2Fprotobuf&treeshake=%5B%7B+Message%2Cproto3+%7D%5D) in the spec. The java implementation seems to write the components utilized by hand, so I believe the JS implementation could do the same and be smaller and simpler.
 * `@types/bytebuffer` - this isn't actually a dependency, its a type definition (dev dependency)
 * `bitset` - Can be replaced by a `Uint8Array` or `DataView`.
-* `bytebuffer` - This is an outdated/redundant module that's replaced by a `DataView` which works in all local tools (nodeJS, Deno, Bun) as well as in the [browser](https://caniuse.com/?search=DataView). What's more is it acts as [`52.5kB`](https://bundlejs.com/?q=bytebuffer&treeshake=%5B*%5D) of the cost of the spec.
-* `@mapbox/point-geometry` not shown as of yet, but used as a dependency. I'm not sure why this is necessary. If you check the repository it's a simple class object that has a `x` and `y` properties with added functions. I don't see where the functions are used, or why the Point class couldn't be created locally.
+* `bytebuffer` - This is an outdated/redundant module that's replaced by a `DataView` which works in all local tools (nodeJS, Deno, Bun) as well as in the [browser](https://caniuse.com/?search=DataView). What's more is it singlehandedly acts as [`52.5kB`](https://bundlejs.com/?q=bytebuffer&treeshake=%5B*%5D) of the cost of the spec.
+* `@mapbox/point-geometry` not shown as of yet, but used as a dependency. I'm not sure why this is necessary. Its a JS module (not TS), If you check the repository it's a simple class object that has a `x` and `y` properties with added functions. I don't see where the functions are used, or why the Point class couldn't be created locally.
 
-I know this focuses on JS primarily, but I think the same ideology should be applied to all languages. Specifications (I argue) should be written to be simple and self-contained. This topic sound almost nit-picky, but I disagree. I think an easy to read codebase goes a long way in peoples perception of your work and it's adoptability.
+I know this focuses on JS primarily, but I think the same ideology should be applied to all languages. Specifications (I argue) should be written to be simple and self-contained if possible. This topic sound almost nit-picky, but I disagree. I think an easy to read codebase goes a long way in peoples perception of your work and it's adoptability.
 
 #### Compression Tools
 
@@ -311,4 +311,4 @@ From the rest of my discussion on the topic as a whole, you already can tell I t
 
 I want to re-iterate that fundamentally, vector geometry specs are simply storage tools for two components: geometries and attributes. My primary argument throughout this document is that specifications can be kept simple, with minimal complexity, plenty of features, and no external dependencies. I think the next era of vector specs **should** expand on features, but maintain the simplicity and values of the giants who came before.
 
-To be incredibly blunt, I think Maplibre's current spec needs work. I think after some evaluation and review, a second iteration of the spec could easily outperform my current iteration in all categories. I know that I probably sound crass for saying these things, but I think it's an important discussion to be had now before the spec is set in stone and ready for use. PMTiles is currently on its third iteration. I think it's vastly better than the first one. I'm on my third iteration myself with OVT, and I still think it could use tuning. My point isn't to deminish what MLT has achieved, but rather want to be clear in my narrative, that there is still work to be done and hope they are willing to keep going.
+To be incredibly blunt, I think Maplibre's current spec needs work. I think after some evaluation and review, a second iteration of the spec could easily outperform my current iteration in all categories. I know that I probably sound crass for saying these things, but I think it's an important discussion to be had now before the spec is set in stone and ready for use. PMTiles is currently on its third iteration. I think it's vastly better than the first one. I'm on my third iteration myself with OVT, and I still think it could use tuning. My point isn't to deminish what MLT has achieved, but rather want to be clear in my narrative, that arguably there is still work to be done and hope they are willing to keep at it. I would love to see the project succeed and grow, but currently I think OVT is the better solution for `s2maps-gpu`.
