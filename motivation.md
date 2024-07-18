@@ -59,7 +59,7 @@ To summerize, tiles themselves only tell a partial story about map, so some mech
 
 ## Comparing The Specifications
 
-Now on to the uncomfortable section. Keep in mind these are just my own personal thoughts and opinions. I reserve the right to be wrong, but this section is really the most important because I think it opens up a discussion on what say 5 years from now the best spec could be and things I learned in the process of creating my own tool and analyzing each spec.
+Now on to the uncomfortable section. Keep in mind these are just my own personal thoughts and opinions. However, this section is really the most important because I think it opens up a discussion on what say 5 years from now the best spec could be and things I learned in the process of creating my own tool and analyzing each spec.
 
 What I value most is simplicity and performance. Those two concepts can be seen as constantly at odds with each other, and yet I believe the fight to fuse them together is one of the most important methods to achieving code that stands the test of time.
 
@@ -312,5 +312,3 @@ From the rest of my discussion on the topic as a whole, you already can tell I t
 I want to re-iterate that fundamentally, vector geometry specs are simply storage tools for two components: geometries and attributes. My primary argument throughout this document is that specifications can be kept simple, with minimal complexity, plenty of features, and no external dependencies. I think the next era of vector specs **should** expand on features, but maintain the simplicity and values of the giants who came before.
 
 To be incredibly blunt, I think Maplibre's current spec needs work. I think after some evaluation and review, a second iteration of the spec could easily outperform my current iteration in all categories. I know that I probably sound crass for saying these things, but I think it's an important discussion to be had now before the spec is set in stone and ready for use. PMTiles is currently on its third iteration. I think it's vastly better than the first one. I'm on my third iteration myself with OVT, and I still think it could use tuning. My point isn't to deminish what MLT has achieved, but rather want to be clear in my narrative, that there is still work to be done and hope they are willing to keep going.
-
-I'd personally drop this spec for Maplibre's if they put the funding and time into future iterations. But as it stands OVT serves the `s2maps-gpu` render engine more. Maybe their spec works for the direction the maplibre engine is going to be fair.
