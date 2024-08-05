@@ -1,9 +1,71 @@
-/// Encode a command with the given length of the data that follows.
-pub fn command_encode(cmd: u8, len: u32) -> u64 {
-  (len << 3) + (cmd & 0x7);
+use crate::{Point, Point3D, BBOX, BBox, BBox3D};
+
+use alloc::vec::Vec;
+
+use core::cmp::Ordering;
+
+pub trait CustomOrd {
+  fn custom_cmp(&self, other: &Self) -> Ordering;
+}
+impl CustomOrd for u64 {
+  fn custom_cmp(&self, other: &Self) -> Ordering {
+      self.partial_cmp(other).unwrap_or(Ordering::Equal)
+  }
+}
+impl CustomOrd for i64 {
+  fn custom_cmp(&self, other: &Self) -> Ordering {
+      self.partial_cmp(other).unwrap_or(Ordering::Equal)
+  }
+}
+impl CustomOrd for f32 {
+  fn custom_cmp(&self, other: &Self) -> Ordering {
+      if self.is_nan() || other.is_nan() {
+          Ordering::Equal // Or handle NaNs differently if needed
+      } else {
+          self.partial_cmp(other).unwrap_or(Ordering::Equal)
+      }
+  }
+}
+impl CustomOrd for f64 {
+  fn custom_cmp(&self, other: &Self) -> Ordering {
+      if self.is_nan() || other.is_nan() {
+          Ordering::Equal // Or handle NaNs differently if needed
+      } else {
+          self.partial_cmp(other).unwrap_or(Ordering::Equal)
+      }
+  }
+}
+/// Wrapper struct for custom ordering
+#[derive(Debug, Default, Clone, Copy)]
+pub struct CustomOrdWrapper<T>(pub T);
+impl<T: CustomOrd> CustomOrd for CustomOrdWrapper<T> {
+    fn custom_cmp(&self, other: &Self) -> Ordering {
+        self.0.custom_cmp(&other.0)
+    }
+}
+impl<T: CustomOrd> PartialOrd for CustomOrdWrapper<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+impl<T: CustomOrd> Eq for CustomOrdWrapper<T> {}
+impl<T: CustomOrd> PartialEq for CustomOrdWrapper<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.custom_cmp(&other.0) == Ordering::Equal
+    }
+}
+impl<T: CustomOrd> Ord for CustomOrdWrapper<T> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.custom_cmp(other)
+    }
 }
 
-pub struct Command { cmd: u8, len: u32 }
+/// Encode a command with the given length of the data that follows.
+pub fn command_encode(cmd: u8, len: u32) -> u64 {
+  ((len << 3) + ((cmd as u32) & 0x7)) as u64
+}
+
+pub struct Command { pub cmd: u8, pub len: u32 }
 
 /// Decode a command with the given length of the data that follows.
 pub fn command_decode(cmd: u64) -> Command {
@@ -13,405 +75,375 @@ pub fn command_decode(cmd: u64) -> Command {
     }
 }
 
+/// Applies zigzag encoding to transform a signed integer into an unsigned integer.
+pub fn zigzag(value: i32) -> u32 {
+    let val: u32 = value as u32;
+    (val << 1) ^ (val >> 31)
+}
+
+pub fn zagzig(value: u32) -> i32 {
+    let val: i32 = value as i32;
+    (val >> 1) ^ -(val & 1)
+}
+
 /// Interweave two 16-bit numbers into a 32-bit number.
 /// In theory two small numbers can end up varint encoded to use less space.
 pub fn weave_2d(a: u16, b: u16) -> u32 {
-  let result = 0;
+    let mut a = a as u32;
+    let mut b = b as u32;
+    let mut result: u32 = 0;
     for i in 0..16 {
-    result |= (a & 1) << (i * 2); // Take ith bit from `a` and put it at position 2*i
-    result |= (b & 1) << (i * 2 + 1); // Take ith bit from `b` and put it at position 2*i+1
-    // move to next bit
-    a >>= 1;
-    b >>= 1;
-  }
-  
-  result
+        result |= (a & 1) << (i * 2); // Take ith bit from `a` and put it at position 2*i
+        result |= (b & 1) << (i * 2 + 1); // Take ith bit from `b` and put it at position 2*i+1
+        // move to next bit
+        a >>= 1;
+        b >>= 1;
+    }
+    
+    result
 }
 
-pub struct Unweave2D { a: number, b: number }
-
 /// Deweave a 32-bit number into two 16-bit numbers.
-pub fn unweave_2d(num: u32) -> Unweave2D {
-    let mut num = num;
+pub fn unweave_2d(num: u32) -> (u16, u16) {
+  let mut num = num;
   let mut a: u16 = 0;
   let mut b: u16 = 0;
   for i in 0..16 {
-    let mut bit = 1 << i;
-    if (num & 1) { a |= bit; }
-    if (num & 2) { b |= bit; }
+    let bit = 1 << i;
+    if num & 1 != 0 { a |= bit; }
+    if num & 2 != 0 { b |= bit; }
     num >>= 2;
   }
   
-  Unweave2D { a, b }
+  (a, b)
 }
 
 /// Interweave three 16-bit numbers into a 48-bit number.
 /// In theory three small numbers can end up varint encoded to use less space.
-pub fn weave_3d(a: number, b: number, c: number): number {
+pub fn weave_3d(a: u16, b: u16, c: u16) -> u64 {
   // return result
-  let result = BigInt(0);
-  let bigA = BigInt(a);
-  let bigB = BigInt(b);
-  let bigC = BigInt(c);
+  let mut result: u64 = 0;
+  let mut a: u64 = a.into();
+  let mut b: u64 = b.into();
+  let mut c: u64 = c.into();
 
-  for (let i = 0; i < 16; i++) {
-    if (bigA & 1n) result |= 1n << BigInt(i * 3); // Take ith bit from `a` and put it at position 3*i
-    if (bigB & 1n) result |= 1n << BigInt(i * 3 + 1); // Take ith bit from `b` and put it at position 3*i+1
-    if (bigC & 1n) result |= 1n << BigInt(i * 3 + 2); // Take ith bit from `c` and put it at position 3*i+2
+  for i in 0..16 {
+    if a & 1 != 0 { result |= 1 << (i * 3); } // Take ith bit from `a` and put it at position 3*i
+    if b & 1 != 0 { result |= 1 << (i * 3 + 1); } // Take ith bit from `b` and put it at position 3*i+1
+    if c & 1 != 0 { result |= 1 << (i * 3 + 2); } // Take ith bit from `c` and put it at position 3*i+2
     // Move to the next bit
-    bigA >>= 1n;
-    bigB >>= 1n;
-    bigC >>= 1n;
+    a >>= 1;
+    b >>= 1;
+    c >>= 1;
   }
 
-  return Number(result);
+  result
 }
 
-/**
- * Deweave a 48-bit number into three 16-bit numbers.
- * @param num - the input
- * @returns - the three numbers
- */
-pub fn unweave_3d(num: number): { a: number; b: number; c: number } {
-  // let bNum = BigInt(num)
-  let a = 0;
-  let b = 0;
-  let c = 0;
-  for (let i = 0; i < 16; i++) {
-    const bit = 1 << i;
-    if (num & 1) a |= bit;
-    if (num & 2) b |= bit;
-    if (num & 4) c |= bit;
-    // num >>= 3 <-- we cant do this for numbers > 32 bits in javascript
-    for (let j = 0; j < 3; j++) {
-      num /= 2;
+/// Deweave a 48-bit number into three 16-bit numbers.
+/// Returns the three 16-bit numbers in a tuple.
+pub fn unweave_3d(num: u64) -> (u32, u32, u32) {
+  let mut a = 0;
+  let mut b = 0;
+  let mut c = 0;
+  let mut num = num; // Make a mutable copy of the input
+
+  for i in 0..16 {
+      let bit = 1 << i;
+      if (num & 1) != 0 { a |= bit; }
+      if (num & 2) != 0 { b |= bit; }
+      if (num & 4) != 0 { c |= bit; }
+      num >>= 3; // Right shift the number by 3 positions
+  }
+
+  (a, b, c)
+}
+
+/// Encode an array of points using interweaving and delta encoding.
+pub fn weave_and_delta_encode_array(array: &[Point]) -> Vec<u32> {
+  let mut res = Vec::new();
+  let mut prev_x = 0;
+  let mut prev_y = 0;
+
+  for point in array.iter() {
+      let pos_x = zigzag(point.x - prev_x);
+      let pos_y = zigzag(point.y - prev_y);
+      res.push(weave_2d(pos_x as u16, pos_y as u16));
+      prev_x = point.x;
+      prev_y = point.y;
+  }
+
+  res
+}
+
+/// Decode an array of points that were encoded using interweaving and delta encoding.
+pub fn unweave_and_delta_decode_array(array: &[u64]) -> Vec<Point> {
+  let mut res = Vec::new();
+  let mut prev_x = 0;
+  let mut prev_y = 0;
+
+  for &encoded_num in array {
+      let (a, b) = unweave_2d(encoded_num as u32);
+      let x = zagzig(a as u32) + prev_x;
+      let y = zagzig(b as u32) + prev_y;
+      res.push(Point::new(x, y));
+      prev_x = x;
+      prev_y = y;
+  }
+
+  res
+}
+
+/// Encode an array of 3D points using interweaving and delta encoding.
+pub fn weave_and_delta_encode_3d_array(array: &[Point3D]) -> Vec<u64> {
+  let mut res = Vec::new();
+  let mut offset_x = 0;
+  let mut offset_y = 0;
+  let mut offset_z = 0;
+
+  for point in array.iter() {
+      let pos_x = zigzag(point.x - offset_x);
+      let pos_y = zigzag(point.y - offset_y);
+      let pos_z = zigzag(point.z - offset_z);
+      res.push(weave_3d(pos_x as u16, pos_y as u16, pos_z as u16));
+      offset_x = point.x;
+      offset_y = point.y;
+      offset_z = point.z;
+  }
+
+  res
+}
+
+/// Decode an array of 3D points that were encoded using interweaving and delta encoding.
+pub fn unweave_and_delta_decode_3d_array(array: &[u64]) -> Vec<Point3D> {
+  let mut res = Vec::new();
+  let mut offset_x = 0;
+  let mut offset_y = 0;
+  let mut offset_z = 0;
+
+  for &encoded_num in array {
+      let (a, b, c) = unweave_3d(encoded_num);
+      let x = zagzig(a) + offset_x;
+      let y = zagzig(b) + offset_y;
+      let z = zagzig(c) + offset_z;
+      res.push(Point3D::new(x, y, z));
+      offset_x = x;
+      offset_y = y;
+      offset_z = z;
+  }
+
+  res
+}
+
+/// Encode an array using delta encoding.
+pub fn delta_encode_array(array: &[u32]) -> Vec<u32> {
+  let mut res = Vec::new();
+  let mut offset = 0;
+
+  for &num in array {
+      let num = num as i32;
+      let encoded = zigzag(num - offset);
+      res.push(encoded);
+      offset = num;
+  }
+
+  res
+}
+
+/// Decode an array that was encoded using delta encoding.
+pub fn delta_decode_array(array: &[u32]) -> Vec<u32> {
+  let mut res = Vec::new();
+  let mut offset = 0;
+
+  for &encoded_num in array {
+      let num = zagzig(encoded_num) + offset;
+      res.push(num as u32);
+      offset = num;
+  }
+
+  res
+}
+
+/// Encode a sorted array using delta encoding.
+pub fn delta_encode_sorted_array(array: &[i32]) -> Vec<u32> {
+  let mut res = Vec::new();
+  let mut offset = 0;
+
+  for &num in array {
+      let delta = (num - offset) as u32; // Safe conversion as the array is sorted
+      res.push(delta);
+      offset = num;
+  }
+
+  res
+}
+
+/// Decode a sorted array that was encoded using delta encoding.
+pub fn delta_decode_sorted_array(array: &[u32]) -> Vec<i32> {
+  let mut res = Vec::new();
+  let mut offset = 0;
+
+  for &encoded_num in array {
+      let num = encoded_num as i32 + offset;  // Casting to i32; since encoded as non-negative delta
+      res.push(num);
+      offset = num;
+  }
+
+  res
+}
+
+/// 24-bit quantization
+/// ~0.000021457672119140625 degrees precision
+/// ~2.388 meters precision
+pub fn quantize_lon(lon: f64) -> i32 {
+  ((lon + 180.0) * 16_777_215.0 / 360.0).round() as i32
+}
+
+/// 24-bit quantization
+/// ~0.000010728836059570312 degrees precision
+/// ~1.194 meters precision
+pub fn quantize_lat(lat: f64) -> i32 {
+  ((lat + 90.0) * 16_777_215.0 / 180.0).round() as i32
+}
+
+/// Converts quantized longitude back to geographical longitude
+pub fn dequantize_lon(q_lon: i32) -> f64 {
+  (q_lon as f64 * 360.0 / 16_777_215.0) - 180.0
+}
+
+/// Converts quantized latitude back to geographical latitude
+pub fn dequantize_lat(q_lat: i32) -> f64 {
+  (q_lat as f64 * 180.0 / 16_777_215.0) - 90.0
+}
+
+/// Packs a 24-bit integer into a buffer at the specified offset.
+pub fn pack24_bit_uint(buffer: &mut [u8], value: i32, offset: usize) {
+  buffer[offset] = ((value >> 16) & 0xff) as u8;
+  buffer[offset + 1] = ((value >> 8) & 0xff) as u8;
+  buffer[offset + 2] = (value & 0xff) as u8;
+}
+
+/// Unpacks a 24-bit integer from a buffer at the specified offset.
+pub fn unpack24_bit_uint(buffer: &[u8], offset: usize) -> i32 {
+  ((buffer[offset] as i32) << 16) | ((buffer[offset + 1] as i32) << 8) | (buffer[offset + 2] as i32)
+}
+
+/// Packs a float into a buffer at the specified offset using little-endian format.
+pub fn pack_float(buffer: &mut [u8], value: f32, offset: usize) {
+  let bytes: [u8; 4] = value.to_le_bytes();  // Converts the float to little-endian byte array
+  buffer[offset..offset + 4].copy_from_slice(&bytes);
+}
+
+/// Unpacks a float from a buffer at the specified offset using little-endian format.
+pub fn unpack_float(buffer: &[u8], offset: usize) -> f32 {
+  f32::from_le_bytes(buffer[offset..offset + 4].try_into().unwrap())  // Converts little-endian bytes back to a float
+}
+
+// | Decimal Places | Approximate Accuracy in Distance       |
+// |----------------|----------------------------------------|
+// | 0              | 111 km (69 miles)                      |
+// | 1              | 11.1 km (6.9 miles)                    |
+// | 2              | 1.11 km (0.69 miles)                   |
+// | 3              | 111 meters (364 feet)                  |
+// | 4              | 11.1 meters (36.4 feet)                |
+// | 5              | 1.11 meters (3.64 feet)                |
+// | 6              | 0.111 meters (11.1 cm or 4.39 inches)  |
+// | 7              | 1.11 cm (0.44 inches)                  |
+// | 8              | 1.11 mm (0.044 inches)                 |
+// 24-bit quantization for longitude and latitude
+// LONGITUDE:
+// - ~0.000021457672119140625 degrees precision
+// - ~2.388 meters precision
+// LATITUDE:
+// - ~0.000010728836059570312 degrees precision
+// - ~1.194 meters precision
+impl BBox {
+  fn quantize(&self) -> Vec<u8> {
+    let mut buffer = Vec::<u8>::with_capacity(12);
+
+    let q_lon1 = quantize_lon(self.left);
+    let q_lat1 = quantize_lat(self.bottom);
+    let q_lon2 = quantize_lon(self.right);
+    let q_lat2 = quantize_lat(self.top);
+
+    pack24_bit_uint(&mut buffer, q_lon1, 0);
+    pack24_bit_uint(&mut buffer, q_lat1, 3);
+    pack24_bit_uint(&mut buffer, q_lon2, 6);
+    pack24_bit_uint(&mut buffer, q_lat2, 9);
+
+    buffer
+  }
+  fn dequantize(buf: &[u8]) -> BBox {
+    let q_lon1 = unpack24_bit_uint(buf, 0);
+    let q_lat1 = unpack24_bit_uint(buf, 3);
+    let q_lon2 = unpack24_bit_uint(buf, 6);
+    let q_lat2 = unpack24_bit_uint(buf, 9);
+
+    BBox {
+      left: dequantize_lon(q_lon1),
+      bottom: dequantize_lat(q_lat1),
+      right: dequantize_lon(q_lon2),
+      top: dequantize_lat(q_lat2),
     }
   }
-  return { a, b, c };
 }
+impl BBox3D {
+  pub fn quantize(&self) -> Vec<u8> {
+    let mut buffer = Vec::<u8>::with_capacity(20);
 
-/**
- * Encode an array of points using interweaving and delta encoding
- * @param array - the array of points
- * @returns - the encoded array as interwoven numbers
- */
-pub fn weaveAndDeltaEncodeArray(array: Point[]): number[] {
-  const res: number[] = [];
+    let q_lon1 = quantize_lon(self.left);
+    let q_lat1 = quantize_lat(self.bottom);
+    let q_lon2 = quantize_lon(self.right);
+    let q_lat2 = quantize_lat(self.top);
 
-  let prevX = 0;
-  let prevY = 0;
-  for (let i = 0; i < array.length; i++) {
-    const { x, y } = array[i];
-    const posX = zigzag(x - prevX);
-    const posY = zigzag(y - prevY);
-    res.push(weave2_d(posX, posY));
-    prevX = x;
-    prevY = y;
+    pack24_bit_uint(&mut buffer, q_lon1, 0);
+    pack24_bit_uint(&mut buffer, q_lat1, 3);
+    pack24_bit_uint(&mut buffer, q_lon2, 6);
+    pack24_bit_uint(&mut buffer, q_lat2, 9);
+
+    pack_float(&mut buffer, self.near as f32, 12);
+    pack_float(&mut buffer, self.far as f32, 16);
+
+    buffer
   }
+  pub fn dequantize(buf: &[u8]) -> BBox3D {
+    let q_lon1 = unpack24_bit_uint(buf, 0);
+    let q_lat1 = unpack24_bit_uint(buf, 3);
+    let q_lon2 = unpack24_bit_uint(buf, 6);
+    let q_lat2 = unpack24_bit_uint(buf, 9);
 
-  return res;
-}
+    let near = unpack_float(buf, 12) as f64;
+    let far = unpack_float(buf, 16) as f64;
 
-/**
- * Decode an array of points that were encoded using interweaving and delta encoding
- * @param array - the encoded array
- * @returns - the decoded array of points
- */
-pub fn unweaveAndDeltaDecodeArray(array: number[]): Point[] {
-  const res: Point[] = [];
-
-  let prevX = 0;
-  let prevY = 0;
-  for (let i = 0; i < array.length; i++) {
-    const { a, b } = unweave2D(array[i]);
-    const x = zagzig(a) + prevX;
-    const y = zagzig(b) + prevY;
-    res.push({ x, y });
-    prevX = x;
-    prevY = y;
+    BBox3D {
+      left: dequantize_lon(q_lon1),
+      bottom: dequantize_lat(q_lat1),
+      right: dequantize_lon(q_lon2),
+      top: dequantize_lat(q_lat2),
+      near,
+      far,
+    }
   }
-
-  return res;
 }
 
-/**
- * Encode an array of 3D points using interweaving and delta encoding
- * @param array - the array of 3D points
- * @returns - the encoded array as interwoven numbers
- */
-pub fn weaveAndDeltaEncode3DArray(array: Point3D[]): number[] {
-  const res: number[] = [];
-
-  let offsetX = 0;
-  let offsetY = 0;
-  let offsetZ = 0;
-  for (let i = 0; i < array.length; i++) {
-    const { x, y, z } = array[i];
-    const posX = zigzag(x - offsetX);
-    const posY = zigzag(y - offsetY);
-    const posZ = zigzag(z - offsetZ);
-    res.push(weave3D(posX, posY, posZ));
-    offsetX = x;
-    offsetY = y;
-    offsetZ = z;
+impl BBOX {
+  pub fn quantize(&self) -> Vec<u8> {
+    match self {
+      BBOX::BBox(bbox) => bbox.quantize(),
+      BBOX::BBox3D(bbox) => bbox.quantize(),
+    }
   }
-
-  return res;
-}
-
-/**
- * Decode an array of 3D points that were encoded using interweaving and delta encoding
- * @param array - the encoded array
- * @returns - the decoded array of 3D points
- */
-pub fn unweaveAndDeltaDecode3DArray(array: number[]): Point3D[] {
-  const res: Point3D[] = [];
-
-  let offsetX = 0;
-  let offsetY = 0;
-  let offsetZ = 0;
-  for (let i = 0; i < array.length; i++) {
-    const { a, b, c } = unweave3D(array[i]);
-    const x = zagzig(a) + offsetX;
-    const y = zagzig(b) + offsetY;
-    const z = zagzig(c) + offsetZ;
-    res.push({ x, y, z });
-    offsetX = x;
-    offsetY = y;
-    offsetZ = z;
+  pub fn dequantize(buf: &[u8]) -> BBOX {
+    BBOX::BBox(BBox::dequantize(buf))
   }
-
-  return res;
 }
 
-/**
- * Encode an array using delta encoding
- * @param array - the array
- * @returns - the encoded array
- */
-pub fn deltaEncodeArray(array: number[]): number[] {
-  const res: number[] = [];
-
-  let offset = 0;
-  for (let i = 0; i < array.length; i++) {
-    const num = array[i];
-    res.push(zigzag(num - offset));
-    offset = num;
+impl From<&[u8]> for BBOX {
+  fn from(buf: &[u8]) -> Self {
+      if buf.len() == 12 {
+          BBOX::BBox(BBox::dequantize(buf))
+      } else {
+          BBOX::BBox3D(BBox3D::dequantize(buf))
+      }
   }
-
-  return res;
-}
-
-/**
- * Decode an array that was encoded using delta encoding
- * @param array - the encoded array
- * @returns - the decoded array
- */
-pub fn deltaDecodeArray(array: number[]): number[] {
-  const res: number[] = [];
-
-  let offset = 0;
-  for (let i = 0; i < array.length; i++) {
-    const num = zagzig(array[i]) + offset;
-    res.push(num);
-    offset = num;
-  }
-
-  return res;
-}
-
-/**
- * Encode a sorted array using delta encoding (doesn't require zigzag)
- * @param array - the array
- * @returns - the encoded array
- */
-pub fn deltaEncodeSortedArray(array: number[]): number[] {
-  const res: number[] = [];
-
-  let offset = 0;
-  for (let i = 0; i < array.length; i++) {
-    const num = array[i];
-    res.push(num - offset);
-    offset = num;
-  }
-
-  return res;
-}
-
-/**
- * Decode a sorted array that was encoded using delta encoding
- * @param array - the encoded array
- * @returns - the decoded array
- */
-pub fn deltaDecodeSortedArray(array: number[]): number[] {
-  const res: number[] = [];
-
-  let offset = 0;
-  for (let i = 0; i < array.length; i++) {
-    const num = array[i] + offset;
-    res.push(num);
-    offset = num;
-  }
-
-  return res;
-}
-
-/**
- * 24-bit quantization
- * ~0.000021457672119140625 degrees precision
- * ~2.388 meters precision
- * @param lon - the longitude
- * @returns - the quantized longitude
- */
-pub fn quantizeLon(lon: number): number {
-  return Math.round(((lon + 180) * 16_777_215) / 360);
-}
-
-/**
- * 24-bit quantization
- * ~0.000010728836059570312 degrees precision
- * ~1.194 meters precision
- * @param lat - the latitude
- * @returns - the quantized latitude
- */
-pub fn quantizeLat(lat: number): number {
-  return Math.round(((lat + 90) * 16_777_215) / 180);
-}
-
-/**
- * @param qLon - the quantized longitude
- * @returns - the longitude
- */
-pub fn dequantizeLon(qLon: number): number {
-  return (qLon * 360) / 16_777_215 - 180;
-}
-
-/**
- * @param qLat - the quantized latitude
- * @returns - the latitude
- */
-pub fn dequantizeLat(qLat: number): number {
-  return (qLat * 180) / 16_777_215 - 90;
-}
-
-/**
- * Packs a 24-bit integer into a buffer at the specified offset.
- * @param buffer - The buffer to pack the integer into
- * @param value - The 24-bit integer to pack
- * @param offset - The offset in the buffer to start packing
- */
-function pack24BitUInt(buffer: Uint8Array, value: number, offset: number): void {
-  buffer[offset] = (value >> 16) & 0xff;
-  buffer[offset + 1] = (value >> 8) & 0xff;
-  buffer[offset + 2] = value & 0xff;
-}
-
-/**
- * @param buffer - The buffer containing the packed 24-bit integer
- * @param offset - The offset in the buffer to start unpacking
- * @returns - The unpacked 24-bit integer
- */
-function unpack24BitUInt(buffer: Uint8Array, offset: number): number {
-  return (buffer[offset] << 16) | (buffer[offset + 1] << 8) | buffer[offset + 2];
-}
-
-/**
- * @param buffer - the buffer to write to
- * @param value - the float to write
- * @param offset - the offset at which we start writting to the buffer
- */
-function packFloat(buffer: Uint8Array, value: number, offset: number): void {
-  const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
-  view.setFloat32(offset, value, true); // true for little-endian
-}
-
-/**
- * @param buffer - The buffer containing the packed float
- * @param offset - The offset in the buffer to start unpacking
- * @returns - The unpacked float
- */
-function unpackFloat(buffer: Uint8Array, offset: number): number {
-  const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
-  return view.getFloat32(offset, true); // true for little-endian
-}
-
-/**
- * | Decimal Places | Approximate Accuracy in Distance       |
- * |----------------|----------------------------------------|
- * | 0              | 111 km (69 miles)                      |
- * | 1              | 11.1 km (6.9 miles)                    |
- * | 2              | 1.11 km (0.69 miles)                   |
- * | 3              | 111 meters (364 feet)                  |
- * | 4              | 11.1 meters (36.4 feet)                |
- * | 5              | 1.11 meters (3.64 feet)                |
- * | 6              | 0.111 meters (11.1 cm or 4.39 inches)  |
- * | 7              | 1.11 cm (0.44 inches)                  |
- * | 8              | 1.11 mm (0.044 inches)                 |
- * 24-bit quantization for longitude and latitude
- * LONGITUDE:
- * - ~0.000021457672119140625 degrees precision
- * - ~2.388 meters precision
- * LATITUDE:
- * - ~0.000010728836059570312 degrees precision
- * - ~1.194 meters precision
- * @param bbox - either 2D or 3D.
- * @returns - the quantized bounding box
- */
-pub fn quantizeBBox(bbox: BBox | BBox3D): Uint8Array {
-  const is3D = bbox.length === 6;
-  const buffer = new Uint8Array(is3D ? 20 : 12);
-
-  const qLon1 = quantizeLon(bbox[0]);
-  const qLat1 = quantizeLat(bbox[1]);
-  const qLon2 = quantizeLon(bbox[2]);
-  const qLat2 = quantizeLat(bbox[3]);
-
-  pack24BitUInt(buffer, qLon1, 0);
-  pack24BitUInt(buffer, qLat1, 3);
-  pack24BitUInt(buffer, qLon2, 6);
-  pack24BitUInt(buffer, qLat2, 9);
-  if (is3D) {
-    packFloat(buffer, bbox[4], 12);
-    packFloat(buffer, bbox[5], 16);
-  }
-
-  return buffer;
-}
-
-/**
- * @param buffer - The buffer containing the quantized bounding box
- * @returns - The decoded bounding box
- */
-pub fn dequantizeBBox(buffer: Uint8Array): BBox {
-  const qLon1 = unpack24BitUInt(buffer, 0);
-  const qLat1 = unpack24BitUInt(buffer, 3);
-  const qLon2 = unpack24BitUInt(buffer, 6);
-  const qLat2 = unpack24BitUInt(buffer, 9);
-
-  const lon1 = dequantizeLon(qLon1);
-  const lat1 = dequantizeLat(qLat1);
-  const lon2 = dequantizeLon(qLon2);
-  const lat2 = dequantizeLat(qLat2);
-
-  return [lon1, lat1, lon2, lat2];
-}
-
-/**
- * @param buffer - The buffer containing the quantized 3D bounding box
- * @returns - The decoded 3D bounding box
- */
-pub fn dequantizeBBox3D(buffer: Uint8Array): BBox3D {
-  const qLon1 = unpack24BitUInt(buffer, 0);
-  const qLat1 = unpack24BitUInt(buffer, 3);
-  const qLon2 = unpack24BitUInt(buffer, 6);
-  const qLat2 = unpack24BitUInt(buffer, 9);
-  const zLow = unpackFloat(buffer, 12);
-  const zHigh = unpackFloat(buffer, 16);
-
-  const lon1 = dequantizeLon(qLon1);
-  const lat1 = dequantizeLat(qLat1);
-  const lon2 = dequantizeLon(qLon2);
-  const lat2 = dequantizeLat(qLat2);
-
-  return [lon1, lat1, lon2, lat2, zLow, zHigh];
 }

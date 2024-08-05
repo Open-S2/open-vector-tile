@@ -3,7 +3,7 @@ import {
   BaseVectorLine,
   BaseVectorLines3DFeature,
   BaseVectorLinesFeature,
-  BaseVectorPoint3DFeature,
+  BaseVectorPoints3DFeature,
   BaseVectorPointsFeature,
   BaseVectorPolys3DFeature,
   BaseVectorPolysFeature,
@@ -96,9 +96,9 @@ describe('BaseVectorPointsFeature', () => {
   });
 });
 
-describe('BaseVectorPoint3DFeature', () => {
-  const point = new BaseVectorPoint3DFeature([{ x: 0, y: 0, z: 1 }], { name: 'a' }, 1);
-  const point2 = new BaseVectorPoint3DFeature(
+describe('BaseVectorPoints3DFeature', () => {
+  const point = new BaseVectorPoints3DFeature([{ x: 0, y: 0, z: 1 }], { name: 'a' }, 1);
+  const point2 = new BaseVectorPoints3DFeature(
     [
       { x: 1_234, y: 5_678, z: 2_419, m: { width: 2 } },
       { x: 2, y: 3, z: 4, m: { width: 3 } },

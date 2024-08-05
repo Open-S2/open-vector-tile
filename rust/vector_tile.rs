@@ -1,108 +1,130 @@
-extern crate alloc;
+use pbf::{ProtoRead, Protobuf};
 
 use alloc::vec::Vec;
+use alloc::string::String;
+use alloc::collections::BTreeMap;
+use alloc::rc::Rc;
 
-/// A BBOX is defined in lon-lat space and helps with zooming motion to
-/// see the entire line or polygon
-/// [left: number, bottom: number, right: number, top: number]
-pub struct BBox {
-    pub left: f64,
-    pub bottom: f64,
-    pub right: f64,
-    pub top: f64,
-}
-/// A BBOX is defined in lon-lat space and helps with zooming motion to
-/// see the entire 3D line or polygon
-pub struct BBox3D {
-  left: f64,
-  bottom: f64,
-  right: f64,
-  top: f64,
-  near: f64,
-  far: f64,
+use core::cell::RefCell;
+
+use crate::base::BaseVectorTile;
+use crate::mapbox::MapboxVectorLayer;
+use crate::open::{write_layer, ColumnCacheReader, ColumnCacheWriter, OpenVectorLayer};
+
+pub trait VectorLayerMethods {
+    fn version(&self) -> u16;
+    fn name(&self) -> String;
+    fn extent(&self) -> usize;
 }
 
-/// Mapbox Vector Feature types.
-pub enum VectorFeatureType {
-    Point = 1,
-    Line = 2,
-    Polygon = 3,
-    MultiPolygon = 4,
+pub enum VectorLayer {
+    Mapbox(MapboxVectorLayer),
+    Open(OpenVectorLayer),
+}
+impl VectorLayerMethods for VectorLayer {
+    fn version(&self) -> u16 {
+        match self {
+            VectorLayer::Mapbox(layer) => layer.version(),
+            VectorLayer::Open(layer) => layer.version(),
+        }
+    }
+
+    fn name(&self) -> String {
+        match self {
+            VectorLayer::Mapbox(layer) => layer.name(),
+            VectorLayer::Open(layer) => layer.name(),
+        }
+    }
+
+    fn extent(&self) -> usize {
+        match self {
+            VectorLayer::Mapbox(layer) => layer.extent(),
+            VectorLayer::Open(layer) => layer.extent(),
+        }
+    }
 }
 
-/// Open Vector Tile Feature types.
-pub enum VectorTileFeatureType {
-    Points = 1,
-    Lines = 2,
-    Polygons = 3,
-    Points3D = 4,
-    Lines3D = 5,
-    Polygons3D = 6,
+pub struct VectorTile {
+    pub layers: BTreeMap<String, VectorLayer>,
+    layer_indexes: Vec<usize>,
+    pbf: Rc<RefCell<Protobuf>>,
+    columns: Option<Rc<RefCell<ColumnCacheReader>>>,
+}
+impl VectorTile {
+    pub fn new(data: RefCell<Vec<u8>>, end: Option<usize>) -> Self {
+        let pbf = Rc::new(RefCell::new(Protobuf::from_input(data)));
+        let pbf_clone = pbf.clone();
+        let mut vt = VectorTile {
+            pbf,
+            columns: None,
+            layer_indexes: Vec::new(),
+            layers: BTreeMap::new()
+        };
+
+        let mut tmp_pbf = pbf_clone.borrow_mut();
+        tmp_pbf.read_fields(&mut vt, end);
+
+        vt.read_layers();
+
+        vt
+    }
+
+    pub fn read_layers(&mut self) -> Option<()> {
+        let layer_indexes = self.layer_indexes.clone();
+        let pbf_clone = self.pbf.clone();
+        let mut tmp_pbf = pbf_clone.borrow_mut();
+        let cache = self.columns.as_ref()?.clone();
+
+        for pos in layer_indexes {
+          tmp_pbf.set_pos(pos);
+          let layer = OpenVectorLayer::new(
+            self.pbf.clone(),
+            cache.clone()
+          );
+          self.layers.insert(layer.name.clone(), VectorLayer::Open(layer));
+        }
+
+        Some(())
+    }
+}
+impl ProtoRead for VectorTile {
+    fn read(&mut self, tag: u64, pb: &mut Protobuf) {
+        match tag {
+            1 | 3 => {
+                let layer = VectorLayer::Mapbox(MapboxVectorLayer::new(
+                    self.pbf.clone(),
+                    pb.read_varint::<usize>() + pb.get_pos(),
+                    tag == 3
+                ));
+                self.layers.insert(pb.read_string(), layer);
+            },
+            4 => {
+                // store the position of each layer for later retrieval.
+                // Columns must be prepped before reading the layer.
+                self.layer_indexes.push(pb.get_pos());
+            },
+            5 => {
+                // vectorTile.#columns = new ColumnCacheReader(pbf, pbf.readVarint() + pbf.pos);
+                self.columns = Some(Rc::new(RefCell::new(ColumnCacheReader::new(
+                    self.pbf.clone(),
+                    pb.read_varint::<usize>() + pb.get_pos()
+                ))));
+            },
+            _ => panic!("unknown tag: {}", tag),
+        }
+    }
 }
 
-/// Open Vector Spec can be an x,y but also may contain an MValue if the
-/// geometry is a line or polygon
-pub struct Point {
-  pub x: u32,
-  pub y: u32,
-  pub m: Option<Properties>,
-}
-/// Open Vector Spec can be an x,y,z but also may contain an MValue
-/// if the geometry is a line or polygon
-pub struct Point3D {
-  pub x: u32,
-  pub y: u32,
-  pub z: u32,
-  pub m: Option<Properties>,
-}
+pub fn write_tile(tile: &mut BaseVectorTile) -> Vec<u8> {
+    let mut pbf = Protobuf::new();
+    let mut cache = ColumnCacheWriter::default();
 
-/// Built array line data with associated offset to help render dashed lines across tiles.
-pub struct VectorLineWithOffset {
-    /// the offset of the line to start processing the dash position
-    pub offset: f32,
-    /// the line data
-    pub geometry: VectorLine,
-}
-/// Built array line data with associated offset to help render dashed lines across tiles.
-pub type VectorLinesWithOffset = Vec<VectorLineWithOffset>;
-/// Built array line data with associated offset to help render dashed lines across tiles.
-pub struct VectorLine3DWithOffset {
-    /// the offset of the line to start processing the dash position
-    pub offset: f32,
-    /// the line data
-    pub geometry: VectorLine3D,
-}
-/// Built array line data with associated offset to help render dashed lines across tiles.
-pub type VectorLines3DWithOffset = Vec<VectorLine3DWithOffset>;
+    // first write layers
+    for layer in tile.layers.values_mut() {
+        pbf.write_bytes_field(4, &write_layer(layer, &mut cache));
+    }
+    // now we can write columns
+    pbf.write_message(5, &cache);
 
-/// A set of points
-pub type VectorPoints = Vec<Point>;
-/// A set of 3D points
-pub type VectorPoints3D = Vec<Point3D>;
-/// A set of points
-pub type VectorLine = Vec<Point>;
-/// A set of 3D points
-pub type VectorLine3D = Vec<Point3D>;
-/// A set of lines
-pub type VectorLines = Vec<VectorLine>;
-/// A set of 3D lines
-pub type VectorLines3D = Vec<VectorLine3D>;
-/// A set of polygons
-pub type VectorPoly = Vec<VectorLine>;
-/// A set of 3D polygons
-pub type VectorPoly3D = Vec<VectorLine3D>;
-/// A set of multiple polygons
-pub type VectorMultiPoly = Vec<VectorPoly>;
-/// A set of multiple 3D polygons
-pub type VectorMultiPoly3D = Vec<VectorPoly3D>;
-/// An enumeration of all the geometry types
-pub enum VectorGeometry {
-    VectorPoints(VectorPoints),
-    VectorLines(VectorLines),
-    VectorPoly(VectorPoly),
-    VectorMultiPoly(VectorMultiPoly),
-    VectorPoints3D(VectorPoints3D),
-    VectorLines3D(VectorLines3D),
-    VectorPoly3D(VectorPoly3D),
-    VectorMultiPoly3D(VectorMultiPoly3D),
+    pbf.take()
 }

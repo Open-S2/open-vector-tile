@@ -3,7 +3,7 @@ import {
   BaseVectorLine,
   BaseVectorLines3DFeature,
   BaseVectorLinesFeature,
-  BaseVectorPoint3DFeature,
+  BaseVectorPoints3DFeature,
   BaseVectorPointsFeature,
   BaseVectorPolys3DFeature,
   BaseVectorPolysFeature,
@@ -135,12 +135,12 @@ describe('encodePoint3DFeature and decodePoint3DFeature', () => {
   const col = new ColumnCacheWriter();
   const shape: Shape = { name: 'string' };
   const mShape: Shape = { size: 'u64' };
-  const basePointFeatureA = new BaseVectorPoint3DFeature(
+  const basePointFeatureA = new BaseVectorPoints3DFeature(
     [{ x: 3_805, y: 5_645, z: 3_212 }],
     { name: 'a' },
     1,
   );
-  const basePointFeatureB = new BaseVectorPoint3DFeature(
+  const basePointFeatureB = new BaseVectorPoints3DFeature(
     [
       { x: 1, y: 0, z: 5, m: { size: 1 } },
       { x: 2, y: -1, z: 6 },

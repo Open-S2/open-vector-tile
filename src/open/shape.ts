@@ -391,7 +391,7 @@ export function validateTypes(types: ShapeType[]): ShapeType {
  * @returns - true if the type is a number
  */
 function isNumber(type: PrimitiveShapes): boolean {
-  return type === 'i64' || type === 'u64' || type === 'f64';
+  return type === 'i64' || type === 'u64' || type === 'f32' || type === 'f64';
 }
 
 /**

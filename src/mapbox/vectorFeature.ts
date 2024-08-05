@@ -151,8 +151,7 @@ export default class MapboxVectorFeature {
   loadGeometryFlat(): [geometry: number[] | VectorGeometry, indices: number[]] {
     if (!this.isS2) return [this.loadGeometry(), [] as number[]];
     this.#pbf.pos = this.#geometry;
-    const { extent } = this;
-    const multiplier = 1 / extent;
+    const multiplier = 1 / this.extent;
 
     const geometry = [];
     const end = this.#pbf.readVarint() + this.#pbf.pos;

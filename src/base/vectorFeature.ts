@@ -116,16 +116,19 @@ export class VectorFeaturePointsBase<
 /**
  * Base Vector Points Feature
  * Type 1
- * Extends from @see {@link VectorFeatureBase}.
+ * Extends from @see {@link VectorFeaturePointsBase}.
  * Store either a single point or a list of points
  */
 export class BaseVectorPointsFeature extends VectorFeaturePointsBase<VectorPoints, BBox> {
   type = 1;
 }
 /**
- * Base Vector Point 3D Feature
+ * Base Vector Points 3D Feature
+ * Type 4
+ * Extends from @see {@link VectorFeaturePointsBase}.
+ * Store either a single point or a list of points
  */
-export class BaseVectorPoint3DFeature extends VectorFeaturePointsBase<VectorPoints3D, BBox3D> {
+export class BaseVectorPoints3DFeature extends VectorFeaturePointsBase<VectorPoints3D, BBox3D> {
   type = 4;
 }
 
@@ -367,7 +370,7 @@ export type BaseVectorFeature =
   | BaseVectorPointsFeature
   | BaseVectorLinesFeature
   | BaseVectorPolysFeature
-  | BaseVectorPoint3DFeature
+  | BaseVectorPoints3DFeature
   | BaseVectorLines3DFeature
   | BaseVectorPolys3DFeature;
 
