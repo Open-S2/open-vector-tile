@@ -88,7 +88,9 @@ impl From<OColumnName> for u64 {
 /// Store either data itself or a reference to the position in the protobuf to deserialize
 #[derive(Debug)]
 pub enum ColumnContainer<T> {
+    /// reference to a position in the protobuf
     Pos(usize),
+    /// data itself
     Data(T),
 }
 
@@ -96,7 +98,7 @@ pub enum ColumnContainer<T> {
 /// Stores all data in a column format.
 /// Upon construction, all columns are decoded from the protobuf.
 /// This allows for quick and easy access to data in a column format.
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct ColumnCacheReader {
     /// strings are stored in a column of strings
     string: Vec<ColumnContainer<String>>,
@@ -137,6 +139,7 @@ impl ColumnCacheReader {
         ccr
     }
 
+    /// get a string
     pub fn get_string(&mut self, index: usize) -> String {
         get_value(
             index,
@@ -146,22 +149,27 @@ impl ColumnCacheReader {
         )
     }
 
+    /// get an unsigned integer
     pub fn get_unsigned(&self, index: usize) -> u64 {
         self.unsigned[index]
     }
 
+    /// get a signed integer
     pub fn get_signed(&self, index: usize) -> i64 {
         self.signed[index]
     }
 
+    /// get a float
     pub fn get_float(&self, index: usize) -> f32 {
         self.float[index]
     }
 
+    /// get a double
     pub fn get_double(&self, index: usize) -> f64 {
         self.double[index]
     }
 
+    /// get a vector of points used by all geometry types
     pub fn get_points(&mut self, index: usize) -> VectorPoints {
         get_value(
             index,
@@ -173,6 +181,7 @@ impl ColumnCacheReader {
         )
     }
 
+    /// get a vector of 3D points used by all geometry types
     pub fn get_points_3d(&mut self, index: usize) -> VectorPoints3D {
         get_value(
             index,
@@ -184,6 +193,7 @@ impl ColumnCacheReader {
         )
     }
 
+    /// get a vector of indices used by all geometry types
     pub fn get_indices(&mut self, index: usize) -> Vec<u32> {
         get_value(
             index,
@@ -195,6 +205,7 @@ impl ColumnCacheReader {
         )
     }
 
+    /// get a vector of encoded data that helps decode shapes
     pub fn get_shapes(&mut self, index: usize) -> Vec<usize> {
         get_value(
             index,
@@ -204,6 +215,7 @@ impl ColumnCacheReader {
         )
     }
 
+    /// get a BBox
     pub fn get_bbox(&mut self, index: usize) -> BBOX {
         get_value(
             index,
@@ -273,7 +285,9 @@ pub struct OColumnBaseChunk {
 /// Number types are eventually sorted, so we track the column and index with the data.
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 pub enum ColumnValue{
+    /// raw number index pointing to a location in the cache column
     Number(usize),
+    /// a reference to a column
     Column(RefCell::<OColumnBaseChunk>),
 }
 impl From<usize> for ColumnValue {
@@ -367,19 +381,20 @@ impl ColumnCacheWriter {
 impl ProtoWrite for ColumnCacheWriter {
     fn write(&self, pbf: &mut Protobuf) {
         // setup
-        let mut unsigned: Vec<(u64, RefCell<OColumnBaseChunk>)> = self.unsigned
+        let unsigned: Vec<(u64, RefCell<OColumnBaseChunk>)> = self.unsigned
             .iter().map(|(&key, value)| (key, value.clone())).collect();
-        let mut signed: Vec<(i64, RefCell<OColumnBaseChunk>)> = self.signed
+        let signed: Vec<(i64, RefCell<OColumnBaseChunk>)> = self.signed
             .iter().map(|(&key, value)| (key, value.clone())).collect();
-        let mut float: Vec<(f32, RefCell<OColumnBaseChunk>)> = self.float
+        let float: Vec<(f32, RefCell<OColumnBaseChunk>)> = self.float
             .iter().map(|(&key, value)| (key.0, value.clone())).collect();
-        let mut double: Vec<(f64, RefCell<OColumnBaseChunk>)> = self.double
+        let double: Vec<(f64, RefCell<OColumnBaseChunk>)> = self.double
             .iter().map(|(&key, value)| (key.0, value.clone())).collect();
         // sort them
-        sort_column(&mut unsigned);
-        sort_column(&mut signed);
-        sort_column(&mut float);
-        sort_column(&mut double);
+        // TODO: bring this back
+        // sort_column(&mut unsigned);
+        // sort_column(&mut signed);
+        // sort_column(&mut float);
+        // sort_column(&mut double);
         // strings
         for string in self.string.iter() {
             pbf.write_string_field(OColumnName::String.into(), string.0);
@@ -431,6 +446,7 @@ impl ProtoWrite for ColumnCacheWriter {
     }
 }
 
+/// Add value to column and return index
 pub fn add<T>(col: &mut OColumnBaseWrite<T>, value: T)-> usize
 where
     T: Ord {
@@ -447,7 +463,7 @@ where
   
 /// Sort number types and value types by index then update the index of each row for better
 /// compression down the line.
-fn sort_column<T: CustomOrd>(input: &mut [(T, RefCell<OColumnBaseChunk>)]) {
+pub fn sort_column<T: CustomOrd>(input: &mut [(T, RefCell<OColumnBaseChunk>)]) {
     // first sort
     input.sort_by(|a, b| {
         // First sort by count in descending order

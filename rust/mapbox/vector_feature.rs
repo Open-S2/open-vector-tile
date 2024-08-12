@@ -11,12 +11,20 @@ use alloc::vec::Vec;
 use alloc::string::String;
 use alloc::collections::BTreeMap;
 
+/// Mapbox specification for a Feature
 pub struct MapboxVectorFeature {
+    /// the id of the feature
     pub id: Option<u64>,
+    /// the version of the vector tile
     pub version: u16,
+    /// the properties
     pub properties: Properties,
+    /// the extent
     pub extent: usize,
+    /// the feature type
     pub r#type: FeatureType,
+    /// whether the feature is using the S2 spec. This isn't used by most tooling and was replaced by
+    /// the open spec
     pub is_s2: bool,
     indices_index: Option<usize>,
     indices: Option<Vec<u32>>,
@@ -28,6 +36,7 @@ pub struct MapboxVectorFeature {
     pbf: Rc<RefCell<Protobuf>>,
 }
 impl MapboxVectorFeature {
+    /// Create a new MapboxVectorFeature
     pub fn new(
         pbf: Rc<RefCell<Protobuf>>,
         is_s2: bool,
@@ -61,14 +70,17 @@ impl MapboxVectorFeature {
         mvt
     }
 
+    /// get the feature type
     pub fn get_type(&self) -> OpenFeatureType {
         (&self.r#type).into()
     }
 
+    /// get the bbox
     pub fn bbox(&self) -> Option<BBOX> {
         None
     }
 
+    /// whether the feature has m values
     pub fn has_m_values(&self) -> bool {
         false
     }
@@ -125,6 +137,7 @@ impl MapboxVectorFeature {
         (geometry, indices)
     }
 
+    /// load the geometry
     pub fn load_geometry(&mut self) -> VectorGeometry {
         if let Some(geometry) = &self.geometry { return geometry.clone(); }
 
@@ -196,6 +209,7 @@ impl MapboxVectorFeature {
         geometry
     }
 
+    /// load the indices
     pub fn read_indices(&mut self) -> Vec<u32> {
         if let Some(indices) = &self.indices {
             return indices.clone();
@@ -312,9 +326,13 @@ fn signed_area(ring: &[Point]) -> i32 {
 /// Mapbox Vector Feature types.
 #[derive(Debug, Clone, PartialEq)]
 pub enum FeatureType {
+    /// Point Feature
     Point = 1,
+    /// Line Feature
     Line = 2,
+    /// Polygon Feature
     Polygon = 3,
+    /// MultiPolygon Feature
     MultiPolygon = 4,
 }
 impl BitCast for FeatureType {
@@ -336,13 +354,21 @@ impl BitCast for FeatureType {
 /// support string, number, boolean, and null (None in Rust).
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
+    /// String value
     String(String),
+    /// Unsigned integer value
     UInt(u64),
+    /// Signed integer 32-bit value
     Int(i32),
+    /// Signed integer 64-bit value
     SInt(i64),
+    /// 32-bit Floating point value
     Float(f32),
+    /// 64-bit Floating point value
     Double(f64),
+    /// Boolean value
     Bool(bool),
+    /// Null value
     Null,
 }
 impl ProtoRead for Value {

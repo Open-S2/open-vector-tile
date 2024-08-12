@@ -41,9 +41,9 @@ dependencies = [
 
 [[package]]
 name = "pbf"
-version = "0.1.6"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6632a580dda84c3cd776bc3c8654a478b74058adf6537d387267b9d41389a115"
+checksum = "72bb070dd1c0f632d5fe145c8205588fd538411990e6d42e8183fda18da762c8"
 
 [[package]]
 name = "proc-macro2"

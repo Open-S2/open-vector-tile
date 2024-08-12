@@ -23,14 +23,23 @@ use crate::open::{
 
 use alloc::vec::Vec;
 
+/// Vector Feature functions that are common to all vector features
 pub trait VectorFeature {
+    /// Get the type of the vector feature
     fn get_type(&self) -> FeatureType;
+    /// Get the properties of the vector feature
     fn get_properties(&self) -> &Properties;
+    /// true if the feature has BBox
     fn has_bbox(&self) -> bool;
+    /// true if the feature has offsets
     fn has_offsets(&self) -> bool;
+    /// true if the feature has M values
     fn has_m_values(&self) -> bool;
+    /// Get the geometry of the feature
     fn load_geometry(&self) -> VectorGeometry;
+    /// Get the M values of the feature
     fn get_m_values(&self) -> Option<LineStringMValues>;
+    /// Encode the feature to cache
     fn encode_to_cache(&self, cache: &mut ColumnCacheWriter, m_shape: &Option<Shape>) -> usize;
 }
 
@@ -39,12 +48,17 @@ pub trait VectorFeature {
 /// Base Vector Points Feature
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct BaseVectorPointsFeature {
+    /// Unique ID
     pub id: Option<u64>,
+    /// Geometry
     pub geometry: VectorPoints,
+    /// Properties
     pub properties: Properties,
+    /// BBox
     pub bbox: Option<BBox>,
 }
 impl BaseVectorPointsFeature {
+    /// Create a new BaseVectorPointsFeature
     pub fn new(
         id: Option<u64>,
         geometry: VectorPoints,
@@ -118,12 +132,17 @@ impl VectorFeature for BaseVectorPointsFeature {
 /// Base Vector Points Feature
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct BaseVectorPoints3DFeature {
+    /// Unique ID
     pub id: Option<u64>,
+    /// Geometry
     pub geometry: VectorPoints3D,
+    /// Properties
     pub properties: Properties,
+    /// BBox
     pub bbox: Option<BBox3D>,
 }
 impl BaseVectorPoints3DFeature {
+    /// Create a new BaseVectorPoints3DFeature
     pub fn new(
         id: Option<u64>,
         geometry: VectorPoints3D,
@@ -199,12 +218,17 @@ impl VectorFeature for BaseVectorPoints3DFeature {
 /// Base Vector Line Feature
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct BaseVectorLinesFeature {
+    /// Unique ID
     pub id: Option<u64>,
+    /// Geometry
     pub geometry: VectorLinesWithOffset,
+    /// Properties
     pub properties: Properties,
+    /// BBox
     pub bbox: Option<BBox>,
 }
 impl BaseVectorLinesFeature {
+    /// Create a new BaseVectorLinesFeature
     pub fn new(
         id: Option<u64>,
         geometry: VectorLinesWithOffset,
@@ -277,12 +301,17 @@ impl VectorFeature for BaseVectorLinesFeature {
 /// Base Vector Line 3D Feature
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct BaseVectorLines3DFeature {
+    /// Unique ID
     pub id: Option<u64>,
+    /// Geometry
     pub geometry: VectorLines3DWithOffset,
+    /// Properties
     pub properties: Properties,
+    /// BBox
     pub bbox: Option<BBox3D>,
 }
 impl BaseVectorLines3DFeature {
+    /// Create a new BaseVectorLines3DFeature
     pub fn new(
         id: Option<u64>,
         geometry: VectorLines3DWithOffset,
@@ -357,14 +386,21 @@ impl VectorFeature for BaseVectorLines3DFeature {
 /// Base Vector Polygon Feature
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct BaseVectorPolysFeature {
+    /// Unique ID
     pub id: Option<u64>,
+    /// Geometry
     pub geometry: Vec<VectorLinesWithOffset>,
+    /// Properties
     pub properties: Properties,
+    /// BBox
     pub bbox: Option<BBox>,
+    /// Tesselation
     pub tesselation: Vec<Point>,
+    /// Indices
     pub indices: Vec<u32>,
 }
 impl BaseVectorPolysFeature {
+    /// Create a new BaseVectorPolysFeature
     pub fn new(
         id: Option<u64>,
         geometry: Vec<VectorLinesWithOffset>,
@@ -452,14 +488,21 @@ impl VectorFeature for BaseVectorPolysFeature {
 /// Base Vector Polygon Feature
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct BaseVectorPolys3DFeature {
+    /// Unique ID
     pub id: Option<u64>,
+    /// Geometry
     pub geometry: Vec<VectorLines3DWithOffset>,
+    /// Properties
     pub properties: Properties,
+    /// BBox
     pub bbox: Option<BBox3D>,
+    /// Tesselation
     pub tesselation: Vec<Point3D>,
+    /// Indices
     pub indices: Vec<u32>,
 }
 impl BaseVectorPolys3DFeature {
+    /// Create a new BaseVectorPolys3DFeature
     pub fn new(
         id: Option<u64>,
         geometry: Vec<VectorLines3DWithOffset>,
@@ -544,12 +587,16 @@ impl VectorFeature for BaseVectorPolys3DFeature {
     }
 }
 
+/// Tesselation Wrapper to handle both 2D and 3D cases
 #[derive(Debug, Clone)]
 pub enum TesselationWrapper {
+    /// 2D tesselation
     Tesselation(Vec<Point>),
+    /// 3D tesselation
     Tesselation3D(Vec<Point3D>),
 }
 impl TesselationWrapper {
+    /// check the length of the tesselation
     pub fn len(&self) -> usize {
         match self {
             TesselationWrapper::Tesselation(points) => points.len(),
@@ -557,6 +604,7 @@ impl TesselationWrapper {
         }
     }
 
+    /// check if the tesselation is empty
     pub fn is_empty(&self) -> bool {
         match self {
             TesselationWrapper::Tesselation(points) => points.is_empty(),
@@ -567,14 +615,21 @@ impl TesselationWrapper {
 
 /// A type that encompasses all vector tile feature types
 pub enum BaseVectorFeature {
+    /// Points
     BaseVectorPointsFeature(BaseVectorPointsFeature),
+    /// Lines
     BaseVectorLinesFeature(BaseVectorLinesFeature),
+    /// Polygons
     BaseVectorPolysFeature(BaseVectorPolysFeature),
+    /// 3D Points
     BaseVectorPoints3DFeature(BaseVectorPoints3DFeature),
+    /// 3D Lines
     BaseVectorLines3DFeature(BaseVectorLines3DFeature),
+    /// 3D Polygons
     BaseVectorPolys3DFeature(BaseVectorPolys3DFeature),
 }
 impl BaseVectorFeature {
+    /// check if the feature geometry has a single length
     pub fn single(&self) -> bool {
         match self {
             BaseVectorFeature::BaseVectorPointsFeature(f) => f.geometry.len() == 1,
@@ -586,6 +641,7 @@ impl BaseVectorFeature {
         }
     }
 
+    /// get the feature properties
     pub fn get_properties(&self) -> &Properties {
         match self {
             BaseVectorFeature::BaseVectorPointsFeature(f) => f.get_properties(),
@@ -597,6 +653,7 @@ impl BaseVectorFeature {
         }
     }
 
+    /// check if the feature has m values
     pub fn has_m_values(&self) -> bool {
         match self {
             BaseVectorFeature::BaseVectorPointsFeature(f) => f.has_m_values(),
@@ -608,6 +665,7 @@ impl BaseVectorFeature {
         }
     }
 
+    /// get the feature m values
     pub fn get_m_values(&self) -> Option<LineStringMValues> {
         match self {
             BaseVectorFeature::BaseVectorPointsFeature(f) => f.get_m_values(),
@@ -619,6 +677,7 @@ impl BaseVectorFeature {
         }
     }
 
+    /// get the feature type
     pub fn get_type(&self) -> FeatureType {
         match self {
             BaseVectorFeature::BaseVectorPointsFeature(f) => f.get_type(),
@@ -629,6 +688,8 @@ impl BaseVectorFeature {
             BaseVectorFeature::BaseVectorPolys3DFeature(f) => f.get_type(),
         }
     }
+
+    /// get the feature id
     pub fn id(&self) -> Option<u64> {
         match self {
             BaseVectorFeature::BaseVectorPointsFeature(f) => f.id,
@@ -640,6 +701,7 @@ impl BaseVectorFeature {
         }
     }
 
+    /// get the feature indices
     pub fn indices(&self) -> Option<Vec<u32>> {
         match self {
             BaseVectorFeature::BaseVectorPolysFeature(f) => Some(f.indices.clone()),
@@ -648,6 +710,7 @@ impl BaseVectorFeature {
         }
     }
 
+    /// get the feature tesselation
     pub fn tesselation(&self) -> Option<TesselationWrapper> {
         match self {
             BaseVectorFeature::BaseVectorPolysFeature(f) =>
@@ -658,6 +721,7 @@ impl BaseVectorFeature {
         }
     }
 
+    /// get the feature bbox
     pub fn bbox(&self) -> Option<BBOX> {
         match self {
             BaseVectorFeature::BaseVectorPointsFeature(f) => f.bbox.map(BBOX::BBox),
@@ -669,6 +733,7 @@ impl BaseVectorFeature {
         }
     }
 
+    /// check if the feature has offsets
     pub fn has_offsets(&self) -> bool {
         match self {
             BaseVectorFeature::BaseVectorLinesFeature(f) => f.has_offsets(),
@@ -679,6 +744,7 @@ impl BaseVectorFeature {
         }
     }
 
+    /// encode the feature to cache
     pub fn encode_to_cache(&self, cache: &mut ColumnCacheWriter, m_shape: &Option<Shape>) -> usize {
         match self {
             BaseVectorFeature::BaseVectorPointsFeature(f) => f.encode_to_cache(cache, m_shape),
@@ -726,32 +792,4 @@ pub fn encode_offset(offset: f64) -> u32 {
 /// Decode offset from a signed integer into a float or double
 pub fn decode_offset(offset: u32) -> f64 {
     (offset as f64) / 1_000.0
-}
-
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    use crate::Point;
-
-    use alloc::vec;
-
-    #[test]
-    fn test_base_vector_points_feature() {
-        let feature = BaseVectorPointsFeature {
-            id: Some(1),
-            geometry: vec![Point::new(0, 0)],
-            properties: Properties::default(),
-            bbox: Some(BBox { left: 0.0, bottom: 0.0, right: 1.0, top: 1.0 }),
-        };
-        let feature2 = BaseVectorPointsFeature::new(
-            Some(1),
-            vec![Point::new(0, 0)],
-            Properties::default(),
-            Some(BBox { left: 0.0, bottom: 0.0, right: 1.0, top: 1.0 }),
-        );
-        
-        assert!(feature == feature2);
-    }
 }

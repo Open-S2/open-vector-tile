@@ -8,6 +8,7 @@ use alloc::collections::BTreeMap;
 /// This is an intermediary for storing feature data in the Open Vector Tile format.
 /// Convert from either a Mapbox vector tile or GeoJSON data.
 pub struct BaseVectorTile {
+    /// the layers in the tile that hold features
     pub layers: BTreeMap<String, BaseVectorLayer>,
 }
 impl From<VectorTile> for BaseVectorTile {

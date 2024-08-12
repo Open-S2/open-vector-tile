@@ -26,6 +26,7 @@ pub struct BaseVectorLayer {
     pub features: Vec<BaseVectorFeature>,
 }
 impl BaseVectorLayer {
+    /// Create a new BaseVectorLayer
     pub fn new(
         name: String,
         extent: usize,
@@ -64,14 +65,17 @@ impl BaseVectorLayer {
         self.features.push(feature);
     }
   
+    /// Get the feature at the given index
     pub fn feature(&self, i: usize) -> &BaseVectorFeature {
         &self.features[i]
     }
 
+    /// Get the number of features
     pub fn len(&self) -> usize {
         self.features.len()
     }
 
+    /// Check if the layer is empty
     pub fn is_empty(&self) -> bool {
         self.features.is_empty()
     }

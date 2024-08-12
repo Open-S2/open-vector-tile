@@ -4,7 +4,9 @@ use alloc::vec::Vec;
 
 use core::cmp::Ordering;
 
+/// Manager for float based comparisons
 pub trait CustomOrd {
+  /// Custom comparison
   fn custom_cmp(&self, other: &Self) -> Ordering;
 }
 impl CustomOrd for u64 {
@@ -65,7 +67,13 @@ pub fn command_encode(cmd: u8, len: u32) -> u64 {
   ((len << 3) + ((cmd as u32) & 0x7)) as u64
 }
 
-pub struct Command { pub cmd: u8, pub len: u32 }
+/// A command container. Decoding of a comand and length
+pub struct Command {
+  /// The command
+  pub cmd: u8,
+  /// The length
+  pub len: u32,
+}
 
 /// Decode a command with the given length of the data that follows.
 pub fn command_decode(cmd: u64) -> Command {
@@ -81,6 +89,7 @@ pub fn zigzag(value: i32) -> u32 {
     (val << 1) ^ (val >> 31)
 }
 
+/// Applies zigzag decoding to transform an unsigned integer into a signed integer.
 pub fn zagzig(value: u32) -> i32 {
     let val: i32 = value as i32;
     (val >> 1) ^ -(val & 1)
@@ -388,6 +397,7 @@ impl BBox {
   }
 }
 impl BBox3D {
+  /// Quantize the BBox3D
   pub fn quantize(&self) -> Vec<u8> {
     let mut buffer = Vec::<u8>::with_capacity(20);
 
@@ -406,6 +416,8 @@ impl BBox3D {
 
     buffer
   }
+
+  /// Dequantize the BBox3D
   pub fn dequantize(buf: &[u8]) -> BBox3D {
     let q_lon1 = unpack24_bit_uint(buf, 0);
     let q_lat1 = unpack24_bit_uint(buf, 3);
@@ -427,12 +439,15 @@ impl BBox3D {
 }
 
 impl BBOX {
+  /// Quantize the BBOX
   pub fn quantize(&self) -> Vec<u8> {
     match self {
       BBOX::BBox(bbox) => bbox.quantize(),
       BBOX::BBox3D(bbox) => bbox.quantize(),
     }
   }
+
+  /// Dequantize the BBOX
   pub fn dequantize(buf: &[u8]) -> BBOX {
     BBOX::BBox(BBox::dequantize(buf))
   }

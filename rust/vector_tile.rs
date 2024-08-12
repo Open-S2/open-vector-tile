@@ -11,14 +11,22 @@ use crate::base::BaseVectorTile;
 use crate::mapbox::MapboxVectorLayer;
 use crate::open::{write_layer, ColumnCacheReader, ColumnCacheWriter, OpenVectorLayer};
 
+/// Methods that all vector layers should have
 pub trait VectorLayerMethods {
+    /// the version of the vector tile layer.
     fn version(&self) -> u16;
+    /// the name of the layer
     fn name(&self) -> String;
+    /// the extent of the vector tile (only **512**, **1_024**, **2_048**, **4_096**, and **8_192**
+    /// are supported for the open spec)
     fn extent(&self) -> usize;
 }
 
+/// Layer container supporting both mapbox and open vector layers
 pub enum VectorLayer {
+    /// Mapbox vector layer
     Mapbox(MapboxVectorLayer),
+    /// Open vector layer
     Open(OpenVectorLayer),
 }
 impl VectorLayerMethods for VectorLayer {
@@ -44,13 +52,20 @@ impl VectorLayerMethods for VectorLayer {
     }
 }
 
+/// The vector tile struct that covers both "open" and "mapbox" specifications
 pub struct VectorTile {
+    /// the layers in the vector tile
     pub layers: BTreeMap<String, VectorLayer>,
+    /// indexes to track the layers. Needed for the open spec because we need the cache before we can
+    /// parse layers and features
     layer_indexes: Vec<usize>,
+    /// the protobuf for the vector tile
     pbf: Rc<RefCell<Protobuf>>,
+    /// the column cache
     columns: Option<Rc<RefCell<ColumnCacheReader>>>,
 }
 impl VectorTile {
+    /// Create a new vector tile
     pub fn new(data: RefCell<Vec<u8>>, end: Option<usize>) -> Self {
         let pbf = Rc::new(RefCell::new(Protobuf::from_input(data)));
         let pbf_clone = pbf.clone();
@@ -69,6 +84,7 @@ impl VectorTile {
         vt
     }
 
+    /// Read the layers
     pub fn read_layers(&mut self) -> Option<()> {
         let layer_indexes = self.layer_indexes.clone();
         let pbf_clone = self.pbf.clone();
@@ -115,6 +131,7 @@ impl ProtoRead for VectorTile {
     }
 }
 
+/// writer for converting a BaseVectorTile to encoded bytes of the Open Vector Tile format
 pub fn write_tile(tile: &mut BaseVectorTile) -> Vec<u8> {
     let mut pbf = Protobuf::new();
     let mut cache = ColumnCacheWriter::default();

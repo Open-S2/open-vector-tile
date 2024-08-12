@@ -44,14 +44,17 @@ impl PrimitiveShape {
         shape_store.push(ShapePair::encode(2.into(), self.into()).into());
     }
 
+    /// returns true if the shape is a number type
     pub fn is_number(&self) -> bool {
         matches!(self, PrimitiveShape::F64 | PrimitiveShape::F32 | PrimitiveShape::I64 | PrimitiveShape::U64)
     }
 
+    /// returns true if two shapes are the same. Numeric types are considered the same.
     pub fn matching_shape(&self, other: &PrimitiveShape) -> bool {
         self == other || self.is_number() == other.is_number()
     }
 
+    /// returns the highest order number type
     pub fn get_highest_order_number(type_a: &PrimitiveShape, type_b: &PrimitiveShape) -> PrimitiveShape {
         if *type_a == PrimitiveShape::F64 || *type_b == PrimitiveShape::F64 {
             PrimitiveShape::F64
@@ -152,7 +155,7 @@ impl ShapePrimitiveType {
     }
 
     fn decode(store: &mut Vec<usize>, cache: &mut ColumnCacheReader) -> Self {
-        let shape_pair = ShapePair::decode(store.pop().unwrap());
+        let shape_pair = ShapePair::decode(store.remove(0));
         match shape_pair.p_type {
             ShapeDefinition::Primitive =>
                 Self::Primitive(PrimitiveShape::from(shape_pair.count_or_col)),
@@ -160,8 +163,8 @@ impl ShapePrimitiveType {
                 let mut nested = BTreeMap::new();
                 for _ in 0..shape_pair.count_or_col {
                     nested.insert(
-                        cache.get_string(store.pop().unwrap()),
-                        PrimitiveShape::from(store.pop().unwrap())
+                        cache.get_string(store.remove(0)),
+                        PrimitiveShape::from(store.remove(0))
                     );
                 }
                 Self::NestedPrimitive(nested)
@@ -235,13 +238,18 @@ impl ShapeType {
     }
 
     fn decode(store: &mut Vec<usize>, cache: &mut ColumnCacheReader) -> Self {
-        let shape_pair = ShapePair::decode(store.pop().unwrap());
+        let code = store.remove(0);
+        let shape_pair = ShapePair::decode(code);
         match shape_pair.p_type {
             ShapeDefinition::Primitive =>
                 Self::Primitive(PrimitiveShape::from(shape_pair.count_or_col)),
             ShapeDefinition::Array =>
                 Self::Array(vec![ShapePrimitiveType::decode(store, cache)]),
-            ShapeDefinition::Object => Self::Nested(Shape::decode(store, cache)),
+            ShapeDefinition::Object => {
+                // reinsert code because shape will check it again
+                store.insert(0, code);
+                Self::Nested(Shape::decode(store, cache))
+            }
         }
     }
 
@@ -259,7 +267,7 @@ impl ShapeType {
 
 /// The Shape Object
 #[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct Shape(BTreeMap<String, ShapeType>);
+pub struct Shape(pub BTreeMap<String, ShapeType>);
 impl From<Value> for Shape {
     fn from(val: Value) -> Self {
         let mut shape = BTreeMap::new();
@@ -277,26 +285,32 @@ impl From<&[Value]> for Shape {
     }
 }
 impl Shape {
-    fn encode(&self, shape_store: &mut Vec<ColumnValue>, cache: &mut ColumnCacheWriter) {
-        shape_store.push(ShapePair::encode(1.into(), self.0.len()).into());
+    /// Encode the shape
+    pub fn encode(&self, shape_store: &mut Vec<ColumnValue>, cache: &mut ColumnCacheWriter) {
+        shape_store.push(ShapePair::encode(
+            ShapeDefinition::Object,
+            self.0.len()
+        ).into());
         for (key, value) in &self.0 {
             shape_store.push(cache.add_string(key.clone()).into());
             value.encode(shape_store, cache);
         }
     }
 
-    fn decode(store: &mut Vec<usize>, cache: &mut ColumnCacheReader) -> Self {
+    /// Decode the shape
+    pub fn decode(store: &mut Vec<usize>, cache: &mut ColumnCacheReader) -> Self {
         let mut map = BTreeMap::<String, ShapeType>::new();
-        let shape_pair = ShapePair::decode(store.pop().unwrap());
-        if shape_pair.p_type != 1.into() { panic!("expected object shape") }
+        let shape_pair = ShapePair::decode(store.remove(0));
+        if shape_pair.p_type != ShapeDefinition::Object { panic!("expected object shape") }
         for _ in 0..shape_pair.count_or_col {
-            let key = cache.get_string(store.pop().unwrap());
+            let key = cache.get_string(store.remove(0));
             let shape = ShapeType::decode(store, cache);
             map.insert(key, shape);
         }
         Shape(map)
     }
 
+    /// Merge two shapes
     pub fn merge(&mut self, other: &Self)  {
         for (key, value) in &other.0 {
             self.0.entry(key.clone())
@@ -322,6 +336,7 @@ pub fn encode_shape(shape: &Shape, cache: &mut ColumnCacheWriter) -> usize {
     cache.add_shapes(shape_store)
 }
 
+/// Decode shapes from the column cache using an index to find the shape encoding
 pub fn decode_shape(shape_index: usize, cache: &mut ColumnCacheReader) -> Shape {
     let mut shape_store = cache.get_shapes(shape_index);
     // duplicate the array to avoid modifying the original
@@ -330,7 +345,7 @@ pub fn decode_shape(shape_index: usize, cache: &mut ColumnCacheReader) -> Shape 
 
 /// A shape pair for stronger compression and decoding
 #[derive(Debug, Clone, PartialEq)]
-struct ShapePair {
+pub struct ShapePair {
     /// The type (0 - array, 1 - object, 2 - value)
     pub p_type: ShapeDefinition,
     /// the length if object or array; or the column to read from
@@ -338,12 +353,12 @@ struct ShapePair {
 }
 impl ShapePair {
     /// encode a shape pair
-    fn encode(p_type: ShapeDefinition, count_or_col: usize) -> usize {
+    pub fn encode(p_type: ShapeDefinition, count_or_col: usize) -> usize {
         (count_or_col << 2) + p_type as usize
     }
 
     /// decode a shape pair
-    fn decode(num: usize) -> ShapePair {
+    pub fn decode(num: usize) -> ShapePair {
         ShapePair {
             p_type: (num & 0b11).into(),
             count_or_col: num >> 2,
@@ -399,7 +414,12 @@ pub enum PrimitiveValue {
     #[default] Null,
 }
 impl PrimitiveValue {
-    fn encode(&self, shape: &PrimitiveShape, store: &mut Vec<ColumnValue>, cache: &mut ColumnCacheWriter) {
+    fn encode(
+        &self,
+        shape: &PrimitiveShape,
+        store: &mut Vec<ColumnValue>,
+        cache: &mut ColumnCacheWriter,
+    ) {
         match (self, shape) {
             // string
             (PrimitiveValue::String(s), PrimitiveShape::String)
@@ -450,6 +470,22 @@ impl PrimitiveValue {
             PrimitiveShape::F32 => PrimitiveValue::F32(cache.get_float(col_val)),
             PrimitiveShape::F64 => PrimitiveValue::F64(cache.get_double(col_val)),
             PrimitiveShape::Bool => PrimitiveValue::Bool(cache.get_unsigned(col_val) == 1),
+            PrimitiveShape::Null => {
+                // put the column back because null does not need to be decoded
+                store.insert(0, col_val);
+                PrimitiveValue::Null
+            },
+        }
+    }
+
+    fn default_from_shape(shape: &PrimitiveShape) -> Self {
+        match shape {
+            PrimitiveShape::String => PrimitiveValue::String(String::new()),
+            PrimitiveShape::U64 => PrimitiveValue::U64(0),
+            PrimitiveShape::I64 => PrimitiveValue::I64(0),
+            PrimitiveShape::F32 => PrimitiveValue::F32(0.0),
+            PrimitiveShape::F64 => PrimitiveValue::F64(0.0),
+            PrimitiveShape::Bool => PrimitiveValue::Bool(false),
             PrimitiveShape::Null => PrimitiveValue::Null,
         }
     }
@@ -559,6 +595,8 @@ impl ValueType {
                 val.encode(shape, store, cache);
             },
             (ValueType::Array(vals), ShapeType::Array(shape)) => {
+                // encode length
+                store.push(ColumnValue::Number(vals.len()));
                 for val in vals {
                     val.encode(&shape[0], store, cache);
                 }
@@ -592,6 +630,14 @@ impl ValueType {
             },
         }
     }
+
+    fn default_from_shape(shape: &ShapeType) -> Self {
+        match shape {
+            ShapeType::Primitive(shape) => ValueType::Primitive(PrimitiveValue::default_from_shape(shape)),
+            ShapeType::Array(_) => ValueType::Array(vec![]),
+            ShapeType::Nested(shape) => ValueType::Nested(Value::default_from_shape(shape)),
+        }
+    }
 }
 impl From<&MapboxValue> for ValueType {
     fn from(mval: &MapboxValue) -> Self {
@@ -601,21 +647,23 @@ impl From<&MapboxValue> for ValueType {
 
 /// Value design
 #[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct Value(BTreeMap<String, ValueType>);
+pub struct Value(pub BTreeMap<String, ValueType>);
 impl Value {
-    fn encode(
+    /// Encode the value into the store
+    pub fn encode(
         &self,
         shape: &Shape,
         store: &mut Vec<ColumnValue>,
         cache: &mut ColumnCacheWriter
     ) {
         for (key, shape_type) in &shape.0 {
-            let val = self.0.get(key).unwrap();
+            let val = self.0.get(key).unwrap_or(&ValueType::default_from_shape(shape_type)).clone();
             val.encode(shape_type, store, cache);
         }
     }
 
-    fn decode(
+    /// Decode the value from the store
+    pub fn decode(
         shape: &Shape,
         store: &mut Vec<usize>,
         cache: &mut ColumnCacheReader
@@ -624,6 +672,14 @@ impl Value {
         for (key, shape_type) in &shape.0 {
             let val = ValueType::decode(shape_type, store, cache);
             value.insert(key.clone(), val);
+        }
+        Value(value)
+    }
+
+    fn default_from_shape(shape: &Shape) -> Self {
+        let mut value = BTreeMap::new();
+        for (key, shape_type) in &shape.0 {
+            value.insert(key.clone(), ValueType::default_from_shape(shape_type));
         }
         Value(value)
     }
@@ -642,12 +698,14 @@ pub type Properties = Value;
 /// Value of a feature's M-Values object
 pub type MValue = Value;
 
+/// Encode a value to the column cache
 pub fn encode_value(value: &Value, shape: &Shape, cache: &mut ColumnCacheWriter) -> usize {
     let mut value_store: Vec<ColumnValue> = vec![];
     value.encode(shape, &mut value_store, cache);
     cache.add_shapes(value_store)
 }
 
+/// Decode a value from the column cache
 pub fn decode_value(value_index: usize, shape: &Shape, cache: &mut ColumnCacheReader) -> Value {
     let value_store = cache.get_shapes(value_index);
     Value::decode(shape, &mut value_store.clone(), cache)

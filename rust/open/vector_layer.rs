@@ -14,15 +14,20 @@ use alloc::string::String;
 /// Contains an extent, name, version, and features.
 /// The features will utilize the layer extent to decode geometry.
 pub struct OpenVectorLayer {
+    /// the version of the vector tile
     pub version: u16,
+    /// the name of the layer
     pub name: String,
+    /// the extent of the vector layer
     pub extent: Extent,
+    /// the features in the layer
     pub features: Vec<OpenVectorFeature>,
     shape: Option<Shape>,
     m_shape: Option<Shape>,
     cache: Rc<RefCell<ColumnCacheReader>>,
 }
 impl OpenVectorLayer {
+    /// Create a new OpenVectorLayer
     pub fn new(
         pbf: Rc<RefCell<Protobuf>>,
         cache: Rc<RefCell<ColumnCacheReader>>,
@@ -85,6 +90,7 @@ impl ProtoRead for OpenVectorLayer {
     }
 }
 
+/// Write the layer to a protobuf
 pub fn write_layer(layer: &mut BaseVectorLayer, cache: &mut ColumnCacheWriter) -> Vec<u8> {
     let mut pbf = Protobuf::new();
 

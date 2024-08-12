@@ -67,13 +67,22 @@ impl Ord for BBOX {
 /// geometry is a line or polygon
 #[derive(Debug, Clone, PartialEq)]
 pub struct Point {
-  pub x: i32,
-  pub y: i32,
-  pub m: Option<MValue>,
+    /// x value
+    pub x: i32,
+    /// y value
+    pub y: i32,
+    /// M value
+    pub m: Option<MValue>,
 }
 impl Point {
+    /// Create a new point
     pub fn new(x: i32, y: i32) -> Point {
         Point { x, y, m: None }
+    }
+
+    /// Create a new point with an MValue
+    pub fn new_with_m(x: i32, y: i32, m: MValue) -> Point {
+        Point { x, y, m: Some(m) }
     }
 }
 impl PartialOrd for Point {
@@ -93,14 +102,24 @@ impl Ord for Point {
 /// if the geometry is a line or polygon
 #[derive(Debug, Clone, PartialEq)]
 pub struct Point3D {
-  pub x: i32,
-  pub y: i32,
-  pub z: i32,
-  pub m: Option<MValue>,
+    /// x value
+    pub x: i32,
+    /// y value
+    pub y: i32,
+    /// z value
+    pub z: i32,
+    /// M value
+    pub m: Option<MValue>,
 }
 impl Point3D {
+    /// Create a new point
     pub fn new(x: i32, y: i32, z: i32) -> Point3D {
         Point3D { x, y, z, m: None }
+    }
+
+    /// Create a new point with an MValue
+    pub fn new_with_m(x: i32, y: i32, z: i32, m: MValue) -> Point3D {
+        Point3D { x, y, z, m: Some(m) }
     }
 }
 impl PartialOrd for Point3D {
@@ -131,18 +150,22 @@ impl From<&Vec<Point>> for VectorLineWithOffset {
     }
 }
 impl VectorLineWithOffset {
+    /// Create a new VectorLineWithOffset
     pub fn new(offset: f64, geometry: VectorLine) -> Self {
         Self { offset, geometry }
     }
 
+    /// check if the line has an offset. 0.0 is considered no offset
     pub fn has_offset(&self) -> bool {
         self.offset != 0.0
     }
 
+    /// check if the line has M values
     pub fn has_m_values(&self) -> bool {
         self.geometry.iter().any(|p| p.m.is_some())
     }
 
+    /// Get the M values for the line
     pub fn get_m_values(&self) -> Option<LineStringMValues> {
         if !self.has_m_values() { return None; }
         Some(self.geometry.iter().map(|p| {
@@ -152,6 +175,7 @@ impl VectorLineWithOffset {
 }
 /// Built array line data with associated offset to help render dashed lines across tiles.
 pub type VectorLinesWithOffset = Vec<VectorLineWithOffset>;
+
 /// Built array line data with associated offset to help render dashed lines across tiles.
 #[derive(Debug, Clone, PartialEq)]
 pub struct VectorLine3DWithOffset {
@@ -161,18 +185,22 @@ pub struct VectorLine3DWithOffset {
     pub geometry: VectorLine3D,
 }
 impl VectorLine3DWithOffset {
+    /// Create a new VectorLine3DWithOffset
     pub fn new(offset: f64, geometry: VectorLine3D) -> Self {
         Self { offset, geometry }
     }
 
+    /// check if the line has an offset. 0.0 is considered no offset
     pub fn has_offset(&self) -> bool {
         self.offset != 0.0
     }
 
+    /// check if the line has M values
     pub fn has_m_values(&self) -> bool {
         self.geometry.iter().any(|p| p.m.is_some())
     }
 
+    /// Get the M values for the line
     pub fn get_m_values(&self) -> Option<LineStringMValues> {
         if !self.has_m_values() { return None; }
         Some(self.geometry.iter().filter_map(|p| p.m.clone()).collect())
@@ -204,10 +232,16 @@ pub type VectorMultiPoly3D = Vec<VectorPoly3D>;
 /// An enumeration of all the geometry types
 #[derive(Debug, Clone, PartialEq)]
 pub enum VectorGeometry {
+    /// points
     VectorPoints(VectorPoints),
+    /// lines
     VectorLines(VectorLinesWithOffset),
+    /// polygons
     VectorPolys(Vec<VectorLinesWithOffset>),
+    /// 3D points
     VectorPoints3D(VectorPoints3D),
+    /// 3D lines
     VectorLines3D(VectorLines3DWithOffset),
+    /// 3D polygons
     VectorPolys3D(Vec<VectorLines3DWithOffset>),
 }

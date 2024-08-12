@@ -25,12 +25,18 @@ use alloc::vec::Vec;
 
 use super::decode_value;
 
+/// Extent guide for how the geometry data is stored
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum Extent {
+    /// 512x512
     Extent512 = 512,
+    /// 1024x1024
     Extent1024 = 1024,
+    /// 2048x2048
     Extent2048 = 2048,
+    /// 4096x4096 (default)
     #[default] Extent4096 = 4096,
+    /// 8192x8192
     Extent8192 = 8192,
 }
 impl BitCast for Extent {
@@ -74,11 +80,17 @@ impl From<Extent> for f64 {
 /// Open Vector Tile Feature types.
 #[derive(Default, Debug, Copy, Clone, PartialEq, PartialOrd, Ord, Eq)]
 pub enum FeatureType {
+    /// Points Feature
     #[default] Points = 1,
+    /// Lines Feature
     Lines = 2,
+    /// Polygons Feature
     Polygons = 3,
+    /// Points3D Feature
     Points3D = 4,
+    /// Lines3D Feature
     Lines3D = 5,
+    /// Polygons3D Feature
     Polygons3D = 6,
 }
 impl BitCast for FeatureType {
@@ -108,9 +120,13 @@ impl From<&MapboxFeatureType> for FeatureType {
     }
 }
 
+/// Open Vector Tile Feature specification
 pub struct OpenVectorFeature {
+    /// the id of the feature
     pub id: Option<u64>,
+    /// the properties of the feature
     pub properties: Properties,
+    /// the type of the feature
     pub r#type: FeatureType,
     cache: Rc<RefCell<ColumnCacheReader>>,
     m_shape: Shape,
@@ -125,10 +141,12 @@ pub struct OpenVectorFeature {
     tesselation_index: Option<usize>,
 }
 impl OpenVectorFeature {
+    /// Create a new OpenVectorFeature
     pub fn get_type(&self) -> FeatureType {
         self.r#type
     }
 
+    /// get the bbox of the feature
     pub fn bbox(&self) -> Option<BBOX> {
         if let Some(index) = self.bbox_index {
             let mut cache = self.cache.borrow_mut();
@@ -138,6 +156,7 @@ impl OpenVectorFeature {
         }
     }
 
+    /// whether the feature has m values
     pub fn has_m_values(&self) -> bool {
         self.has_m_values
     }
@@ -158,6 +177,7 @@ impl OpenVectorFeature {
         }
     }
 
+    /// regardless of the type, we return a flattend point array
     pub fn load_points_3d(&mut self) -> VectorPoints3D {
         match self.load_geometry() {
             VectorGeometry::VectorPoints3D(p) => p,
@@ -231,6 +251,7 @@ impl OpenVectorFeature {
         (geometry, indices)
     }
 
+    /// load the geometry
     pub fn load_geometry(&mut self) -> VectorGeometry {
         if let Some(geometry) = &self.geometry { return geometry.clone(); }
 
@@ -481,6 +502,7 @@ impl OpenVectorFeature {
     }
 }
 
+/// Read a single feature given the encoded data
 pub fn read_feature(
     data: Vec<u8>,
     extent: Extent,
@@ -539,6 +561,7 @@ pub fn read_feature(
     }
 }
 
+/// Write a single feature to the column cache and return the encoding indexes for lookup
 pub fn write_feature(
     feature: &BaseVectorFeature,
     shape: &Shape,
@@ -548,7 +571,7 @@ pub fn write_feature(
     // write id, type, properties, bbox, geometry, indices, tesselation, mValues
     let mut pbf = Protobuf::new();
     // type is just stored as a varint
-    pbf.write_varint(feature.get_type().to_u64());
+    pbf.write_varint(feature.get_type());
     // store flags if each one exists or not into a single byte
     let id = feature.id();
     let has_id: bool = id.is_some();
@@ -569,30 +592,30 @@ pub fn write_feature(
     if has_tessellation { flags += 1 << 4; }
     if has_m_values { flags += 1 << 5; }
     if single { flags += 1 << 6; }
-    pbf.write_varint(flags as u64);
+    pbf.write_varint(flags);
     // id is stored in unsigned column
     if has_id { pbf.write_varint(id.unwrap()); }
     // index to values column
     let value_index = encode_value(feature.get_properties(), shape, cache);
-    pbf.write_varint(value_index as u64);
+    pbf.write_varint(value_index);
     // geometry
     let stored_geo = feature.encode_to_cache(cache, m_shape);
-    pbf.write_varint(stored_geo as u64);
+    pbf.write_varint(stored_geo);
     // indices
     if has_indices {
-        pbf.write_varint(cache.add_indices(feature.indices().unwrap()) as u64);
+        pbf.write_varint(cache.add_indices(feature.indices().unwrap()));
     }
     // tesselation
     if has_tessellation {
         match tesselation.unwrap() {
             TesselationWrapper::Tesselation(t) =>
-                pbf.write_varint(cache.add_points(t) as u64),
+                pbf.write_varint(cache.add_points(t)),
             TesselationWrapper::Tesselation3D(t) =>
-                pbf.write_varint(cache.add_points_3d(t) as u64),
+                pbf.write_varint(cache.add_points_3d(t)),
         }
     }
     // bbox is stored in double column.
-    if has_bbox { pbf.write_varint(cache.add_bbox(bbox.unwrap()) as u64); }
+    if has_bbox { pbf.write_varint(cache.add_bbox(bbox.unwrap())); }
   
     pbf.take()
 }

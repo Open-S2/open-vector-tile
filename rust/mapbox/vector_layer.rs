@@ -9,17 +9,28 @@ use alloc::rc::Rc;
 use alloc::vec::Vec;
 use alloc::string::String;
 
+/// Mapbox specification for a Layer
 pub struct MapboxVectorLayer {
+    /// the version of the vector tile layer.
     pub version: u16,
+    /// the name of the layer
     pub name: String,
+    /// the extent of the vector layer
     pub extent: usize,
+    /// the features in the layer
     pub features: Vec<MapboxVectorFeature>,
+    /// whether or not the layer is an s2 layer. This is an extension to the Mapbox spec and not used
+    /// in production by most tools
     is_s2: bool,
+    /// a reference to the pbf
     pbf: Rc<RefCell<Protobuf>>,
+    /// key store used by features
     keys: Rc<RefCell<Vec<String>>>,
+    /// value store used by features
     values: Rc<RefCell<Vec<Value>>>,
 }
 impl MapboxVectorLayer {
+    /// Create a new MapboxVectorLayer
     pub fn new(
         pbf: Rc<RefCell<Protobuf>>,
         end: usize,
