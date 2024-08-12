@@ -1,21 +1,17 @@
 use crate::util::{
-    delta_decode_array,
-    delta_encode_array,
-    unweave_and_delta_decode_3d_array,
-    unweave_and_delta_decode_array,
-    weave_and_delta_encode_3d_array,
-    weave_and_delta_encode_array,
+    delta_decode_array, delta_encode_array, unweave_and_delta_decode_3d_array,
+    unweave_and_delta_decode_array, weave_and_delta_encode_3d_array, weave_and_delta_encode_array,
 };
-use crate::{BBOX, Point, Point3D, VectorPoints, VectorPoints3D};
 use crate::util::{CustomOrd, CustomOrdWrapper};
+use crate::{Point, Point3D, VectorPoints, VectorPoints3D, BBOX};
 
-use pbf::{Protobuf, ProtoRead, ProtoWrite};
+use pbf::{ProtoRead, ProtoWrite, Protobuf};
 
-use alloc::vec::Vec;
-use alloc::string::String;
-use core::cell::RefCell;
-use alloc::rc::Rc;
 use alloc::collections::BTreeMap;
+use alloc::rc::Rc;
+use alloc::string::String;
+use alloc::vec::Vec;
+use core::cell::RefCell;
 use core::cmp::Ordering;
 
 /// Column Types take up 3 bits.
@@ -23,7 +19,8 @@ use core::cmp::Ordering;
 #[derive(Debug, Default, Clone, PartialEq, PartialOrd, Eq, Ord)]
 pub enum OColumnName {
     /// stores string values
-    #[default] String = 0,
+    #[default]
+    String = 0,
     /// Note: IDs are stored in unsigned
     /// Number types are sorted prior to storing
     Unsigned = 1,
@@ -141,12 +138,9 @@ impl ColumnCacheReader {
 
     /// get a string
     pub fn get_string(&mut self, index: usize) -> String {
-        get_value(
-            index,
-            self.pbf.clone(),
-            &mut self.string,
-            |pbf| pbf.read_string()
-        )
+        get_value(index, self.pbf.clone(), &mut self.string, |pbf| {
+            pbf.read_string()
+        })
     }
 
     /// get an unsigned integer
@@ -171,61 +165,38 @@ impl ColumnCacheReader {
 
     /// get a vector of points used by all geometry types
     pub fn get_points(&mut self, index: usize) -> VectorPoints {
-        get_value(
-            index,
-            self.pbf.clone(),
-            &mut self.points,
-            |pbf| {
-                unweave_and_delta_decode_array(&pbf.read_packed::<u64>())
-            }
-        )
+        get_value(index, self.pbf.clone(), &mut self.points, |pbf| {
+            unweave_and_delta_decode_array(&pbf.read_packed::<u64>())
+        })
     }
 
     /// get a vector of 3D points used by all geometry types
     pub fn get_points_3d(&mut self, index: usize) -> VectorPoints3D {
-        get_value(
-            index,
-            self.pbf.clone(),
-            &mut self.points_3d,
-            |pbf| {
-                unweave_and_delta_decode_3d_array(&pbf.read_packed::<u64>())
-            }
-        )
+        get_value(index, self.pbf.clone(), &mut self.points_3d, |pbf| {
+            unweave_and_delta_decode_3d_array(&pbf.read_packed::<u64>())
+        })
     }
 
     /// get a vector of indices used by all geometry types
     pub fn get_indices(&mut self, index: usize) -> Vec<u32> {
-        get_value(
-            index,
-            self.pbf.clone(),
-            &mut self.indices,
-            |pbf| {
-                delta_decode_array(&pbf.read_packed::<u32>())
-            }
-        )
+        get_value(index, self.pbf.clone(), &mut self.indices, |pbf| {
+            delta_decode_array(&pbf.read_packed::<u32>())
+        })
     }
 
     /// get a vector of encoded data that helps decode shapes
     pub fn get_shapes(&mut self, index: usize) -> Vec<usize> {
-        get_value(
-            index,
-            self.pbf.clone(),
-            &mut self.shapes,
-            |pbf| pbf.read_packed::<usize>()
-        )
+        get_value(index, self.pbf.clone(), &mut self.shapes, |pbf| {
+            pbf.read_packed::<usize>()
+        })
     }
 
     /// get a BBox
     pub fn get_bbox(&mut self, index: usize) -> BBOX {
-        get_value(
-            index,
-            self.pbf.clone(),
-            &mut self.bbox,
-            |pbf| {
-                let buf = pbf.read_packed::<u8>();
-                (&buf[..]).into()
-            }
-        )
+        get_value(index, self.pbf.clone(), &mut self.bbox, |pbf| {
+            let buf = pbf.read_packed::<u8>();
+            (&buf[..]).into()
+        })
     }
 }
 impl ProtoRead for ColumnCacheReader {
@@ -251,11 +222,11 @@ fn get_value<T, F>(
     index: usize,
     pbf: Rc<RefCell<Protobuf>>,
     container: &mut [ColumnContainer<T>],
-    read_func: F
+    read_func: F,
 ) -> T
-    where
-        T: Clone,
-        F: FnOnce(&mut Protobuf) -> T,
+where
+    T: Clone,
+    F: FnOnce(&mut Protobuf) -> T,
 {
     match &container[index] {
         ColumnContainer::Pos(pos) => {
@@ -284,23 +255,28 @@ pub struct OColumnBaseChunk {
 /// but the object is a reference to one of the number columns.
 /// Number types are eventually sorted, so we track the column and index with the data.
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
-pub enum ColumnValue{
+pub enum ColumnValue {
     /// raw number index pointing to a location in the cache column
     Number(usize),
     /// a reference to a column
-    Column(RefCell::<OColumnBaseChunk>),
+    Column(RefCell<OColumnBaseChunk>),
 }
 impl From<usize> for ColumnValue {
     fn from(index: usize) -> Self {
         ColumnValue::Number(index)
     }
 }
+impl From<RefCell<OColumnBaseChunk>> for ColumnValue {
+    fn from(chunk: RefCell<OColumnBaseChunk>) -> Self {
+        ColumnValue::Column(chunk)
+    }
+}
 /// A building block for all column types.
-pub type OColumnBaseWrite<K> = BTreeMap<K, RefCell::<OColumnBaseChunk>>;
+pub type OColumnBaseWrite<K> = BTreeMap<K, RefCell<OColumnBaseChunk>>;
 
 /// A building block for all number column types.
-pub type OColumnBaseFloatWrite<K> = BTreeMap<CustomOrdWrapper<K>, RefCell::<OColumnBaseChunk>>;
-  
+pub type OColumnBaseFloatWrite<K> = BTreeMap<CustomOrdWrapper<K>, RefCell<OColumnBaseChunk>>;
+
 /// The cache where all data is stored in a column format.
 /// Each column type has its own array of data.
 /// Number types maintain their own index for sorting purposes.
@@ -334,23 +310,23 @@ impl ColumnCacheWriter {
     }
 
     /// add u64 to cache
-    pub fn add_u64(&mut self, value: u64) -> usize {
-        add(&mut self.unsigned, value)
+    pub fn add_u64(&mut self, value: u64) -> RefCell<OColumnBaseChunk> {
+        add_number(&mut self.unsigned, value)
     }
 
     /// add i64 to cache
-    pub fn add_i64(&mut self, value: i64) -> usize {
-        add(&mut self.signed, value)
+    pub fn add_i64(&mut self, value: i64) -> RefCell<OColumnBaseChunk> {
+        add_number(&mut self.signed, value)
     }
 
     /// add f32 to cache
-    pub fn add_f32(&mut self, value: f32) -> usize {
-        add(&mut self.float, CustomOrdWrapper(value))
+    pub fn add_f32(&mut self, value: f32) -> RefCell<OColumnBaseChunk> {
+        add_number(&mut self.float, CustomOrdWrapper(value))
     }
 
     /// add f64 to cache
-    pub fn add_f64(&mut self, value: f64) -> usize {
-        add(&mut self.double, CustomOrdWrapper(value))
+    pub fn add_f64(&mut self, value: f64) -> RefCell<OColumnBaseChunk> {
+        add_number(&mut self.double, CustomOrdWrapper(value))
     }
 
     /// add points to cache
@@ -381,65 +357,95 @@ impl ColumnCacheWriter {
 impl ProtoWrite for ColumnCacheWriter {
     fn write(&self, pbf: &mut Protobuf) {
         // setup
-        let unsigned: Vec<(u64, RefCell<OColumnBaseChunk>)> = self.unsigned
-            .iter().map(|(&key, value)| (key, value.clone())).collect();
-        let signed: Vec<(i64, RefCell<OColumnBaseChunk>)> = self.signed
-            .iter().map(|(&key, value)| (key, value.clone())).collect();
-        let float: Vec<(f32, RefCell<OColumnBaseChunk>)> = self.float
-            .iter().map(|(&key, value)| (key.0, value.clone())).collect();
-        let double: Vec<(f64, RefCell<OColumnBaseChunk>)> = self.double
-            .iter().map(|(&key, value)| (key.0, value.clone())).collect();
+        let mut strings: Vec<(&String, &RefCell<OColumnBaseChunk>)> = self.string.iter().collect();
+        let mut unsigned: Vec<(&u64, &RefCell<OColumnBaseChunk>)> = self.unsigned.iter().collect();
+        let mut signed: Vec<(&i64, &RefCell<OColumnBaseChunk>)> = self.signed.iter().collect();
+        let mut float: Vec<(&CustomOrdWrapper<f32>, &RefCell<OColumnBaseChunk>)> =
+            self.float.iter().collect();
+        let mut double: Vec<(&CustomOrdWrapper<f64>, &RefCell<OColumnBaseChunk>)> =
+            self.double.iter().collect();
+        let mut points: Vec<(&Vec<Point>, &RefCell<OColumnBaseChunk>)> =
+            self.points.iter().collect();
+        let mut points_3d: Vec<(&Vec<Point3D>, &RefCell<OColumnBaseChunk>)> =
+            self.points_3d.iter().collect();
+        let mut indices: Vec<(&Vec<u32>, &RefCell<OColumnBaseChunk>)> =
+            self.indices.iter().collect();
+        let mut shapes: Vec<(&Vec<ColumnValue>, &RefCell<OColumnBaseChunk>)> =
+            self.shapes.iter().collect();
+        let mut bbox: Vec<(&BBOX, &RefCell<OColumnBaseChunk>)> = self.bbox.iter().collect();
+
         // sort them
         // TODO: bring this back
         // sort_column(&mut unsigned);
         // sort_column(&mut signed);
         // sort_column(&mut float);
         // sort_column(&mut double);
+        strings.sort_by(|a, b| a.1.borrow().index.cmp(&b.1.borrow().index));
+        unsigned.sort_by(|a, b| a.1.borrow().index.cmp(&b.1.borrow().index));
+        signed.sort_by(|a, b| a.1.borrow().index.cmp(&b.1.borrow().index));
+        float.sort_by(|a, b| a.1.borrow().index.cmp(&b.1.borrow().index));
+        double.sort_by(|a, b| a.1.borrow().index.cmp(&b.1.borrow().index));
+        points.sort_by(|a, b| a.1.borrow().index.cmp(&b.1.borrow().index));
+        points_3d.sort_by(|a, b| a.1.borrow().index.cmp(&b.1.borrow().index));
+        indices.sort_by(|a, b| a.1.borrow().index.cmp(&b.1.borrow().index));
+        shapes.sort_by(|a, b| a.1.borrow().index.cmp(&b.1.borrow().index));
+        bbox.sort_by(|a, b| a.1.borrow().index.cmp(&b.1.borrow().index));
+
+        // store
         // strings
-        for string in self.string.iter() {
+        for string in strings {
             pbf.write_string_field(OColumnName::String.into(), string.0);
         }
         // u64
         for u in unsigned {
-            pbf.write_varint_field(OColumnName::Unsigned.into(), u.0);
+            pbf.write_varint_field(OColumnName::Unsigned.into(), *u.0);
         }
         // i64
         for s in signed {
-            pbf.write_s_varint_field(OColumnName::Signed.into(), s.0);
+            pbf.write_s_varint_field(OColumnName::Signed.into(), *s.0);
         }
         // f32
         for f in float {
-            pbf.write_varint_field(OColumnName::Float.into(), f.0);
+            pbf.write_varint_field(OColumnName::Float.into(), f.0 .0);
         }
         // f64
         for d in double {
-            pbf.write_varint_field(OColumnName::Double.into(), d.0);
+            pbf.write_varint_field(OColumnName::Double.into(), d.0 .0);
         }
         // points
-        for p in self.points.iter() {
-            pbf.write_packed_varint(OColumnName::Points.into(), &weave_and_delta_encode_array(p.0));
+        for p in points {
+            pbf.write_packed_varint(
+                OColumnName::Points.into(),
+                &weave_and_delta_encode_array(p.0),
+            );
         }
         // points 3D
-        for p_3d in self.points_3d.iter() {
-            pbf.write_packed_varint(OColumnName::Points3D.into(), &weave_and_delta_encode_3d_array(p_3d.0));
+        for p_3d in points_3d {
+            pbf.write_packed_varint(
+                OColumnName::Points3D.into(),
+                &weave_and_delta_encode_3d_array(p_3d.0),
+            );
         }
         // indices
-        for i in self.indices.iter() {
+        for i in indices {
             pbf.write_packed_varint(OColumnName::Indices.into(), &delta_encode_array(i.0));
         }
         // shapes
-        for s in self.shapes.iter() {
-            let packed: Vec<usize> = s.0
-                .iter()
-                .map(|v| match v {
-                    ColumnValue::Number(n) => *n,
-                    ColumnValue::Column(c) => c.borrow().index,
-                })
-                .collect();
+        for s in shapes {
+            println!("SHAPE!!!: {:?}", s.0);
+            println!();
+            println!();
+            let packed: Vec<usize> =
+                s.0.iter()
+                    .map(|v| match v {
+                        ColumnValue::Number(n) => *n,
+                        ColumnValue::Column(c) => c.borrow().index,
+                    })
+                    .collect();
             pbf.write_packed_varint(OColumnName::Shapes.into(), &packed);
         }
         // bbox
-        for bbox in self.bbox.iter() {
+        for bbox in bbox {
             let quantized = bbox.0.quantize();
             pbf.write_packed_varint(OColumnName::BBox.into(), &quantized);
         }
@@ -447,34 +453,81 @@ impl ProtoWrite for ColumnCacheWriter {
 }
 
 /// Add value to column and return index
-pub fn add<T>(col: &mut OColumnBaseWrite<T>, value: T)-> usize
+pub fn add<T>(col: &mut OColumnBaseWrite<T>, value: T) -> usize
 where
-    T: Ord {
+    T: Ord,
+{
     if let Some(col) = col.get_mut(&value) {
-        let mut col: core::cell::RefMut<OColumnBaseChunk> = col.borrow_mut();
-        col.count += 1;
-        col.index
+        let mut chunk = col.borrow_mut();
+        chunk.count += 1;
+        chunk.index
     } else {
         let index = col.len();
         col.insert(value, RefCell::new(OColumnBaseChunk { index, count: 1 }));
         index
     }
 }
-  
+
+/// Add a **number** value to column and return index
+pub fn add_number<T>(col: &mut OColumnBaseWrite<T>, value: T) -> RefCell<OColumnBaseChunk>
+where
+    T: Ord,
+{
+    if let Some(chunk) = col.get_mut(&value) {
+        {
+            let mut chunk_mut = chunk.borrow_mut();
+            chunk_mut.count += 1;
+        }
+        chunk.clone()
+    } else {
+        let index = col.len();
+        let new_chunk = RefCell::new(OColumnBaseChunk { index, count: 1 });
+        col.insert(value, new_chunk.clone());
+        new_chunk
+    }
+}
+
 /// Sort number types and value types by index then update the index of each row for better
 /// compression down the line.
-pub fn sort_column<T: CustomOrd>(input: &mut [(T, RefCell<OColumnBaseChunk>)]) {
+pub fn sort_column<T: CustomOrd + core::fmt::Debug>(
+    input: &mut [(&T, &RefCell<OColumnBaseChunk>)],
+) {
     // first sort
+    println!("BEFORE SORT: {:?}", input);
     input.sort_by(|a, b| {
         // First sort by count in descending order
         match b.1.borrow().count.cmp(&a.1.borrow().count) {
-            Ordering::Equal => a.0.custom_cmp(&b.0), // Then sort by data if counts are equal
+            Ordering::Equal => a.0.custom_cmp(b.0), // Then sort by data if counts are equal
             other => other,
         }
     });
+    println!("AFTER SORT: {:?}", input);
     // than update indexes
     input
         .iter_mut()
         .enumerate()
         .for_each(|(i, v)| v.1.borrow_mut().index = i);
+    println!("AFTER INDEX: {:?}", input);
+    println!();
+    println!();
 }
+
+// SHAPE!!!: [Column(RefCell { value: OColumnBaseChunk { index: 0, count: 1 } }), Number(2), Number(0), Number(1), Column(RefCell { value: OColumnBase
+// Chunk { index: 0, count: 1 } }), Column(RefCell { value: OColumnBaseChunk { index: 0, count: 1 } }), Column(RefCell { value: OColumnBaseChunk { ind▐
+// ex: 0, count: 1 } }), Column(RefCell { value: OColumnBaseChunk { index: 1, count: 1 } })]                                                          ▐
+
+// SHAPE!!!: [Column(RefCell { value: OColumnBaseChunk { index: 0, count: 1 } }), Number(2), Number(0), Number(1), Column(RefCell { value: OColumnBase▐
+// Chunk { index: 0, count: 1 } }), Column(RefCell { value: OColumnBaseChunk { index: 0, count: 1 } }), Column(RefCell { value: OColumnBaseChunk { ind▐
+// ex: 0, count: 1 } }), Column(RefCell { value: OColumnBaseChunk { index: 1, count: 1 } })]                                                          ▐
+
+//                                                                                                                                                     ▐
+//                                                                                                                                                     ▐
+// SHAPE!!!: [Column(RefCell { value: OColumnBaseChunk { index: 1, count: 1 } }), Number(3), Number(2), Number(3), Number(0), Column(RefCell { value: ▐
+// OColumnBaseChunk { index: 1, count: 1 } }), Column(RefCell { value: OColumnBaseChunk { index: 2, count: 1 } }), Column(RefCell { value: OColumnBase▐
+// Chunk { index: 1, count: 1 } }), Column(RefCell { value: OColumnBaseChunk { index: 2, count: 2 } })]
+
+//                                                                                                                                                     ▐
+//                                                                                                                                                     ▐
+// SHAPE!!!: [Column(RefCell { value: OColumnBaseChunk { index: 1, count: 1 } }), Number(3), Number(2), Number(3), Number(0), Column(RefCell { value: ▐
+// OColumnBaseChunk { index: 1, count: 1 } }), Column(RefCell { value: OColumnBaseChunk { index: 2, count: 1 } }), Column(RefCell { value: OColumnBase▐
+// Chunk { index: 1, count: 1 } }), Column(RefCell { value: OColumnBaseChunk { index: 2, count: 2 } })]

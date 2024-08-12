@@ -1,15 +1,20 @@
-use pbf::{Protobuf, ProtoRead, ProtoWrite, Type, bit_cast::BitCast};
+use pbf::{bit_cast::BitCast, ProtoRead, ProtoWrite, Protobuf, Type};
 
-use crate::{Point, VectorGeometry, VectorLineWithOffset, VectorLinesWithOffset, VectorPoints, BBOX};
+use crate::base::{BaseVectorFeature, TesselationWrapper};
 use crate::open::FeatureType as OpenFeatureType;
+use crate::util::{command_encode, zigzag};
+use crate::{
+    Point, VectorGeometry, VectorLineWithOffset, VectorLinesWithOffset, VectorPoints, BBOX,
+};
 
 use core::cell::RefCell;
+use core::cmp::Ordering;
 
+use alloc::collections::BTreeMap;
 use alloc::rc::Rc;
+use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
-use alloc::string::String;
-use alloc::collections::BTreeMap;
 
 /// Mapbox specification for a Feature
 pub struct MapboxVectorFeature {
@@ -91,13 +96,14 @@ impl MapboxVectorFeature {
             VectorGeometry::VectorPoints(p) => p,
             VectorGeometry::VectorLines(lines) => {
                 lines.iter().flat_map(|p| p.geometry.clone()).collect()
-            },
-            VectorGeometry::VectorPolys(polys) => {
-                polys.iter().flat_map(|p| {
-                    p.iter().flat_map(|p| p.geometry.clone())
-                }).collect()
-            },
-            _ => { panic!("unexpected geometry type") },
+            }
+            VectorGeometry::VectorPolys(polys) => polys
+                .iter()
+                .flat_map(|p| p.iter().flat_map(|p| p.geometry.clone()))
+                .collect(),
+            _ => {
+                panic!("unexpected geometry type")
+            }
         }
     }
 
@@ -105,10 +111,10 @@ impl MapboxVectorFeature {
     pub fn load_lines(&mut self) -> VectorLinesWithOffset {
         match self.load_geometry() {
             VectorGeometry::VectorLines(lines) => lines,
-            VectorGeometry::VectorPolys(polys) => {
-                polys.iter().flat_map(|p| p.clone()).collect()
+            VectorGeometry::VectorPolys(polys) => polys.iter().flat_map(|p| p.clone()).collect(),
+            _ => {
+                panic!("unexpected geometry type")
             }
-            _ => { panic!("unexpected geometry type") },
         }
     }
 
@@ -118,16 +124,20 @@ impl MapboxVectorFeature {
         let multiplier: f64 = 1.0 / self.extent as f64;
         // grab the geometry, flatten it, and mutate to an f64
         let mut geometry: Vec<f64> = match self.load_geometry() {
-            VectorGeometry::VectorPolys(polys) => {
-                polys.iter().flat_map(|p| {
+            VectorGeometry::VectorPolys(polys) => polys
+                .iter()
+                .flat_map(|p| {
                     p.iter().flat_map(|p| {
-                        p.geometry.clone().into_iter().flat_map(|p| {
-                            vec![p.x as f64 * multiplier, p.y as f64 * multiplier]
-                        })
+                        p.geometry
+                            .clone()
+                            .into_iter()
+                            .flat_map(|p| vec![p.x as f64 * multiplier, p.y as f64 * multiplier])
                     })
-                }).collect()
-            },
-            _ => { panic!("unexpected geometry type") },
+                })
+                .collect(),
+            _ => {
+                panic!("unexpected geometry type")
+            }
         };
         // if a poly, check if we should load indices
         let indices = self.read_indices();
@@ -139,7 +149,9 @@ impl MapboxVectorFeature {
 
     /// load the geometry
     pub fn load_geometry(&mut self) -> VectorGeometry {
-        if let Some(geometry) = &self.geometry { return geometry.clone(); }
+        if let Some(geometry) = &self.geometry {
+            return geometry.clone();
+        }
 
         let mut pbf = self.pbf.borrow_mut();
         pbf.set_pos(self.geometry_index);
@@ -167,29 +179,34 @@ impl MapboxVectorFeature {
                 x += pbf.read_s_varint::<i32>();
                 y += pbf.read_s_varint::<i32>();
 
-                if cmd == 1 { // moveTo
+                if cmd == 1 {
+                    // moveTo
                     if !points.is_empty() && self.r#type != FeatureType::Point {
-                        lines.push((&points).into());
+                        lines.push((&points[..]).into());
                         points = vec![];
                     }
                 }
                 points.push(Point::new(x, y));
-            } else if cmd == 4 { // next poly
-                if !points.is_empty() { lines.push((&points).into()); }
+            } else if cmd == 4 {
+                // next poly
+                if !points.is_empty() {
+                    lines.push((&points[..]).into());
+                }
                 polys.push(lines);
                 lines = vec![];
                 points = vec![];
-            } else if cmd == 7 { // close path
+            } else if cmd == 7 {
+                // close path
                 if !points.is_empty() {
                     points.push(points[0].clone());
-                    lines.push((&points).into());
+                    lines.push((&points[..]).into());
                     points = vec![];
                 }
             } else {
                 panic!("unknown cmd: {}", cmd);
             }
         }
-        
+
         let geometry = if self.r#type == FeatureType::Point {
             VectorGeometry::VectorPoints(points)
         } else {
@@ -204,7 +221,7 @@ impl MapboxVectorFeature {
                 VectorGeometry::VectorPolys(polys)
             }
         };
-    
+
         self.geometry = Some(geometry.clone());
         geometry
     }
@@ -219,23 +236,25 @@ impl MapboxVectorFeature {
 
         let mut pbf = self.pbf.borrow_mut();
         pbf.set_pos(self.indices_index.unwrap());
-    
+
         let mut curr: i32 = 0;
         let end = pbf.read_varint::<usize>() + self.indices_index.unwrap();
         // build indices
         let mut indices: Vec<u32> = vec![];
         while pbf.get_pos() < end {
-          curr += pbf.read_s_varint::<i32>();
-          indices.push(curr as u32);
+            curr += pbf.read_s_varint::<i32>();
+            indices.push(curr as u32);
         }
-    
+
         self.indices = Some(indices.clone());
         indices
     }
 
     /// Add tesselation data to the geometry
     pub fn add_tesselation(&mut self, geometry: &mut Vec<f64>, multiplier: f64) {
-        if self.tesselation_index.is_none() { return; }
+        if self.tesselation_index.is_none() {
+            return;
+        }
 
         let mut pbf = self.pbf.borrow_mut();
         pbf.set_pos(self.tesselation_index.unwrap());
@@ -261,10 +280,10 @@ impl ProtoRead for MapboxVectorFeature {
                 while pb.get_pos() < end {
                     let key = &self.keys.borrow()[pb.read_varint::<usize>()];
                     let value = &self.values.borrow()[pb.read_varint::<usize>()];
-            
+
                     self.properties.insert(key.clone(), value.clone());
                 }
-            },
+            }
             2 => self.r#type = pb.read_varint::<FeatureType>(),
             3 => self.geometry_index = pb.read_varint::<usize>(),
             4 => self.indices_index = Some(pb.read_varint::<usize>()),
@@ -274,9 +293,7 @@ impl ProtoRead for MapboxVectorFeature {
     }
 }
 
-fn classify_rings(
-    rings: &VectorLinesWithOffset,
-) -> Vec<VectorLinesWithOffset> {
+fn classify_rings(rings: &VectorLinesWithOffset) -> Vec<VectorLinesWithOffset> {
     let mut polygons: Vec<VectorLinesWithOffset> = vec![];
     let mut polygon: VectorLinesWithOffset = vec![];
     let mut ccw: Option<bool> = None;
@@ -284,16 +301,22 @@ fn classify_rings(
     let mut i: usize = 0;
     while i < rings.len() {
         let area = signed_area(&rings[i].geometry);
-        if area == 0 { continue; }
-        if ccw.is_none() { ccw = Some(area < 0); }
+        if area == 0 {
+            continue;
+        }
+        if ccw.is_none() {
+            ccw = Some(area < 0);
+        }
 
-        if ccw.is_some() && ccw.unwrap() == (area < 0) { // outer poly ring
+        if ccw.is_some() && ccw.unwrap() == (area < 0) {
+            // outer poly ring
             if !polygon.is_empty() {
                 polygons.push(polygon.clone());
                 polygon = vec![];
             }
             polygon.push(rings[i].clone());
-        } else { // inner poly ring (hole)
+        } else {
+            // inner poly ring (hole)
             polygon.push(rings[i].clone());
         }
 
@@ -322,7 +345,6 @@ fn signed_area(ring: &[Point]) -> i32 {
     sum
 }
 
-
 /// Mapbox Vector Feature types.
 #[derive(Debug, Clone, PartialEq)]
 pub enum FeatureType {
@@ -334,6 +356,16 @@ pub enum FeatureType {
     Polygon = 3,
     /// MultiPolygon Feature
     MultiPolygon = 4,
+}
+impl From<OpenFeatureType> for FeatureType {
+    fn from(value: OpenFeatureType) -> Self {
+        match value {
+            OpenFeatureType::Points => FeatureType::Point,
+            OpenFeatureType::Lines => FeatureType::Line,
+            OpenFeatureType::Polygons => FeatureType::MultiPolygon,
+            _ => panic!("unknown value: {:?}", value),
+        }
+    }
 }
 impl BitCast for FeatureType {
     fn to_u64(&self) -> u64 {
@@ -371,6 +403,29 @@ pub enum Value {
     /// Null value
     Null,
 }
+impl PartialOrd for Value {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+impl Eq for Value {}
+impl Ord for Value {
+    fn cmp(&self, other: &Self) -> Ordering {
+        use Value::*;
+
+        match (self, other) {
+            (String(a), String(b)) => a.partial_cmp(b).unwrap(),
+            (UInt(a), UInt(b)) => a.partial_cmp(b).unwrap(),
+            (Int(a), Int(b)) => a.partial_cmp(b).unwrap(),
+            (SInt(a), SInt(b)) => a.partial_cmp(b).unwrap(),
+            (Float(a), Float(b)) => a.partial_cmp(b).unwrap(),
+            (Double(a), Double(b)) => a.partial_cmp(b).unwrap(),
+            (Bool(a), Bool(b)) => a.partial_cmp(b).unwrap(),
+            (Null, Null) => Ordering::Equal,
+            _ => Ordering::Less,
+        }
+    }
+}
 impl ProtoRead for Value {
     fn read(&mut self, tag: u64, pb: &mut Protobuf) {
         match tag {
@@ -404,3 +459,177 @@ impl ProtoWrite for Value {
 /// `Properties` is a storage structure for the vector feature. Keys are strings, values are
 /// any basic type of `Value`.
 pub type Properties = BTreeMap<String, Value>;
+
+/// Write a feature to a protobuffer using the S2 Specification
+pub fn write_feature(
+    feature: &BaseVectorFeature,
+    keys: &mut BTreeMap<String, usize>,
+    values: &mut BTreeMap<Value, usize>,
+) -> Vec<u8> {
+    let mut pbf = Protobuf::new();
+    let properties: Properties = feature.properties().clone().into();
+    if let Some(id) = feature.id() {
+        pbf.write_varint_field(15, id);
+    }
+    pbf.write_bytes_field(1, &write_properties(&properties, keys, values));
+    let _type: FeatureType = feature.get_type().into();
+    pbf.write_varint_field(2, _type);
+    // Geometry
+    pbf.write_bytes_field(3, &write_geometry(feature));
+    // Indices
+    if let Some(indices) = feature.indices() {
+        pbf.write_bytes_field(4, &write_indices(&indices));
+    }
+    // Tesselation
+    if let Some(TesselationWrapper::Tesselation(tess)) = feature.tesselation() {
+        pbf.write_bytes_field(5, &write_tesselation(&tess));
+    }
+
+    pbf.take()
+}
+
+/// Write a properties to a protobuffer using the S2 Specification
+fn write_properties(
+    properties: &Properties,
+    keys: &mut BTreeMap<String, usize>,
+    values: &mut BTreeMap<Value, usize>,
+) -> Vec<u8> {
+    let mut pbf = Protobuf::new();
+
+    for (key, value) in properties {
+        let key_length = keys.len();
+        let key_index = keys.entry(key.clone()).or_insert(key_length);
+        pbf.write_varint(*key_index);
+        let value_length = values.len();
+        let value_index = values.entry(value.clone()).or_insert(value_length);
+        pbf.write_varint(*value_index);
+    }
+
+    pbf.take()
+}
+
+/// write the indices to a protobuffer using the S2 Specification
+fn write_indices(indices: &[u32]) -> Vec<u8> {
+    let mut pbf = Protobuf::new();
+
+    let mut curr: i32 = 0;
+    for index in indices {
+        let d_curr = (*index as i32) - curr;
+        pbf.write_varint(zigzag(d_curr));
+        curr += d_curr;
+    }
+
+    pbf.take()
+}
+
+/// write the tesselation to a protobuffer using the S2 Specification
+fn write_tesselation(geometry: &[Point]) -> Vec<u8> {
+    let mut pbf = Protobuf::new();
+    let mut x = 0;
+    let mut y = 0;
+    for point in geometry {
+        let dx = point.x - x;
+        let dy = point.y - y;
+        pbf.write_varint(zigzag(dx));
+        pbf.write_varint(zigzag(dy));
+        x += dx;
+        y += dy;
+    }
+
+    pbf.take()
+}
+
+/// write the geometry to a protobuffer using the S2 Specification
+fn write_geometry(feature: &BaseVectorFeature) -> Vec<u8> {
+    use BaseVectorFeature::*;
+    let mut pbf = Protobuf::new();
+    match feature {
+        BaseVectorPointsFeature(points) => write_geometry_points(&points.geometry, &mut pbf),
+        BaseVectorLinesFeature(lines) => write_geometry_lines(&lines.geometry, &mut pbf),
+        BaseVectorPolysFeature(polys) => write_geometry_polys(&polys.geometry, &mut pbf),
+        _ => panic!("unknown feature type: {:?}", feature.get_type()),
+    };
+    pbf.take()
+}
+
+/// write the points geometry to a protobuffer using the S2 Specification
+fn write_geometry_points(points: &[Point], pbf: &mut Protobuf) {
+    let mut x = 0;
+    let mut y = 0;
+
+    for point in points {
+        // move
+        pbf.write_varint(command_encode(1, 1)); // moveto
+                                                // store
+        let dx = point.x - x;
+        let dy = point.y - y;
+        pbf.write_varint(zigzag(dx));
+        pbf.write_varint(zigzag(dy));
+        // update position
+        x += dx;
+        y += dy;
+    }
+}
+
+/// write the lines geometry to a protobuffer using the S2 Specification
+fn write_geometry_lines(lines: &[VectorLineWithOffset], pbf: &mut Protobuf) {
+    let mut x = 0;
+    let mut y = 0;
+
+    for line in lines {
+        let line_geo = &line.geometry;
+        pbf.write_varint(command_encode(1, 1)); // moveto
+                                                // do not write polygon closing path as lineto
+        let line_count = line_geo.len();
+        let mut i = 0;
+        while i < line_count {
+            if i == 1 {
+                pbf.write_varint(command_encode(2, (line_count - 1).try_into().unwrap()));
+                // lineto
+            }
+
+            let point = &line_geo[i];
+            let dx = point.x - x;
+            let dy = point.y - y;
+            pbf.write_varint(zigzag(dx));
+            pbf.write_varint(zigzag(dy));
+            x += dx;
+            y += dy;
+
+            i += 1;
+        }
+    }
+}
+
+/// write the polys geometry to a protobuffer using the S2 Specification
+fn write_geometry_polys(polys: &[Vec<VectorLineWithOffset>], pbf: &mut Protobuf) {
+    let mut x = 0;
+    let mut y = 0;
+
+    for poly in polys {
+        for ring in poly {
+            let ring_geo = &ring.geometry;
+            pbf.write_varint(command_encode(1, 1)); // moveto
+            let line_count = ring_geo.len() - 1;
+            let mut i = 0;
+            while i < line_count {
+                if i == 1 {
+                    pbf.write_varint(command_encode(2, (line_count - 1).try_into().unwrap()));
+                    // lineto
+                }
+
+                let point = &ring_geo[i];
+                let dx = point.x - x;
+                let dy = point.y - y;
+                pbf.write_varint(zigzag(dx));
+                pbf.write_varint(zigzag(dy));
+                x += dx;
+                y += dy;
+
+                i += 1;
+            }
+            pbf.write_varint(command_encode(7, 1)); // ClosePath
+        }
+        pbf.write_varint(command_encode(4, 1)); // ClosePolygon
+    }
+}

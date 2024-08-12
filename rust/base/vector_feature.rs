@@ -1,24 +1,11 @@
 use crate::mapbox::MapboxVectorFeature;
-use crate::{
-    BBOX,
-    BBox,
-    BBox3D,
-    VectorGeometry,
-    VectorLines3DWithOffset,
-    VectorLinesWithOffset,
-    VectorPoints,
-    VectorPoints3D,
-    Point,
-    Point3D,
+use crate::open::{
+    encode_value, ColumnCacheWriter, FeatureType, LineStringMValues, Properties, Shape,
 };
 use crate::util::{weave_2d, weave_3d, zigzag};
-use crate::open::{
-    encode_value,
-    ColumnCacheWriter,
-    FeatureType,
-    LineStringMValues,
-    Properties,
-    Shape,
+use crate::{
+    BBox, BBox3D, Point, Point3D, VectorGeometry, VectorLines3DWithOffset, VectorLinesWithOffset,
+    VectorPoints, VectorPoints3D, BBOX,
 };
 
 use alloc::vec::Vec;
@@ -28,7 +15,7 @@ pub trait VectorFeature {
     /// Get the type of the vector feature
     fn get_type(&self) -> FeatureType;
     /// Get the properties of the vector feature
-    fn get_properties(&self) -> &Properties;
+    fn properties(&self) -> &Properties;
     /// true if the feature has BBox
     fn has_bbox(&self) -> bool;
     /// true if the feature has offsets
@@ -38,9 +25,9 @@ pub trait VectorFeature {
     /// Get the geometry of the feature
     fn load_geometry(&self) -> VectorGeometry;
     /// Get the M values of the feature
-    fn get_m_values(&self) -> Option<LineStringMValues>;
+    fn m_values(&self) -> Option<LineStringMValues>;
     /// Encode the feature to cache
-    fn encode_to_cache(&self, cache: &mut ColumnCacheWriter, m_shape: &Option<Shape>) -> usize;
+    fn encode_to_cache(&self, cache: &mut ColumnCacheWriter, m_shape: Option<&Shape>) -> usize;
 }
 
 //? Points & Points3D
@@ -63,7 +50,7 @@ impl BaseVectorPointsFeature {
         id: Option<u64>,
         geometry: VectorPoints,
         properties: Properties,
-        bbox: Option<BBox>
+        bbox: Option<BBox>,
     ) -> Self {
         Self {
             id,
@@ -80,7 +67,7 @@ impl VectorFeature for BaseVectorPointsFeature {
     }
 
     /// Get the properties of the feature
-    fn get_properties(&self) -> &Properties {
+    fn properties(&self) -> &Properties {
         &self.properties
     }
 
@@ -103,15 +90,22 @@ impl VectorFeature for BaseVectorPointsFeature {
         VectorGeometry::VectorPoints(self.geometry.clone())
     }
 
-    fn get_m_values(&self) -> Option<LineStringMValues> {
-        if !self.has_m_values() { return None; }
-        Some(self.geometry.iter().map(|g| {
-            // grab the m values, if they exist otherwise return default
-            g.m.clone().unwrap_or_default()
-        }).collect())
+    fn m_values(&self) -> Option<LineStringMValues> {
+        if !self.has_m_values() {
+            return None;
+        }
+        Some(
+            self.geometry
+                .iter()
+                .map(|g| {
+                    // grab the m values, if they exist otherwise return default
+                    g.m.clone().unwrap_or_default()
+                })
+                .collect(),
+        )
     }
 
-    fn encode_to_cache(&self, cache: &mut ColumnCacheWriter, m_shape: &Option<Shape>) -> usize {
+    fn encode_to_cache(&self, cache: &mut ColumnCacheWriter, m_shape: Option<&Shape>) -> usize {
         let geometry = &self.geometry;
         if geometry.len() == 1 {
             let point = &geometry[0];
@@ -120,7 +114,7 @@ impl VectorFeature for BaseVectorPointsFeature {
             let mut indices: Vec<u32> = Vec::new();
             indices.push(cache.add_points(geometry.to_vec()) as u32);
             // store the mvalues indexes if they exist
-            if let (Some(m_values), Some(shape)) = (self.get_m_values(), m_shape) {
+            if let (Some(m_values), Some(shape)) = (self.m_values(), m_shape) {
                 for m in m_values {
                     indices.push(encode_value(&m, shape, cache) as u32);
                 }
@@ -147,7 +141,7 @@ impl BaseVectorPoints3DFeature {
         id: Option<u64>,
         geometry: VectorPoints3D,
         properties: Properties,
-        bbox: Option<BBox3D>
+        bbox: Option<BBox3D>,
     ) -> Self {
         Self {
             id,
@@ -164,7 +158,7 @@ impl VectorFeature for BaseVectorPoints3DFeature {
     }
 
     /// Get the properties of the feature
-    fn get_properties(&self) -> &Properties {
+    fn properties(&self) -> &Properties {
         &self.properties
     }
 
@@ -187,23 +181,32 @@ impl VectorFeature for BaseVectorPoints3DFeature {
         VectorGeometry::VectorPoints3D(self.geometry.clone())
     }
 
-    fn get_m_values(&self) -> Option<LineStringMValues> {
-        if !self.has_m_values() { return None; }
-        Some(self.geometry.iter().map(|g| {
-            g.m.clone().unwrap_or_default()
-        }).collect())
+    fn m_values(&self) -> Option<LineStringMValues> {
+        if !self.has_m_values() {
+            return None;
+        }
+        Some(
+            self.geometry
+                .iter()
+                .map(|g| g.m.clone().unwrap_or_default())
+                .collect(),
+        )
     }
 
-    fn encode_to_cache(&self, cache: &mut ColumnCacheWriter, m_shape: &Option<Shape>) -> usize {
+    fn encode_to_cache(&self, cache: &mut ColumnCacheWriter, m_shape: Option<&Shape>) -> usize {
         let geometry = &self.geometry;
         if geometry.len() == 1 {
             let point = &geometry[0];
-            weave_3d(zigzag(point.x) as u16, zigzag(point.y) as u16, zigzag(point.z) as u16) as usize
+            weave_3d(
+                zigzag(point.x) as u16,
+                zigzag(point.y) as u16,
+                zigzag(point.z) as u16,
+            ) as usize
         } else {
             let mut indices: Vec<u32> = Vec::new();
             indices.push(cache.add_points_3d(geometry.to_vec()) as u32);
             // store the mvalues indexes if they exist
-            if let (Some(m_values), Some(shape)) = (self.get_m_values(), m_shape) {
+            if let (Some(m_values), Some(shape)) = (self.m_values(), m_shape) {
                 for m in m_values {
                     indices.push(encode_value(&m, shape, cache) as u32);
                 }
@@ -233,7 +236,7 @@ impl BaseVectorLinesFeature {
         id: Option<u64>,
         geometry: VectorLinesWithOffset,
         properties: Properties,
-        bbox: Option<BBox>
+        bbox: Option<BBox>,
     ) -> Self {
         Self {
             id,
@@ -250,7 +253,7 @@ impl VectorFeature for BaseVectorLinesFeature {
     }
 
     /// Get the properties of the feature
-    fn get_properties(&self) -> &Properties {
+    fn properties(&self) -> &Properties {
         &self.properties
     }
 
@@ -270,27 +273,36 @@ impl VectorFeature for BaseVectorLinesFeature {
     }
 
     fn load_geometry(&self) -> VectorGeometry {
-        VectorGeometry::VectorLines(
-            self.geometry.to_vec()
+        VectorGeometry::VectorLines(self.geometry.to_vec())
+    }
+
+    fn m_values(&self) -> Option<LineStringMValues> {
+        if !self.has_m_values() {
+            return None;
+        }
+        Some(
+            self.geometry
+                .iter()
+                .flat_map(|g| g.m_values().unwrap())
+                .collect(),
         )
     }
 
-    fn get_m_values(&self) -> Option<LineStringMValues> {
-        if !self.has_m_values() { return None; }
-        Some(self.geometry.iter().flat_map(|g| g.get_m_values().unwrap()).collect())
-    }
-
-    fn encode_to_cache(&self, cache: &mut ColumnCacheWriter, m_shape: &Option<Shape>) -> usize {
+    fn encode_to_cache(&self, cache: &mut ColumnCacheWriter, m_shape: Option<&Shape>) -> usize {
         let geometry = &self.geometry;
         let mut indices: Vec<u32> = Vec::new();
-        if geometry.len() != 1 { indices.push(geometry.len() as u32) }
+        if geometry.len() != 1 {
+            indices.push(geometry.len() as u32)
+        }
         for line in geometry {
-            if line.has_offset() { indices.push(encode_offset(line.offset)); }
+            if line.has_offset() {
+                indices.push(encode_offset(line.offset));
+            }
             indices.push(cache.add_points(line.geometry.clone()) as u32);
             // store the mvalues indexes if they exist
-            if let (Some(m_values), Some(shape)) = (line.get_m_values(), m_shape.clone()) {
+            if let (Some(m_values), Some(shape)) = (line.m_values(), m_shape) {
                 for m in m_values {
-                    indices.push(encode_value(&m, &shape, cache) as u32);
+                    indices.push(encode_value(&m, shape, cache) as u32);
                 }
             }
         }
@@ -316,7 +328,7 @@ impl BaseVectorLines3DFeature {
         id: Option<u64>,
         geometry: VectorLines3DWithOffset,
         properties: Properties,
-        bbox: Option<BBox3D>
+        bbox: Option<BBox3D>,
     ) -> Self {
         Self {
             id,
@@ -333,7 +345,7 @@ impl VectorFeature for BaseVectorLines3DFeature {
     }
 
     /// Get the properties of the feature
-    fn get_properties(&self) -> &Properties {
+    fn properties(&self) -> &Properties {
         &self.properties
     }
 
@@ -353,27 +365,36 @@ impl VectorFeature for BaseVectorLines3DFeature {
     }
 
     fn load_geometry(&self) -> VectorGeometry {
-        VectorGeometry::VectorLines3D(
-            self.geometry.to_vec()
+        VectorGeometry::VectorLines3D(self.geometry.to_vec())
+    }
+
+    fn m_values(&self) -> Option<LineStringMValues> {
+        if !self.has_m_values() {
+            return None;
+        }
+        Some(
+            self.geometry
+                .iter()
+                .flat_map(|g| g.m_values().unwrap())
+                .collect(),
         )
     }
 
-    fn get_m_values(&self) -> Option<LineStringMValues> {
-        if !self.has_m_values() { return None; }
-        Some(self.geometry.iter().flat_map(|g| g.get_m_values().unwrap()).collect())
-    }
-
-    fn encode_to_cache(&self, cache: &mut ColumnCacheWriter, m_shape: &Option<Shape>) -> usize {
+    fn encode_to_cache(&self, cache: &mut ColumnCacheWriter, m_shape: Option<&Shape>) -> usize {
         let geometry = &self.geometry;
         let mut indices: Vec<u32> = Vec::new();
-        if geometry.len() != 1 { indices.push(geometry.len() as u32) }
+        if geometry.len() != 1 {
+            indices.push(geometry.len() as u32)
+        }
         for line in geometry {
-            if line.has_offset() { indices.push(encode_offset(line.offset)); }
+            if line.has_offset() {
+                indices.push(encode_offset(line.offset));
+            }
             indices.push(cache.add_points_3d(line.geometry.clone()) as u32);
             // store the mvalues indexes if they exist
-            if let (Some(m_values), Some(shape)) = (line.get_m_values(), m_shape.clone()) {
+            if let (Some(m_values), Some(shape)) = (line.m_values(), m_shape) {
                 for m in m_values {
-                    indices.push(encode_value(&m, &shape, cache) as u32);
+                    indices.push(encode_value(&m, shape, cache) as u32);
                 }
             }
         }
@@ -426,7 +447,7 @@ impl VectorFeature for BaseVectorPolysFeature {
     }
 
     /// Get the properties of the feature
-    fn get_properties(&self) -> &Properties {
+    fn properties(&self) -> &Properties {
         &self.properties
     }
 
@@ -437,46 +458,51 @@ impl VectorFeature for BaseVectorPolysFeature {
 
     /// Points do not have this feature, so return false
     fn has_offsets(&self) -> bool {
-        self.geometry.iter().any(|g| {
-            g.iter().any(|l| l.has_offset())
-        })
+        self.geometry
+            .iter()
+            .any(|g| g.iter().any(|l| l.has_offset()))
     }
 
     /// Points do not have this feature, so return false
     fn has_m_values(&self) -> bool {
-        self.geometry.iter().any(|g| {
-            g.iter().any(|l| l.has_m_values())
-        })
+        self.geometry
+            .iter()
+            .any(|g| g.iter().any(|l| l.has_m_values()))
     }
 
     fn load_geometry(&self) -> VectorGeometry {
-        VectorGeometry::VectorPolys(
-            self.geometry.iter().map(|line| {
-                line.to_vec()
-            }).collect()
+        VectorGeometry::VectorPolys(self.geometry.iter().map(|line| line.to_vec()).collect())
+    }
+
+    fn m_values(&self) -> Option<LineStringMValues> {
+        if !self.has_m_values() {
+            return None;
+        }
+        Some(
+            self.geometry
+                .iter()
+                .flat_map(|g| g.iter().flat_map(|l| l.m_values().unwrap_or_default()))
+                .collect(),
         )
     }
 
-    fn get_m_values(&self) -> Option<LineStringMValues> {
-        if !self.has_m_values() { return None; }
-        Some(self.geometry.iter().flat_map(|g| {
-            g.iter().flat_map(|l| l.get_m_values().unwrap())
-        }).collect())
-    }
-
-    fn encode_to_cache(&self, cache: &mut ColumnCacheWriter, m_shape: &Option<Shape>) -> usize {
+    fn encode_to_cache(&self, cache: &mut ColumnCacheWriter, m_shape: Option<&Shape>) -> usize {
         let geometry = &self.geometry;
         let mut indices: Vec<u32> = Vec::new();
-        if geometry.len() != 1 { indices.push(geometry.len() as u32) }
+        if geometry.len() != 1 {
+            indices.push(geometry.len() as u32)
+        }
         for poly in geometry {
             indices.push(poly.len() as u32);
             for line in poly {
-                if line.has_offset() { indices.push(encode_offset(line.offset)); }
+                if line.has_offset() {
+                    indices.push(encode_offset(line.offset));
+                }
                 indices.push(cache.add_points(line.geometry.clone()) as u32);
                 // store the mvalues indexes if they exist
-                if let (Some(m_values), Some(shape)) = (line.get_m_values(), m_shape.clone()) {
+                if let (Some(m_values), Some(shape)) = (line.m_values(), m_shape) {
                     for m in m_values {
-                        indices.push(encode_value(&m, &shape, cache) as u32);
+                        indices.push(encode_value(&m, shape, cache) as u32);
                     }
                 }
             }
@@ -524,11 +550,11 @@ impl BaseVectorPolys3DFeature {
 impl VectorFeature for BaseVectorPolys3DFeature {
     /// Get the type of the feature
     fn get_type(&self) -> FeatureType {
-        FeatureType::Polygons
+        FeatureType::Polygons3D
     }
 
     /// Get the properties of the feature
-    fn get_properties(&self) -> &Properties {
+    fn properties(&self) -> &Properties {
         &self.properties
     }
 
@@ -539,46 +565,51 @@ impl VectorFeature for BaseVectorPolys3DFeature {
 
     /// Points do not have this feature, so return false
     fn has_offsets(&self) -> bool {
-        self.geometry.iter().any(|g| {
-            g.iter().any(|l| l.has_offset())
-        })
+        self.geometry
+            .iter()
+            .any(|g| g.iter().any(|l| l.has_offset()))
     }
 
     /// Points do not have this feature, so return false
     fn has_m_values(&self) -> bool {
-        self.geometry.iter().any(|g| {
-            g.iter().any(|l| l.has_m_values())
-        })
+        self.geometry
+            .iter()
+            .any(|g| g.iter().any(|l| l.has_m_values()))
     }
 
     fn load_geometry(&self) -> VectorGeometry {
-        VectorGeometry::VectorPolys3D(
-            self.geometry.iter().map(|line| {
-                line.to_vec()
-            }).collect()
+        VectorGeometry::VectorPolys3D(self.geometry.iter().map(|line| line.to_vec()).collect())
+    }
+
+    fn m_values(&self) -> Option<LineStringMValues> {
+        if !self.has_m_values() {
+            return None;
+        }
+        Some(
+            self.geometry
+                .iter()
+                .flat_map(|g| g.iter().flat_map(|l| l.m_values().unwrap_or_default()))
+                .collect(),
         )
     }
 
-    fn get_m_values(&self) -> Option<LineStringMValues> {
-        if !self.has_m_values() { return None; }
-        Some(self.geometry.iter().flat_map(|g| {
-            g.iter().flat_map(|l| l.get_m_values().unwrap())
-        }).collect())
-    }
-
-    fn encode_to_cache(&self, cache: &mut ColumnCacheWriter, m_shape: &Option<Shape>) -> usize {
+    fn encode_to_cache(&self, cache: &mut ColumnCacheWriter, m_shape: Option<&Shape>) -> usize {
         let geometry = &self.geometry;
         let mut indices: Vec<u32> = Vec::new();
-        if geometry.len() != 1 { indices.push(geometry.len() as u32) }
+        if geometry.len() != 1 {
+            indices.push(geometry.len() as u32)
+        }
         for poly in geometry {
             indices.push(poly.len() as u32);
             for line in poly {
-                if line.has_offset() { indices.push(encode_offset(line.offset)); }
+                if line.has_offset() {
+                    indices.push(encode_offset(line.offset));
+                }
                 indices.push(cache.add_points_3d(line.geometry.clone()) as u32);
                 // store the mvalues indexes if they exist
-                if let (Some(m_values), Some(shape)) = (line.get_m_values(), m_shape.clone()) {
+                if let (Some(m_values), Some(shape)) = (line.m_values(), m_shape) {
                     for m in m_values {
-                        indices.push(encode_value(&m, &shape, cache) as u32);
+                        indices.push(encode_value(&m, shape, cache) as u32);
                     }
                 }
             }
@@ -588,7 +619,7 @@ impl VectorFeature for BaseVectorPolys3DFeature {
 }
 
 /// Tesselation Wrapper to handle both 2D and 3D cases
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TesselationWrapper {
     /// 2D tesselation
     Tesselation(Vec<Point>),
@@ -642,14 +673,14 @@ impl BaseVectorFeature {
     }
 
     /// get the feature properties
-    pub fn get_properties(&self) -> &Properties {
+    pub fn properties(&self) -> &Properties {
         match self {
-            BaseVectorFeature::BaseVectorPointsFeature(f) => f.get_properties(),
-            BaseVectorFeature::BaseVectorLinesFeature(f) => f.get_properties(),
-            BaseVectorFeature::BaseVectorPolysFeature(f) => f.get_properties(),
-            BaseVectorFeature::BaseVectorPoints3DFeature(f) => f.get_properties(),
-            BaseVectorFeature::BaseVectorLines3DFeature(f) => f.get_properties(),
-            BaseVectorFeature::BaseVectorPolys3DFeature(f) => f.get_properties(),
+            BaseVectorFeature::BaseVectorPointsFeature(f) => f.properties(),
+            BaseVectorFeature::BaseVectorLinesFeature(f) => f.properties(),
+            BaseVectorFeature::BaseVectorPolysFeature(f) => f.properties(),
+            BaseVectorFeature::BaseVectorPoints3DFeature(f) => f.properties(),
+            BaseVectorFeature::BaseVectorLines3DFeature(f) => f.properties(),
+            BaseVectorFeature::BaseVectorPolys3DFeature(f) => f.properties(),
         }
     }
 
@@ -666,14 +697,14 @@ impl BaseVectorFeature {
     }
 
     /// get the feature m values
-    pub fn get_m_values(&self) -> Option<LineStringMValues> {
+    pub fn m_values(&self) -> Option<LineStringMValues> {
         match self {
-            BaseVectorFeature::BaseVectorPointsFeature(f) => f.get_m_values(),
-            BaseVectorFeature::BaseVectorLinesFeature(f) => f.get_m_values(),
-            BaseVectorFeature::BaseVectorPolysFeature(f) => f.get_m_values(),
-            BaseVectorFeature::BaseVectorPoints3DFeature(f) => f.get_m_values(),
-            BaseVectorFeature::BaseVectorLines3DFeature(f) => f.get_m_values(),
-            BaseVectorFeature::BaseVectorPolys3DFeature(f) => f.get_m_values(),
+            BaseVectorFeature::BaseVectorPointsFeature(f) => f.m_values(),
+            BaseVectorFeature::BaseVectorLinesFeature(f) => f.m_values(),
+            BaseVectorFeature::BaseVectorPolysFeature(f) => f.m_values(),
+            BaseVectorFeature::BaseVectorPoints3DFeature(f) => f.m_values(),
+            BaseVectorFeature::BaseVectorLines3DFeature(f) => f.m_values(),
+            BaseVectorFeature::BaseVectorPolys3DFeature(f) => f.m_values(),
         }
     }
 
@@ -706,18 +737,20 @@ impl BaseVectorFeature {
         match self {
             BaseVectorFeature::BaseVectorPolysFeature(f) => Some(f.indices.clone()),
             BaseVectorFeature::BaseVectorPolys3DFeature(f) => Some(f.indices.clone()),
-            _ => None
+            _ => None,
         }
     }
 
     /// get the feature tesselation
     pub fn tesselation(&self) -> Option<TesselationWrapper> {
         match self {
-            BaseVectorFeature::BaseVectorPolysFeature(f) =>
-                Some(TesselationWrapper::Tesselation(f.tesselation.clone())),
-            BaseVectorFeature::BaseVectorPolys3DFeature(f) =>
-                Some(TesselationWrapper::Tesselation3D(f.tesselation.clone())),
-            _ => None
+            BaseVectorFeature::BaseVectorPolysFeature(f) => {
+                Some(TesselationWrapper::Tesselation(f.tesselation.clone()))
+            }
+            BaseVectorFeature::BaseVectorPolys3DFeature(f) => {
+                Some(TesselationWrapper::Tesselation3D(f.tesselation.clone()))
+            }
+            _ => None,
         }
     }
 
@@ -740,12 +773,12 @@ impl BaseVectorFeature {
             BaseVectorFeature::BaseVectorLines3DFeature(f) => f.has_offsets(),
             BaseVectorFeature::BaseVectorPolysFeature(f) => f.has_offsets(),
             BaseVectorFeature::BaseVectorPolys3DFeature(f) => f.has_offsets(),
-            _ => false
+            _ => false,
         }
     }
 
     /// encode the feature to cache
-    pub fn encode_to_cache(&self, cache: &mut ColumnCacheWriter, m_shape: &Option<Shape>) -> usize {
+    pub fn encode_to_cache(&self, cache: &mut ColumnCacheWriter, m_shape: Option<&Shape>) -> usize {
         match self {
             BaseVectorFeature::BaseVectorPointsFeature(f) => f.encode_to_cache(cache, m_shape),
             BaseVectorFeature::BaseVectorLinesFeature(f) => f.encode_to_cache(cache, m_shape),
@@ -771,13 +804,13 @@ impl From<&mut MapboxVectorFeature> for BaseVectorFeature {
 
         match mvt.load_geometry() {
             VectorGeometry::VectorPoints(geo) => BaseVectorFeature::BaseVectorPointsFeature(
-                BaseVectorPointsFeature::new(id, geo, properties, None)
+                BaseVectorPointsFeature::new(id, geo, properties, None),
             ),
             VectorGeometry::VectorLines(geo) => BaseVectorFeature::BaseVectorLinesFeature(
-                BaseVectorLinesFeature::new(id, geo, properties, None)
+                BaseVectorLinesFeature::new(id, geo, properties, None),
             ),
             VectorGeometry::VectorPolys(geo) => BaseVectorFeature::BaseVectorPolysFeature(
-                BaseVectorPolysFeature::new(id, geo, properties, None, indices, tesselation)
+                BaseVectorPolysFeature::new(id, geo, properties, None, indices, tesselation),
             ),
             _ => panic!("unexpected geometry type"),
         }
@@ -788,7 +821,7 @@ impl From<&mut MapboxVectorFeature> for BaseVectorFeature {
 pub fn encode_offset(offset: f64) -> u32 {
     (offset * 1_000.0).round() as u32
 }
-  
+
 /// Decode offset from a signed integer into a float or double
 pub fn decode_offset(offset: u32) -> f64 {
     (offset as f64) / 1_000.0

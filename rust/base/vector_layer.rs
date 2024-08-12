@@ -2,8 +2,8 @@ use crate::base::BaseVectorFeature;
 use crate::mapbox::MapboxVectorLayer;
 use crate::open::Shape;
 
-use alloc::vec::Vec;
 use alloc::string::String;
+use alloc::vec::Vec;
 
 /// Base Vector Layer
 /// This is an intermediary for storing layer data in the Open Vector Tile format.
@@ -45,15 +45,15 @@ impl BaseVectorLayer {
             features,
         }
     }
-  
+
     /// Add a new feature to the layer
     pub fn add_feature(&mut self, feature: BaseVectorFeature) {
         if !self.shape_defined {
-            let prop_shape = (feature.get_properties()).clone().into();
+            let prop_shape = (feature.properties()).clone().into();
             self.shape.merge(&prop_shape);
         }
         if !self.m_shape_defined {
-            if let Some(m_values) = feature.get_m_values() {
+            if let Some(m_values) = feature.m_values() {
                 let feature_shape: Shape = (&m_values[..]).into();
                 match self.m_shape {
                     Some(ref mut m_shape) => m_shape.merge(&feature_shape),
@@ -64,7 +64,7 @@ impl BaseVectorLayer {
 
         self.features.push(feature);
     }
-  
+
     /// Get the feature at the given index
     pub fn feature(&self, i: usize) -> &BaseVectorFeature {
         &self.features[i]

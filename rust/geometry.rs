@@ -119,7 +119,12 @@ impl Point3D {
 
     /// Create a new point with an MValue
     pub fn new_with_m(x: i32, y: i32, z: i32, m: MValue) -> Point3D {
-        Point3D { x, y, z, m: Some(m) }
+        Point3D {
+            x,
+            y,
+            z,
+            m: Some(m),
+        }
     }
 }
 impl PartialOrd for Point3D {
@@ -132,7 +137,10 @@ impl Eq for Point3D {}
 impl Ord for Point3D {
     fn cmp(&self, other: &Self) -> Ordering {
         // only compare x and y
-        self.x.cmp(&other.x).then(self.y.cmp(&other.y)).then(self.z.cmp(&other.z))
+        self.x
+            .cmp(&other.x)
+            .then(self.y.cmp(&other.y))
+            .then(self.z.cmp(&other.z))
     }
 }
 
@@ -144,9 +152,12 @@ pub struct VectorLineWithOffset {
     /// the line data
     pub geometry: VectorLine,
 }
-impl From<&Vec<Point>> for VectorLineWithOffset {
-    fn from(p: &Vec<Point>) -> Self {
-        Self { offset: 0.0, geometry: p.clone() }
+impl From<&[Point]> for VectorLineWithOffset {
+    fn from(p: &[Point]) -> Self {
+        Self {
+            offset: 0.0,
+            geometry: p.to_vec(),
+        }
     }
 }
 impl VectorLineWithOffset {
@@ -166,11 +177,16 @@ impl VectorLineWithOffset {
     }
 
     /// Get the M values for the line
-    pub fn get_m_values(&self) -> Option<LineStringMValues> {
-        if !self.has_m_values() { return None; }
-        Some(self.geometry.iter().map(|p| {
-            p.m.clone().unwrap_or_default()
-        }).collect())
+    pub fn m_values(&self) -> Option<LineStringMValues> {
+        if !self.has_m_values() {
+            return None;
+        }
+        Some(
+            self.geometry
+                .iter()
+                .map(|p| p.m.clone().unwrap_or_default())
+                .collect(),
+        )
     }
 }
 /// Built array line data with associated offset to help render dashed lines across tiles.
@@ -201,9 +217,16 @@ impl VectorLine3DWithOffset {
     }
 
     /// Get the M values for the line
-    pub fn get_m_values(&self) -> Option<LineStringMValues> {
-        if !self.has_m_values() { return None; }
-        Some(self.geometry.iter().filter_map(|p| p.m.clone()).collect())
+    pub fn m_values(&self) -> Option<LineStringMValues> {
+        if !self.has_m_values() {
+            return None;
+        }
+        Some(
+            self.geometry
+                .iter()
+                .map(|p| p.m.clone().unwrap_or_default())
+                .collect(),
+        )
     }
 }
 /// Built array line data with associated offset to help render dashed lines across tiles.

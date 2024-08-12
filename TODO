@@ -1,8 +1,6 @@
 # TODO
 
-[ ] Port to Rust
 [ ] Rust tests > 90%
-[ ] Rust Documentation complete
 
 // PLAIN: 466_594 bytes
 // WITHOUT PROPERTY DATA: 176_751 bytes (~62%)

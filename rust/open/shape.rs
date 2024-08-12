@@ -1,12 +1,12 @@
-use crate::open::{ColumnCacheWriter, ColumnCacheReader, ColumnValue};
 use crate::mapbox::{Properties as MapboxProperties, Value as MapboxValue};
+use crate::open::{ColumnCacheReader, ColumnCacheWriter, ColumnValue};
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
+use alloc::collections::BTreeMap;
+use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
-use alloc::string::String;
-use alloc::collections::BTreeMap;
 
 //? Shape
 
@@ -46,7 +46,10 @@ impl PrimitiveShape {
 
     /// returns true if the shape is a number type
     pub fn is_number(&self) -> bool {
-        matches!(self, PrimitiveShape::F64 | PrimitiveShape::F32 | PrimitiveShape::I64 | PrimitiveShape::U64)
+        matches!(
+            self,
+            PrimitiveShape::F64 | PrimitiveShape::F32 | PrimitiveShape::I64 | PrimitiveShape::U64
+        )
     }
 
     /// returns true if two shapes are the same. Numeric types are considered the same.
@@ -55,7 +58,10 @@ impl PrimitiveShape {
     }
 
     /// returns the highest order number type
-    pub fn get_highest_order_number(type_a: &PrimitiveShape, type_b: &PrimitiveShape) -> PrimitiveShape {
+    pub fn get_highest_order_number(
+        type_a: &PrimitiveShape,
+        type_b: &PrimitiveShape,
+    ) -> PrimitiveShape {
         if *type_a == PrimitiveShape::F64 || *type_b == PrimitiveShape::F64 {
             PrimitiveShape::F64
         } else if *type_a == PrimitiveShape::F32 || *type_b == PrimitiveShape::F32 {
@@ -136,7 +142,7 @@ impl From<ValuePrimitiveType> for ShapePrimitiveType {
                     nested_map.insert(key, value.into());
                 }
                 ShapePrimitiveType::NestedPrimitive(nested_map)
-            },
+            }
         }
     }
 }
@@ -150,35 +156,42 @@ impl ShapePrimitiveType {
                     shape_store.push(cache.add_string(key.clone()).into());
                     value.encode(shape_store, cache);
                 }
-            },
+            }
         }
     }
 
     fn decode(store: &mut Vec<usize>, cache: &mut ColumnCacheReader) -> Self {
         let shape_pair = ShapePair::decode(store.remove(0));
         match shape_pair.p_type {
-            ShapeDefinition::Primitive =>
-                Self::Primitive(PrimitiveShape::from(shape_pair.count_or_col)),
+            ShapeDefinition::Primitive => {
+                Self::Primitive(PrimitiveShape::from(shape_pair.count_or_col))
+            }
             ShapeDefinition::Object => {
                 let mut nested = BTreeMap::new();
                 for _ in 0..shape_pair.count_or_col {
                     nested.insert(
                         cache.get_string(store.remove(0)),
-                        PrimitiveShape::from(store.remove(0))
+                        PrimitiveShape::from(store.remove(0)),
                     );
                 }
                 Self::NestedPrimitive(nested)
-            },
+            }
             _ => panic!("Unknown shape definition: {:?}", shape_pair),
         }
     }
 
     fn merge(&mut self, other: &Self) {
         match (self, other) {
-            (ShapePrimitiveType::Primitive(self_prim), ShapePrimitiveType::Primitive(other_prim)) => {
+            (
+                ShapePrimitiveType::Primitive(self_prim),
+                ShapePrimitiveType::Primitive(other_prim),
+            ) => {
                 self_prim.merge(other_prim);
             }
-            (ShapePrimitiveType::NestedPrimitive(self_nested), ShapePrimitiveType::NestedPrimitive(other_nested)) => {
+            (
+                ShapePrimitiveType::NestedPrimitive(self_nested),
+                ShapePrimitiveType::NestedPrimitive(other_nested),
+            ) => {
                 for (key, value) in other_nested {
                     if self_nested.contains_key(key) {
                         self_nested.get_mut(key).unwrap().merge(value);
@@ -215,11 +228,11 @@ impl From<ValueType> for ShapeType {
                     nested_map.insert(key, value.into());
                 }
                 ShapeType::Nested(Shape(nested_map))
-            },
+            }
             ValueType::Array(array) => {
                 let validated = validate_types(&array);
                 ShapeType::Array(vec![validated])
-            },
+            }
         }
     }
 }
@@ -230,10 +243,10 @@ impl ShapeType {
             Self::Array(array) => {
                 shape_store.push(0.into());
                 array.first().unwrap().encode(shape_store, cache);
-            },
+            }
             Self::Nested(nested) => {
                 nested.encode(shape_store, cache);
-            },
+            }
         }
     }
 
@@ -241,10 +254,10 @@ impl ShapeType {
         let code = store.remove(0);
         let shape_pair = ShapePair::decode(code);
         match shape_pair.p_type {
-            ShapeDefinition::Primitive =>
-                Self::Primitive(PrimitiveShape::from(shape_pair.count_or_col)),
-            ShapeDefinition::Array =>
-                Self::Array(vec![ShapePrimitiveType::decode(store, cache)]),
+            ShapeDefinition::Primitive => {
+                Self::Primitive(PrimitiveShape::from(shape_pair.count_or_col))
+            }
+            ShapeDefinition::Array => Self::Array(vec![ShapePrimitiveType::decode(store, cache)]),
             ShapeDefinition::Object => {
                 // reinsert code because shape will check it again
                 store.insert(0, code);
@@ -258,7 +271,7 @@ impl ShapeType {
             (Self::Primitive(a), Self::Primitive(b)) => a.merge(b),
             (Self::Array(a), Self::Array(b)) => {
                 a.first_mut().unwrap().merge(b.first().unwrap());
-            },
+            }
             (Self::Nested(a), Self::Nested(b)) => a.merge(b),
             _ => panic!("Can't merge"),
         };
@@ -280,17 +293,16 @@ impl From<Value> for Shape {
 impl From<&[Value]> for Shape {
     fn from(val: &[Value]) -> Self {
         let mut shape = Shape(BTreeMap::new());
-        for v in val { shape.merge(&v.clone().into()); }
+        for v in val {
+            shape.merge(&v.clone().into());
+        }
         shape
     }
 }
 impl Shape {
     /// Encode the shape
     pub fn encode(&self, shape_store: &mut Vec<ColumnValue>, cache: &mut ColumnCacheWriter) {
-        shape_store.push(ShapePair::encode(
-            ShapeDefinition::Object,
-            self.0.len()
-        ).into());
+        shape_store.push(ShapePair::encode(ShapeDefinition::Object, self.0.len()).into());
         for (key, value) in &self.0 {
             shape_store.push(cache.add_string(key.clone()).into());
             value.encode(shape_store, cache);
@@ -301,7 +313,9 @@ impl Shape {
     pub fn decode(store: &mut Vec<usize>, cache: &mut ColumnCacheReader) -> Self {
         let mut map = BTreeMap::<String, ShapeType>::new();
         let shape_pair = ShapePair::decode(store.remove(0));
-        if shape_pair.p_type != ShapeDefinition::Object { panic!("expected object shape") }
+        if shape_pair.p_type != ShapeDefinition::Object {
+            panic!("expected object shape")
+        }
         for _ in 0..shape_pair.count_or_col {
             let key = cache.get_string(store.remove(0));
             let shape = ShapeType::decode(store, cache);
@@ -311,9 +325,10 @@ impl Shape {
     }
 
     /// Merge two shapes
-    pub fn merge(&mut self, other: &Self)  {
+    pub fn merge(&mut self, other: &Self) {
         for (key, value) in &other.0 {
-            self.0.entry(key.clone())
+            self.0
+                .entry(key.clone())
                 .and_modify(|val| val.merge(value))
                 .or_insert_with(|| value.clone());
         }
@@ -341,7 +356,7 @@ pub fn decode_shape(shape_index: usize, cache: &mut ColumnCacheReader) -> Shape 
     let mut shape_store = cache.get_shapes(shape_index);
     // duplicate the array to avoid modifying the original
     Shape::decode(&mut shape_store, cache)
-  }
+}
 
 /// A shape pair for stronger compression and decoding
 #[derive(Debug, Clone, PartialEq)]
@@ -391,7 +406,6 @@ impl From<usize> for ShapeDefinition {
     }
 }
 
-
 //? VALUE
 
 /// Primitive types supported by Properties
@@ -411,7 +425,8 @@ pub enum PrimitiveValue {
     /// boolean
     Bool(bool),
     /// null
-    #[default] Null,
+    #[default]
+    Null,
 }
 impl PrimitiveValue {
     fn encode(
@@ -422,37 +437,41 @@ impl PrimitiveValue {
     ) {
         match (self, shape) {
             // string
-            (PrimitiveValue::String(s), PrimitiveShape::String)
-                => store.push(cache.add_string(s.clone()).into()),
+            (PrimitiveValue::String(s), PrimitiveShape::String) => {
+                store.push(cache.add_string(s.clone()).into())
+            }
             // u64
-            (PrimitiveValue::U64(u), PrimitiveShape::U64)
-                => store.push(cache.add_u64(*u).into()),
+            (PrimitiveValue::U64(u), PrimitiveShape::U64) => store.push(cache.add_u64(*u).into()),
             // i64
-            (PrimitiveValue::U64(u), PrimitiveShape::I64)
-                => store.push(cache.add_i64(*u as i64).into()),
-            (PrimitiveValue::I64(i), PrimitiveShape::I64)
-                => store.push(cache.add_i64(*i).into()),
+            (PrimitiveValue::U64(u), PrimitiveShape::I64) => {
+                store.push(cache.add_i64(*u as i64).into())
+            }
+            (PrimitiveValue::I64(i), PrimitiveShape::I64) => store.push(cache.add_i64(*i).into()),
             // f32
-            (PrimitiveValue::U64(u), PrimitiveShape::F32)
-                => store.push(cache.add_f32(*u as f32).into()),
-            (PrimitiveValue::I64(i), PrimitiveShape::F32)
-                => store.push(cache.add_f32(*i as f32).into()),
-            (PrimitiveValue::F32(f), PrimitiveShape::F32)
-                => store.push(cache.add_f32(*f).into()),
+            (PrimitiveValue::U64(u), PrimitiveShape::F32) => {
+                store.push(cache.add_f32(*u as f32).into())
+            }
+            (PrimitiveValue::I64(i), PrimitiveShape::F32) => {
+                store.push(cache.add_f32(*i as f32).into())
+            }
+            (PrimitiveValue::F32(f), PrimitiveShape::F32) => store.push(cache.add_f32(*f).into()),
             // f64
-            (PrimitiveValue::U64(u), PrimitiveShape::F64)
-                => store.push(cache.add_f64(*u as f64).into()),
-            (PrimitiveValue::I64(i), PrimitiveShape::F64)
-                => store.push(cache.add_f64(*i as f64).into()),
-            (PrimitiveValue::F32(f), PrimitiveShape::F64)
-                => store.push(cache.add_f64(*f as f64).into()),
-            (PrimitiveValue::F64(f), PrimitiveShape::F64)
-                => store.push(cache.add_f64(*f).into()),
+            (PrimitiveValue::U64(u), PrimitiveShape::F64) => {
+                store.push(cache.add_f64(*u as f64).into())
+            }
+            (PrimitiveValue::I64(i), PrimitiveShape::F64) => {
+                store.push(cache.add_f64(*i as f64).into())
+            }
+            (PrimitiveValue::F32(f), PrimitiveShape::F64) => {
+                store.push(cache.add_f64(*f as f64).into())
+            }
+            (PrimitiveValue::F64(f), PrimitiveShape::F64) => store.push(cache.add_f64(*f).into()),
             // bool
-            (PrimitiveValue::Bool(b), PrimitiveShape::Bool)
-                => store.push(cache.add_u64(if *b { 1 } else { 0 }).into()),
+            (PrimitiveValue::Bool(b), PrimitiveShape::Bool) => {
+                store.push(cache.add_u64(if *b { 1 } else { 0 }).into())
+            }
             // null
-            (PrimitiveValue::Null, PrimitiveShape::Null) => {},
+            (PrimitiveValue::Null, PrimitiveShape::Null) => {}
             _ => panic!("shape mismatch"),
         }
     }
@@ -460,7 +479,7 @@ impl PrimitiveValue {
     fn decode(
         shape: &PrimitiveShape,
         store: &mut Vec<usize>,
-        cache: &mut ColumnCacheReader
+        cache: &mut ColumnCacheReader,
     ) -> Self {
         let col_val = store.remove(0);
         match shape {
@@ -474,7 +493,7 @@ impl PrimitiveValue {
                 // put the column back because null does not need to be decoded
                 store.insert(0, col_val);
                 PrimitiveValue::Null
-            },
+            }
         }
     }
 
@@ -504,6 +523,19 @@ impl From<&MapboxValue> for PrimitiveValue {
         }
     }
 }
+impl From<PrimitiveValue> for MapboxValue {
+    fn from(val: PrimitiveValue) -> Self {
+        match val {
+            PrimitiveValue::String(string) => MapboxValue::String(string),
+            PrimitiveValue::U64(usigned) => MapboxValue::UInt(usigned),
+            PrimitiveValue::I64(signed) => MapboxValue::Int(signed as i32),
+            PrimitiveValue::F32(float) => MapboxValue::Float(float),
+            PrimitiveValue::F64(double) => MapboxValue::Double(double),
+            PrimitiveValue::Bool(boolean) => MapboxValue::Bool(boolean),
+            PrimitiveValue::Null => MapboxValue::Null,
+        }
+    }
+}
 
 /// Arrays may contain either a primitive or an object whose values are primitives
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -519,7 +551,7 @@ impl ValuePrimitiveType {
         &self,
         shape: &ShapePrimitiveType,
         store: &mut Vec<ColumnValue>,
-        cache: &mut ColumnCacheWriter
+        cache: &mut ColumnCacheWriter,
     ) {
         match (shape, self) {
             (
@@ -527,7 +559,7 @@ impl ValuePrimitiveType {
                 ValuePrimitiveType::Primitive(value_prim),
             ) => {
                 value_prim.encode(shape_prim, store, cache);
-            },
+            }
             (
                 ShapePrimitiveType::NestedPrimitive(shape_nest),
                 ValuePrimitiveType::NestedPrimitive(value_nest),
@@ -536,28 +568,28 @@ impl ValuePrimitiveType {
                     let val = value_nest.get(key).unwrap();
                     val.encode(prim_shape, store, cache);
                 }
-            },
-            _ => { panic!("shape and value do not match") },
+            }
+            _ => {
+                panic!("shape and value do not match")
+            }
         }
     }
 
     fn decode(
         shape: &ShapePrimitiveType,
         store: &mut Vec<usize>,
-        cache: &mut ColumnCacheReader
+        cache: &mut ColumnCacheReader,
     ) -> Self {
         match shape {
             ShapePrimitiveType::Primitive(shape_prim) => {
                 ValuePrimitiveType::Primitive(PrimitiveValue::decode(shape_prim, store, cache))
-            },
-            ShapePrimitiveType::NestedPrimitive(shape_nest) => {
-                ValuePrimitiveType::NestedPrimitive(
-                    shape_nest
-                        .iter()
-                        .map(|(key, shape)| (key.clone(), PrimitiveValue::decode(shape, store, cache)))
-                        .collect()
-                )
-            },
+            }
+            ShapePrimitiveType::NestedPrimitive(shape_nest) => ValuePrimitiveType::NestedPrimitive(
+                shape_nest
+                    .iter()
+                    .map(|(key, shape)| (key.clone(), PrimitiveValue::decode(shape, store, cache)))
+                    .collect(),
+            ),
         }
     }
 
@@ -588,35 +620,33 @@ impl ValueType {
         &self,
         shape: &ShapeType,
         store: &mut Vec<ColumnValue>,
-        cache: &mut ColumnCacheWriter
+        cache: &mut ColumnCacheWriter,
     ) {
         match (self, shape) {
             (ValueType::Primitive(val), ShapeType::Primitive(shape)) => {
                 val.encode(shape, store, cache);
-            },
+            }
             (ValueType::Array(vals), ShapeType::Array(shape)) => {
                 // encode length
                 store.push(ColumnValue::Number(vals.len()));
                 for val in vals {
                     val.encode(&shape[0], store, cache);
                 }
-            },
+            }
             (ValueType::Nested(val), ShapeType::Nested(shape)) => {
                 val.encode(shape, store, cache);
-            },
-            _ => { panic!("shape and value do not match") },
+            }
+            _ => {
+                panic!("shape and value do not match")
+            }
         }
     }
 
-    fn decode(
-        shape: &ShapeType,
-        store: &mut Vec<usize>,
-        cache: &mut ColumnCacheReader
-    ) -> Self {
+    fn decode(shape: &ShapeType, store: &mut Vec<usize>, cache: &mut ColumnCacheReader) -> Self {
         match shape {
             ShapeType::Primitive(shape_prim) => {
                 ValueType::Primitive(PrimitiveValue::decode(shape_prim, store, cache))
-            },
+            }
             ShapeType::Array(shape_arr) => {
                 let mut val = Vec::<ValuePrimitiveType>::new();
                 let len = store.remove(0);
@@ -624,16 +654,16 @@ impl ValueType {
                     val.push(ValuePrimitiveType::decode(&shape_arr[0], store, cache));
                 }
                 ValueType::Array(val)
-            },
-            ShapeType::Nested(shape) => {
-                ValueType::Nested(Value::decode(shape, store, cache))
-            },
+            }
+            ShapeType::Nested(shape) => ValueType::Nested(Value::decode(shape, store, cache)),
         }
     }
 
     fn default_from_shape(shape: &ShapeType) -> Self {
         match shape {
-            ShapeType::Primitive(shape) => ValueType::Primitive(PrimitiveValue::default_from_shape(shape)),
+            ShapeType::Primitive(shape) => {
+                ValueType::Primitive(PrimitiveValue::default_from_shape(shape))
+            }
             ShapeType::Array(_) => ValueType::Array(vec![]),
             ShapeType::Nested(shape) => ValueType::Nested(Value::default_from_shape(shape)),
         }
@@ -642,6 +672,15 @@ impl ValueType {
 impl From<&MapboxValue> for ValueType {
     fn from(mval: &MapboxValue) -> Self {
         ValueType::Primitive(mval.into())
+    }
+}
+impl From<ValueType> for MapboxValue {
+    fn from(val: ValueType) -> Self {
+        match val {
+            ValueType::Primitive(val) => val.into(),
+            ValueType::Array(_) => MapboxValue::Null,
+            ValueType::Nested(_) => MapboxValue::Null,
+        }
     }
 }
 
@@ -654,20 +693,20 @@ impl Value {
         &self,
         shape: &Shape,
         store: &mut Vec<ColumnValue>,
-        cache: &mut ColumnCacheWriter
+        cache: &mut ColumnCacheWriter,
     ) {
         for (key, shape_type) in &shape.0 {
-            let val = self.0.get(key).unwrap_or(&ValueType::default_from_shape(shape_type)).clone();
+            let val = self
+                .0
+                .get(key)
+                .unwrap_or(&ValueType::default_from_shape(shape_type))
+                .clone();
             val.encode(shape_type, store, cache);
         }
     }
 
     /// Decode the value from the store
-    pub fn decode(
-        shape: &Shape,
-        store: &mut Vec<usize>,
-        cache: &mut ColumnCacheReader
-    ) -> Self {
+    pub fn decode(shape: &Shape, store: &mut Vec<usize>, cache: &mut ColumnCacheReader) -> Self {
         let mut value = BTreeMap::new();
         for (key, shape_type) in &shape.0 {
             let val = ValueType::decode(shape_type, store, cache);
@@ -691,6 +730,15 @@ impl From<&MapboxProperties> for Value {
             value.insert(key.clone(), val.into());
         }
         Value(value)
+    }
+}
+impl From<Value> for MapboxProperties {
+    fn from(val: Value) -> Self {
+        let mut mval = BTreeMap::new();
+        for (key, val) in val.0 {
+            mval.insert(key, val.into());
+        }
+        mval
     }
 }
 /// Value of a features properties object
@@ -738,7 +786,7 @@ pub enum MValues {
 
 //? The Following are utility functions when the user doesn't pre-define the Properties/M-Value
 //? Shapes to store:
-  
+
 /// This is primarily to check if the type is a primitive.
 /// If the primitive is a number, find the "depth", the most complex is f64, then i64, then u64.
 /// Otherwise, if the primitives don't match, throw an error.
@@ -767,7 +815,7 @@ pub fn validate_types(types: &[ValuePrimitiveType]) -> ShapePrimitiveType {
             }
 
             ShapePrimitiveType::Primitive(base)
-        },
+        }
         Some(ValuePrimitiveType::NestedPrimitive(nested)) => {
             // iterate and check if each following types match
             for t in types[1..].iter() {

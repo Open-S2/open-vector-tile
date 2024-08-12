@@ -1,9 +1,9 @@
 use pbf::{ProtoRead, Protobuf};
 
-use alloc::vec::Vec;
-use alloc::string::String;
 use alloc::collections::BTreeMap;
 use alloc::rc::Rc;
+use alloc::string::String;
+use alloc::vec::Vec;
 
 use core::cell::RefCell;
 
@@ -66,14 +66,14 @@ pub struct VectorTile {
 }
 impl VectorTile {
     /// Create a new vector tile
-    pub fn new(data: RefCell<Vec<u8>>, end: Option<usize>) -> Self {
-        let pbf = Rc::new(RefCell::new(Protobuf::from_input(data)));
+    pub fn new(data: Vec<u8>, end: Option<usize>) -> Self {
+        let pbf = Rc::new(RefCell::new(data.into()));
         let pbf_clone = pbf.clone();
         let mut vt = VectorTile {
             pbf,
             columns: None,
             layer_indexes: Vec::new(),
-            layers: BTreeMap::new()
+            layers: BTreeMap::new(),
         };
 
         let mut tmp_pbf = pbf_clone.borrow_mut();
@@ -92,12 +92,10 @@ impl VectorTile {
         let cache = self.columns.as_ref()?.clone();
 
         for pos in layer_indexes {
-          tmp_pbf.set_pos(pos);
-          let layer = OpenVectorLayer::new(
-            self.pbf.clone(),
-            cache.clone()
-          );
-          self.layers.insert(layer.name.clone(), VectorLayer::Open(layer));
+            tmp_pbf.set_pos(pos);
+            let layer = OpenVectorLayer::new(self.pbf.clone(), cache.clone());
+            self.layers
+                .insert(layer.name.clone(), VectorLayer::Open(layer));
         }
 
         Some(())
@@ -110,22 +108,22 @@ impl ProtoRead for VectorTile {
                 let layer = VectorLayer::Mapbox(MapboxVectorLayer::new(
                     self.pbf.clone(),
                     pb.read_varint::<usize>() + pb.get_pos(),
-                    tag == 3
+                    tag == 3,
                 ));
                 self.layers.insert(pb.read_string(), layer);
-            },
+            }
             4 => {
                 // store the position of each layer for later retrieval.
                 // Columns must be prepped before reading the layer.
                 self.layer_indexes.push(pb.get_pos());
-            },
+            }
             5 => {
                 // vectorTile.#columns = new ColumnCacheReader(pbf, pbf.readVarint() + pbf.pos);
                 self.columns = Some(Rc::new(RefCell::new(ColumnCacheReader::new(
                     self.pbf.clone(),
-                    pb.read_varint::<usize>() + pb.get_pos()
+                    pb.read_varint::<usize>() + pb.get_pos(),
                 ))));
-            },
+            }
             _ => panic!("unknown tag: {}", tag),
         }
     }

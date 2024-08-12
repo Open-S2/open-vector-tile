@@ -1,21 +1,13 @@
-use pbf::{Protobuf, bit_cast::BitCast};
+use pbf::{bit_cast::BitCast, Protobuf};
 
 use crate::base::{decode_offset, BaseVectorFeature, TesselationWrapper};
-use crate::util::{unweave_2d, unweave_3d, zagzig};
-use crate::{
-    Point,
-    Point3D,
-    VectorGeometry,
-    VectorLine3DWithOffset,
-    VectorLineWithOffset,
-    VectorLines3DWithOffset,
-    VectorLinesWithOffset,
-    VectorPoints,
-    VectorPoints3D,
-    BBOX,
-};
 use crate::mapbox::FeatureType as MapboxFeatureType;
 use crate::open::{encode_value, ColumnCacheReader, ColumnCacheWriter, Properties, Shape};
+use crate::util::{unweave_2d, unweave_3d, zagzig};
+use crate::{
+    Point, Point3D, VectorGeometry, VectorLine3DWithOffset, VectorLineWithOffset,
+    VectorLines3DWithOffset, VectorLinesWithOffset, VectorPoints, VectorPoints3D, BBOX,
+};
 
 use core::cell::RefCell;
 
@@ -35,7 +27,8 @@ pub enum Extent {
     /// 2048x2048
     Extent2048 = 2048,
     /// 4096x4096 (default)
-    #[default] Extent4096 = 4096,
+    #[default]
+    Extent4096 = 4096,
     /// 8192x8192
     Extent8192 = 8192,
 }
@@ -81,7 +74,8 @@ impl From<Extent> for f64 {
 #[derive(Default, Debug, Copy, Clone, PartialEq, PartialOrd, Ord, Eq)]
 pub enum FeatureType {
     /// Points Feature
-    #[default] Points = 1,
+    #[default]
+    Points = 1,
     /// Lines Feature
     Lines = 2,
     /// Polygons Feature
@@ -167,13 +161,14 @@ impl OpenVectorFeature {
             VectorGeometry::VectorPoints(p) => p,
             VectorGeometry::VectorLines(lines) => {
                 lines.iter().flat_map(|p| p.geometry.clone()).collect()
-            },
-            VectorGeometry::VectorPolys(polys) => {
-                polys.iter().flat_map(|p| {
-                    p.iter().flat_map(|p| p.geometry.clone())
-                }).collect()
-            },
-            _ => { panic!("unexpected geometry type") },
+            }
+            VectorGeometry::VectorPolys(polys) => polys
+                .iter()
+                .flat_map(|p| p.iter().flat_map(|p| p.geometry.clone()))
+                .collect(),
+            _ => {
+                panic!("unexpected geometry type")
+            }
         }
     }
 
@@ -183,13 +178,14 @@ impl OpenVectorFeature {
             VectorGeometry::VectorPoints3D(p) => p,
             VectorGeometry::VectorLines3D(lines) => {
                 lines.iter().flat_map(|p| p.geometry.clone()).collect()
-            },
-            VectorGeometry::VectorPolys3D(polys) => {
-                polys.iter().flat_map(|p| {
-                    p.iter().flat_map(|p| p.geometry.clone())
-                }).collect()
-            },
-            _ => { panic!("unexpected geometry type") },
+            }
+            VectorGeometry::VectorPolys3D(polys) => polys
+                .iter()
+                .flat_map(|p| p.iter().flat_map(|p| p.geometry.clone()))
+                .collect(),
+            _ => {
+                panic!("unexpected geometry type")
+            }
         }
     }
 
@@ -197,10 +193,10 @@ impl OpenVectorFeature {
     pub fn load_lines(&mut self) -> VectorLinesWithOffset {
         match self.load_geometry() {
             VectorGeometry::VectorLines(lines) => lines,
-            VectorGeometry::VectorPolys(polys) => {
-                polys.iter().flat_map(|p| p.clone()).collect()
+            VectorGeometry::VectorPolys(polys) => polys.iter().flat_map(|p| p.clone()).collect(),
+            _ => {
+                panic!("unexpected geometry type")
             }
-            _ => { panic!("unexpected geometry type") },
         }
     }
 
@@ -208,10 +204,10 @@ impl OpenVectorFeature {
     pub fn load_lines_3d(&mut self) -> VectorLines3DWithOffset {
         match self.load_geometry() {
             VectorGeometry::VectorLines3D(lines) => lines,
-            VectorGeometry::VectorPolys3D(polys) => {
-                polys.iter().flat_map(|p| p.clone()).collect()
+            VectorGeometry::VectorPolys3D(polys) => polys.iter().flat_map(|p| p.clone()).collect(),
+            _ => {
+                panic!("unexpected geometry type")
             }
-            _ => { panic!("unexpected geometry type") },
         }
     }
 
@@ -222,28 +218,36 @@ impl OpenVectorFeature {
         // grab the geometry, flatten it, and mutate to an f64
         let geometry: Vec<f64> = match self.load_geometry() {
             VectorGeometry::VectorPolys(polys) => {
-                let mut geo = polys.iter().flat_map(|p| {
-                    p.iter().flat_map(|p| {
-                        p.geometry.clone().into_iter().flat_map(|p| {
-                            vec![p.x as f64 * multiplier, p.y as f64 * multiplier]
+                let mut geo = polys
+                    .iter()
+                    .flat_map(|p| {
+                        p.iter().flat_map(|p| {
+                            p.geometry.clone().into_iter().flat_map(|p| {
+                                vec![p.x as f64 * multiplier, p.y as f64 * multiplier]
+                            })
                         })
                     })
-                }).collect();
+                    .collect();
                 self.add_tesselation(&mut geo, multiplier);
                 geo
-            },
+            }
             VectorGeometry::VectorPolys3D(polys) => {
-                let mut geo = polys.iter().flat_map(|p| {
-                    p.iter().flat_map(|p| {
-                        p.geometry.clone().into_iter().flat_map(|p| {
-                            vec![p.x as f64 * multiplier, p.y as f64 * multiplier]
+                let mut geo = polys
+                    .iter()
+                    .flat_map(|p| {
+                        p.iter().flat_map(|p| {
+                            p.geometry.clone().into_iter().flat_map(|p| {
+                                vec![p.x as f64 * multiplier, p.y as f64 * multiplier]
+                            })
                         })
                     })
-                }).collect();
+                    .collect();
                 self.add_tesselation_3d(&mut geo, multiplier);
                 geo
-            },
-            _ => { panic!("unexpected geometry type") },
+            }
+            _ => {
+                panic!("unexpected geometry type")
+            }
         };
         // if a poly, check if we should load indices
         let indices = self.read_indices();
@@ -253,15 +257,21 @@ impl OpenVectorFeature {
 
     /// load the geometry
     pub fn load_geometry(&mut self) -> VectorGeometry {
-        if let Some(geometry) = &self.geometry { return geometry.clone(); }
+        if let Some(geometry) = &self.geometry {
+            return geometry.clone();
+        }
 
         match self.r#type {
             FeatureType::Points => VectorGeometry::VectorPoints(self._load_geometry_points()),
-            FeatureType::Points3D => VectorGeometry::VectorPoints3D(self._load_geometry_points_3d()),
+            FeatureType::Points3D => {
+                VectorGeometry::VectorPoints3D(self._load_geometry_points_3d())
+            }
             FeatureType::Lines => VectorGeometry::VectorLines(self._load_geometry_lines()),
             FeatureType::Lines3D => VectorGeometry::VectorLines3D(self._load_geometry_lines_3d()),
             FeatureType::Polygons => VectorGeometry::VectorPolys(self._load_geometry_polys()),
-            FeatureType::Polygons3D => VectorGeometry::VectorPolys3D(self._load_geometry_polys_3d()),
+            FeatureType::Polygons3D => {
+                VectorGeometry::VectorPolys3D(self._load_geometry_polys_3d())
+            }
         }
     }
 
@@ -281,7 +291,11 @@ impl OpenVectorFeature {
                 let length = geometry.len();
                 geometry.iter_mut().take(length).for_each(|p| {
                     let value_index = self.geometry_indices[index_pos];
-                    p.m = Some(decode_value(value_index as usize, &self.m_shape, &mut cache));
+                    p.m = Some(decode_value(
+                        value_index as usize,
+                        &self.m_shape,
+                        &mut cache,
+                    ));
                     index_pos += 1;
                 });
             }
@@ -306,7 +320,11 @@ impl OpenVectorFeature {
                 let length = geometry.len();
                 geometry.iter_mut().take(length).for_each(|p| {
                     let value_index = self.geometry_indices[index_pos];
-                    p.m = Some(decode_value(value_index as usize, &self.m_shape, &mut cache));
+                    p.m = Some(decode_value(
+                        value_index as usize,
+                        &self.m_shape,
+                        &mut cache,
+                    ));
                     index_pos += 1;
                 });
             }
@@ -317,7 +335,7 @@ impl OpenVectorFeature {
 
     fn _load_geometry_lines(&mut self) -> VectorLinesWithOffset {
         let mut cache = self.cache.borrow_mut();
-        
+
         let mut res: VectorLinesWithOffset = vec![];
 
         let mut index_pos = 0;
@@ -341,7 +359,11 @@ impl OpenVectorFeature {
                 let length = geometry.len();
                 geometry.iter_mut().take(length).for_each(|p| {
                     let value_index = self.geometry_indices[index_pos];
-                    p.m = Some(decode_value(value_index as usize, &self.m_shape, &mut cache));
+                    p.m = Some(decode_value(
+                        value_index as usize,
+                        &self.m_shape,
+                        &mut cache,
+                    ));
                     index_pos += 1;
                 });
             }
@@ -353,7 +375,7 @@ impl OpenVectorFeature {
 
     fn _load_geometry_lines_3d(&mut self) -> VectorLines3DWithOffset {
         let mut cache = self.cache.borrow_mut();
-        
+
         let mut res: VectorLines3DWithOffset = vec![];
 
         let mut index_pos = 0;
@@ -377,7 +399,11 @@ impl OpenVectorFeature {
                 let length = geometry.len();
                 geometry.iter_mut().take(length).for_each(|p| {
                     let value_index = self.geometry_indices[index_pos];
-                    p.m = Some(decode_value(value_index as usize, &self.m_shape, &mut cache));
+                    p.m = Some(decode_value(
+                        value_index as usize,
+                        &self.m_shape,
+                        &mut cache,
+                    ));
                     index_pos += 1;
                 });
             }
@@ -389,7 +415,7 @@ impl OpenVectorFeature {
 
     fn _load_geometry_polys(&mut self) -> Vec<VectorLinesWithOffset> {
         let mut cache = self.cache.borrow_mut();
-        
+
         let mut res: Vec<VectorLinesWithOffset> = vec![];
 
         let mut index_pos = 0;
@@ -417,7 +443,11 @@ impl OpenVectorFeature {
                     let length = geometry.len();
                     geometry.iter_mut().take(length).for_each(|p| {
                         let value_index = self.geometry_indices[index_pos];
-                        p.m = Some(decode_value(value_index as usize, &self.m_shape, &mut cache));
+                        p.m = Some(decode_value(
+                            value_index as usize,
+                            &self.m_shape,
+                            &mut cache,
+                        ));
                         index_pos += 1;
                     });
                 }
@@ -431,7 +461,7 @@ impl OpenVectorFeature {
 
     fn _load_geometry_polys_3d(&mut self) -> Vec<VectorLines3DWithOffset> {
         let mut cache = self.cache.borrow_mut();
-        
+
         let mut res: Vec<VectorLines3DWithOffset> = vec![];
 
         let mut index_pos = 0;
@@ -459,7 +489,11 @@ impl OpenVectorFeature {
                     let length = geometry.len();
                     geometry.iter_mut().take(length).for_each(|p| {
                         let value_index = self.geometry_indices[index_pos];
-                        p.m = Some(decode_value(value_index as usize, &self.m_shape, &mut cache));
+                        p.m = Some(decode_value(
+                            value_index as usize,
+                            &self.m_shape,
+                            &mut cache,
+                        ));
                         index_pos += 1;
                     });
                 }
@@ -473,14 +507,18 @@ impl OpenVectorFeature {
 
     /// returns the indices of the geometry
     pub fn read_indices(&mut self) -> Vec<u32> {
-        if self.indices_index.is_none() { return vec![]; }
+        if self.indices_index.is_none() {
+            return vec![];
+        }
         let mut cache = self.cache.borrow_mut();
         cache.get_indices(self.indices_index.unwrap())
     }
 
     /// Add tesselation data to the geometry
     pub fn add_tesselation(&mut self, geometry: &mut Vec<f64>, multiplier: f64) {
-        let Some(tesselation_index) = self.tesselation_index else { return; };
+        let Some(tesselation_index) = self.tesselation_index else {
+            return;
+        };
         let mut cache = self.cache.borrow_mut();
         let data = cache.get_points(tesselation_index);
         for point in data {
@@ -491,7 +529,9 @@ impl OpenVectorFeature {
 
     /// Add 3D tesselation data to the geometry
     pub fn add_tesselation_3d(&mut self, geometry: &mut Vec<f64>, multiplier: f64) {
-        let Some(tesselation_index) = self.tesselation_index else { return; };
+        let Some(tesselation_index) = self.tesselation_index else {
+            return;
+        };
         let mut cache = self.cache.borrow_mut();
         let data = cache.get_points_3d(tesselation_index);
         for point in data {
@@ -516,7 +556,11 @@ pub fn read_feature(
     // next the flags
     let flags: u8 = pbf.read_varint();
     // read the id if it exists
-    let id: Option<u64> = if flags & 1 > 0 { Some(pbf.read_varint()) } else { None };
+    let id: Option<u64> = if flags & 1 > 0 {
+        Some(pbf.read_varint())
+    } else {
+        None
+    };
     let has_bbox = flags & (1 << 1) > 0;
     let has_offsets = (flags & (1 << 2)) > 0;
     let has_indices = flags & (1 << 3) > 0;
@@ -531,17 +575,28 @@ pub fn read_feature(
     let mut indices_index: Option<usize> = None;
     let mut tesselation_index: Option<usize> = None;
     if r#type == FeatureType::Points || r#type == FeatureType::Points3D {
-        if single { geometry_indices.push(pbf.read_varint()) }
-        else { geometry_indices = cache.borrow_mut().get_indices(pbf.read_varint()); }
+        if single {
+            geometry_indices.push(pbf.read_varint())
+        } else {
+            geometry_indices = cache.borrow_mut().get_indices(pbf.read_varint());
+        }
     } else {
         geometry_indices = cache.borrow_mut().get_indices(pbf.read_varint());
     }
     // read indices and tesselation if they exist
     if r#type == FeatureType::Polygons || r#type == FeatureType::Polygons3D {
-        if has_indices { indices_index = Some(pbf.read_varint()); }
-        if has_tessellation { tesselation_index = Some(pbf.read_varint()); }
+        if has_indices {
+            indices_index = Some(pbf.read_varint());
+        }
+        if has_tessellation {
+            tesselation_index = Some(pbf.read_varint());
+        }
     }
-    let bbox_index = if has_bbox { Some(pbf.read_varint()) } else { None };
+    let bbox_index = if has_bbox {
+        Some(pbf.read_varint())
+    } else {
+        None
+    };
 
     OpenVectorFeature {
         id,
@@ -565,7 +620,7 @@ pub fn read_feature(
 pub fn write_feature(
     feature: &BaseVectorFeature,
     shape: &Shape,
-    m_shape: &Option<Shape>,
+    m_shape: Option<&Shape>,
     cache: &mut ColumnCacheWriter,
 ) -> Vec<u8> {
     // write id, type, properties, bbox, geometry, indices, tesselation, mValues
@@ -581,22 +636,38 @@ pub fn write_feature(
     let has_tessellation = tesselation.is_some() && tesselation.as_ref().unwrap().is_empty();
     let has_offsets = feature.has_offsets();
     let bbox = feature.bbox();
-    let has_bbox = bbox.is_some(); 
+    let has_bbox = bbox.is_some();
     let has_m_values = feature.has_m_values();
     let single = feature.single();
     let mut flags: u8 = 0;
-    if has_id { flags += 1; }
-    if has_bbox { flags += 1 << 1; }
-    if has_offsets { flags += 1 << 2; }
-    if has_indices { flags += 1 << 3; }
-    if has_tessellation { flags += 1 << 4; }
-    if has_m_values { flags += 1 << 5; }
-    if single { flags += 1 << 6; }
+    if has_id {
+        flags += 1;
+    }
+    if has_bbox {
+        flags += 1 << 1;
+    }
+    if has_offsets {
+        flags += 1 << 2;
+    }
+    if has_indices {
+        flags += 1 << 3;
+    }
+    if has_tessellation {
+        flags += 1 << 4;
+    }
+    if has_m_values {
+        flags += 1 << 5;
+    }
+    if single {
+        flags += 1 << 6;
+    }
     pbf.write_varint(flags);
     // id is stored in unsigned column
-    if has_id { pbf.write_varint(id.unwrap()); }
+    if has_id {
+        pbf.write_varint(id.unwrap());
+    }
     // index to values column
-    let value_index = encode_value(feature.get_properties(), shape, cache);
+    let value_index = encode_value(feature.properties(), shape, cache);
     pbf.write_varint(value_index);
     // geometry
     let stored_geo = feature.encode_to_cache(cache, m_shape);
@@ -608,14 +679,14 @@ pub fn write_feature(
     // tesselation
     if has_tessellation {
         match tesselation.unwrap() {
-            TesselationWrapper::Tesselation(t) =>
-                pbf.write_varint(cache.add_points(t)),
-            TesselationWrapper::Tesselation3D(t) =>
-                pbf.write_varint(cache.add_points_3d(t)),
+            TesselationWrapper::Tesselation(t) => pbf.write_varint(cache.add_points(t)),
+            TesselationWrapper::Tesselation3D(t) => pbf.write_varint(cache.add_points_3d(t)),
         }
     }
     // bbox is stored in double column.
-    if has_bbox { pbf.write_varint(cache.add_bbox(bbox.unwrap())); }
-  
+    if has_bbox {
+        pbf.write_varint(cache.add_bbox(bbox.unwrap()));
+    }
+
     pbf.take()
 }

@@ -10,12 +10,12 @@ extern crate pbf;
 
 /// Base Vector containers for Tiles, Layers, and Features
 pub mod base;
+/// Geometry utilities
+pub mod geometry;
 /// Mapbox specification for Layers and Features
 pub mod mapbox;
 /// Open specification for Layers and Features
 pub mod open;
-/// Geometry utilities
-pub mod geometry;
 /// Utilities/functions that are useful across all specifications
 pub mod util;
 /// The vector tile struct that covers both "open" and "mapbox" specifications
