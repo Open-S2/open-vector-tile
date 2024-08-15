@@ -1,12 +1,13 @@
-use pbf::{bit_cast::BitCast, Protobuf};
+use pbf::{BitCast, Protobuf};
 
 use crate::base::{decode_offset, BaseVectorFeature, TesselationWrapper};
 use crate::mapbox::FeatureType as MapboxFeatureType;
 use crate::open::{encode_value, ColumnCacheReader, ColumnCacheWriter, Properties, Shape};
 use crate::util::{unweave_2d, unweave_3d, zagzig};
 use crate::{
-    Point, Point3D, VectorGeometry, VectorLine3DWithOffset, VectorLineWithOffset,
-    VectorLines3DWithOffset, VectorLinesWithOffset, VectorPoints, VectorPoints3D, BBOX,
+    Point, Point3D, VectorFeatureMethods, VectorGeometry, VectorLine3DWithOffset,
+    VectorLineWithOffset, VectorLines3DWithOffset, VectorLinesWithOffset, VectorPoints,
+    VectorPoints3D, BBOX,
 };
 
 use core::cell::RefCell;
@@ -115,6 +116,7 @@ impl From<&MapboxFeatureType> for FeatureType {
 }
 
 /// Open Vector Tile Feature specification
+#[derive(Debug)]
 pub struct OpenVectorFeature {
     /// the id of the feature
     pub id: Option<u64>,
@@ -135,146 +137,6 @@ pub struct OpenVectorFeature {
     tesselation_index: Option<usize>,
 }
 impl OpenVectorFeature {
-    /// Create a new OpenVectorFeature
-    pub fn get_type(&self) -> FeatureType {
-        self.r#type
-    }
-
-    /// get the bbox of the feature
-    pub fn bbox(&self) -> Option<BBOX> {
-        if let Some(index) = self.bbox_index {
-            let mut cache = self.cache.borrow_mut();
-            Some(cache.get_bbox(index))
-        } else {
-            None
-        }
-    }
-
-    /// whether the feature has m values
-    pub fn has_m_values(&self) -> bool {
-        self.has_m_values
-    }
-
-    /// regardless of the type, we return a flattend point array
-    pub fn load_points(&mut self) -> VectorPoints {
-        match self.load_geometry() {
-            VectorGeometry::VectorPoints(p) => p,
-            VectorGeometry::VectorLines(lines) => {
-                lines.iter().flat_map(|p| p.geometry.clone()).collect()
-            }
-            VectorGeometry::VectorPolys(polys) => polys
-                .iter()
-                .flat_map(|p| p.iter().flat_map(|p| p.geometry.clone()))
-                .collect(),
-            _ => {
-                panic!("unexpected geometry type")
-            }
-        }
-    }
-
-    /// regardless of the type, we return a flattend point array
-    pub fn load_points_3d(&mut self) -> VectorPoints3D {
-        match self.load_geometry() {
-            VectorGeometry::VectorPoints3D(p) => p,
-            VectorGeometry::VectorLines3D(lines) => {
-                lines.iter().flat_map(|p| p.geometry.clone()).collect()
-            }
-            VectorGeometry::VectorPolys3D(polys) => polys
-                .iter()
-                .flat_map(|p| p.iter().flat_map(|p| p.geometry.clone()))
-                .collect(),
-            _ => {
-                panic!("unexpected geometry type")
-            }
-        }
-    }
-
-    /// an array of lines. The offsets will be set to 0
-    pub fn load_lines(&mut self) -> VectorLinesWithOffset {
-        match self.load_geometry() {
-            VectorGeometry::VectorLines(lines) => lines,
-            VectorGeometry::VectorPolys(polys) => polys.iter().flat_map(|p| p.clone()).collect(),
-            _ => {
-                panic!("unexpected geometry type")
-            }
-        }
-    }
-
-    /// an array of lines. The offsets will be set to 0
-    pub fn load_lines_3d(&mut self) -> VectorLines3DWithOffset {
-        match self.load_geometry() {
-            VectorGeometry::VectorLines3D(lines) => lines,
-            VectorGeometry::VectorPolys3D(polys) => polys.iter().flat_map(|p| p.clone()).collect(),
-            _ => {
-                panic!("unexpected geometry type")
-            }
-        }
-    }
-
-    /// (flattened geometry & tesslation if applicable, indices)
-    pub fn load_geometry_flat(&mut self) -> (Vec<f64>, Vec<u32>) {
-        // build a multiplier
-        let multiplier: f64 = 1.0 / f64::from(self.extent);
-        // grab the geometry, flatten it, and mutate to an f64
-        let geometry: Vec<f64> = match self.load_geometry() {
-            VectorGeometry::VectorPolys(polys) => {
-                let mut geo = polys
-                    .iter()
-                    .flat_map(|p| {
-                        p.iter().flat_map(|p| {
-                            p.geometry.clone().into_iter().flat_map(|p| {
-                                vec![p.x as f64 * multiplier, p.y as f64 * multiplier]
-                            })
-                        })
-                    })
-                    .collect();
-                self.add_tesselation(&mut geo, multiplier);
-                geo
-            }
-            VectorGeometry::VectorPolys3D(polys) => {
-                let mut geo = polys
-                    .iter()
-                    .flat_map(|p| {
-                        p.iter().flat_map(|p| {
-                            p.geometry.clone().into_iter().flat_map(|p| {
-                                vec![p.x as f64 * multiplier, p.y as f64 * multiplier]
-                            })
-                        })
-                    })
-                    .collect();
-                self.add_tesselation_3d(&mut geo, multiplier);
-                geo
-            }
-            _ => {
-                panic!("unexpected geometry type")
-            }
-        };
-        // if a poly, check if we should load indices
-        let indices = self.read_indices();
-
-        (geometry, indices)
-    }
-
-    /// load the geometry
-    pub fn load_geometry(&mut self) -> VectorGeometry {
-        if let Some(geometry) = &self.geometry {
-            return geometry.clone();
-        }
-
-        match self.r#type {
-            FeatureType::Points => VectorGeometry::VectorPoints(self._load_geometry_points()),
-            FeatureType::Points3D => {
-                VectorGeometry::VectorPoints3D(self._load_geometry_points_3d())
-            }
-            FeatureType::Lines => VectorGeometry::VectorLines(self._load_geometry_lines()),
-            FeatureType::Lines3D => VectorGeometry::VectorLines3D(self._load_geometry_lines_3d()),
-            FeatureType::Polygons => VectorGeometry::VectorPolys(self._load_geometry_polys()),
-            FeatureType::Polygons3D => {
-                VectorGeometry::VectorPolys3D(self._load_geometry_polys_3d())
-            }
-        }
-    }
-
     fn _load_geometry_points(&mut self) -> VectorPoints {
         let mut cache = self.cache.borrow_mut();
 
@@ -504,9 +366,111 @@ impl OpenVectorFeature {
 
         res
     }
+}
+impl VectorFeatureMethods for OpenVectorFeature {
+    /// get the id of the feature
+    fn id(&self) -> Option<u64> {
+        self.id
+    }
+
+    /// get the version of the feature
+    fn version(&self) -> u16 {
+        1
+    }
+
+    /// get the extent of the feature
+    fn extent(&self) -> usize {
+        self.extent.into()
+    }
+
+    fn properties(&self) -> Properties {
+        self.properties.clone()
+    }
+
+    /// Create a new OpenVectorFeature
+    fn get_type(&self) -> FeatureType {
+        self.r#type
+    }
+
+    /// get the bbox of the feature
+    fn bbox(&self) -> Option<BBOX> {
+        if let Some(index) = self.bbox_index {
+            let mut cache = self.cache.borrow_mut();
+            Some(cache.get_bbox(index))
+        } else {
+            None
+        }
+    }
+
+    /// whether the feature has m values
+    fn has_m_values(&self) -> bool {
+        self.has_m_values
+    }
+
+    /// regardless of the type, we return a flattend point array
+    fn load_points(&mut self) -> VectorPoints {
+        match self.load_geometry() {
+            VectorGeometry::VectorPoints(p) => p,
+            VectorGeometry::VectorLines(lines) => {
+                lines.iter().flat_map(|p| p.geometry.clone()).collect()
+            }
+            VectorGeometry::VectorPolys(polys) => polys
+                .iter()
+                .flat_map(|p| {
+                    p.iter()
+                        .flat_map(|p| p.geometry[..p.geometry.len() - 1].to_vec())
+                })
+                .collect(),
+            _ => {
+                panic!("unexpected geometry type")
+            }
+        }
+    }
+
+    /// regardless of the type, we return a flattend point array
+    fn load_points_3d(&mut self) -> VectorPoints3D {
+        match self.load_geometry() {
+            VectorGeometry::VectorPoints3D(p) => p,
+            VectorGeometry::VectorLines3D(lines) => {
+                lines.iter().flat_map(|p| p.geometry.clone()).collect()
+            }
+            VectorGeometry::VectorPolys3D(polys) => polys
+                .iter()
+                .flat_map(|p| {
+                    p.iter()
+                        .flat_map(|p| p.geometry[..p.geometry.len() - 1].to_vec())
+                })
+                .collect(),
+            _ => {
+                panic!("unexpected geometry type")
+            }
+        }
+    }
+
+    /// an array of lines. The offsets will be set to 0
+    fn load_lines(&mut self) -> VectorLinesWithOffset {
+        match self.load_geometry() {
+            VectorGeometry::VectorLines(lines) => lines,
+            VectorGeometry::VectorPolys(polys) => polys.iter().flat_map(|p| p.clone()).collect(),
+            _ => {
+                panic!("unexpected geometry type")
+            }
+        }
+    }
+
+    /// an array of lines. The offsets will be set to 0
+    fn load_lines_3d(&mut self) -> VectorLines3DWithOffset {
+        match self.load_geometry() {
+            VectorGeometry::VectorLines3D(lines) => lines,
+            VectorGeometry::VectorPolys3D(polys) => polys.iter().flat_map(|p| p.clone()).collect(),
+            _ => {
+                panic!("unexpected geometry type")
+            }
+        }
+    }
 
     /// returns the indices of the geometry
-    pub fn read_indices(&mut self) -> Vec<u32> {
+    fn read_indices(&mut self) -> Vec<u32> {
         if self.indices_index.is_none() {
             return vec![];
         }
@@ -515,7 +479,7 @@ impl OpenVectorFeature {
     }
 
     /// Add tesselation data to the geometry
-    pub fn add_tesselation(&mut self, geometry: &mut Vec<f64>, multiplier: f64) {
+    fn add_tesselation(&mut self, geometry: &mut Vec<f64>, multiplier: f64) {
         let Some(tesselation_index) = self.tesselation_index else {
             return;
         };
@@ -528,7 +492,7 @@ impl OpenVectorFeature {
     }
 
     /// Add 3D tesselation data to the geometry
-    pub fn add_tesselation_3d(&mut self, geometry: &mut Vec<f64>, multiplier: f64) {
+    fn add_tesselation_3d(&mut self, geometry: &mut Vec<f64>, multiplier: f64) {
         let Some(tesselation_index) = self.tesselation_index else {
             return;
         };
@@ -539,6 +503,72 @@ impl OpenVectorFeature {
             geometry.push(point.y as f64 * multiplier);
             geometry.push(point.z as f64 * multiplier);
         }
+    }
+
+    /// (flattened geometry & tesslation if applicable, indices)
+    fn load_geometry_flat(&mut self) -> (Vec<f64>, Vec<u32>) {
+        // build a multiplier
+        let multiplier: f64 = 1.0 / f64::from(self.extent);
+        // grab the geometry, flatten it, and mutate to an f64
+        let geometry: Vec<f64> = match self.load_geometry() {
+            VectorGeometry::VectorPolys(polys) => {
+                let mut geo = polys
+                    .iter()
+                    .flat_map(|p| {
+                        p.iter().flat_map(|p| {
+                            p.geometry.clone().into_iter().flat_map(|p| {
+                                vec![p.x as f64 * multiplier, p.y as f64 * multiplier]
+                            })
+                        })
+                    })
+                    .collect();
+                self.add_tesselation(&mut geo, multiplier);
+                geo
+            }
+            VectorGeometry::VectorPolys3D(polys) => {
+                let mut geo = polys
+                    .iter()
+                    .flat_map(|p| {
+                        p.iter().flat_map(|p| {
+                            p.geometry.clone().into_iter().flat_map(|p| {
+                                vec![p.x as f64 * multiplier, p.y as f64 * multiplier]
+                            })
+                        })
+                    })
+                    .collect();
+                self.add_tesselation_3d(&mut geo, multiplier);
+                geo
+            }
+            _ => {
+                panic!("unexpected geometry type")
+            }
+        };
+        // if a poly, check if we should load indices
+        let indices = self.read_indices();
+
+        (geometry, indices)
+    }
+
+    /// load the geometry
+    fn load_geometry(&mut self) -> VectorGeometry {
+        if let Some(geometry) = &self.geometry {
+            return geometry.clone();
+        }
+
+        self.geometry = Some(match self.r#type {
+            FeatureType::Points => VectorGeometry::VectorPoints(self._load_geometry_points()),
+            FeatureType::Points3D => {
+                VectorGeometry::VectorPoints3D(self._load_geometry_points_3d())
+            }
+            FeatureType::Lines => VectorGeometry::VectorLines(self._load_geometry_lines()),
+            FeatureType::Lines3D => VectorGeometry::VectorLines3D(self._load_geometry_lines_3d()),
+            FeatureType::Polygons => VectorGeometry::VectorPolys(self._load_geometry_polys()),
+            FeatureType::Polygons3D => {
+                VectorGeometry::VectorPolys3D(self._load_geometry_polys_3d())
+            }
+        });
+
+        self.load_geometry()
     }
 }
 
@@ -631,9 +661,9 @@ pub fn write_feature(
     let id = feature.id();
     let has_id: bool = id.is_some();
     let indices = feature.indices();
-    let has_indices = indices.is_some() && indices.unwrap().is_empty();
+    let has_indices = indices.is_some() && !indices.unwrap().is_empty();
     let tesselation = feature.tesselation();
-    let has_tessellation = tesselation.is_some() && tesselation.as_ref().unwrap().is_empty();
+    let has_tessellation = tesselation.is_some() && !tesselation.as_ref().unwrap().is_empty();
     let has_offsets = feature.has_offsets();
     let bbox = feature.bbox();
     let has_bbox = bbox.is_some();

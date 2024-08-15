@@ -47,7 +47,7 @@ describe('parsing vector tiles', async () => {
 
     const park = poi_label.feature(11);
 
-    expect(function () {
+    expect(() => {
       const park = poi_label.feature(1e9);
       park.loadGeometry();
     }).toThrowError('feature index out of bounds');

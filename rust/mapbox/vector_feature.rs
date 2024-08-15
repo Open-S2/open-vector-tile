@@ -1,14 +1,14 @@
-use pbf::{bit_cast::BitCast, ProtoRead, ProtoWrite, Protobuf, Type};
+use pbf::{BitCast, ProtoRead, ProtoWrite, Protobuf, Type};
 
 use crate::base::{BaseVectorFeature, TesselationWrapper};
-use crate::open::FeatureType as OpenFeatureType;
-use crate::util::{command_encode, zigzag};
+use crate::open::{FeatureType as OpenFeatureType, Properties as OpenProperties};
+use crate::util::{command_encode, zigzag, CustomOrdWrapper};
 use crate::{
-    Point, VectorGeometry, VectorLineWithOffset, VectorLinesWithOffset, VectorPoints, BBOX,
+    Point, VectorFeatureMethods, VectorGeometry, VectorLineWithOffset, VectorLines3DWithOffset,
+    VectorLinesWithOffset, VectorPoints, VectorPoints3D, BBOX,
 };
 
 use core::cell::RefCell;
-use core::cmp::Ordering;
 
 use alloc::collections::BTreeMap;
 use alloc::rc::Rc;
@@ -17,6 +17,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 
 /// Mapbox specification for a Feature
+#[derive(Debug)]
 pub struct MapboxVectorFeature {
     /// the id of the feature
     pub id: Option<u64>,
@@ -50,8 +51,7 @@ impl MapboxVectorFeature {
         keys: Rc<RefCell<Vec<String>>>,
         values: Rc<RefCell<Vec<Value>>>,
     ) -> MapboxVectorFeature {
-        let pbf_clone = pbf.clone();
-        let mut mvt = MapboxVectorFeature {
+        MapboxVectorFeature {
             id: None,
             version,
             properties: Properties::new(),
@@ -67,31 +67,47 @@ impl MapboxVectorFeature {
             keys,
             values,
             pbf,
-        };
+        }
+    }
+}
+impl VectorFeatureMethods for MapboxVectorFeature {
+    /// get the feature id
+    fn id(&self) -> Option<u64> {
+        self.id
+    }
 
-        let mut tmp_pbf = pbf_clone.borrow_mut();
-        tmp_pbf.read_message::<MapboxVectorFeature>(&mut mvt);
+    /// get the feature version
+    fn version(&self) -> u16 {
+        self.version
+    }
 
-        mvt
+    /// get the feature properties
+    fn properties(&self) -> OpenProperties {
+        (&self.properties).into()
+    }
+
+    /// get the feature extent
+    fn extent(&self) -> usize {
+        self.extent
     }
 
     /// get the feature type
-    pub fn get_type(&self) -> OpenFeatureType {
+    fn get_type(&self) -> OpenFeatureType {
         (&self.r#type).into()
     }
 
     /// get the bbox
-    pub fn bbox(&self) -> Option<BBOX> {
+    fn bbox(&self) -> Option<BBOX> {
         None
     }
 
     /// whether the feature has m values
-    pub fn has_m_values(&self) -> bool {
+    fn has_m_values(&self) -> bool {
         false
     }
 
     /// regardless of the type, we return a flattend point array
-    pub fn load_points(&mut self) -> VectorPoints {
+    fn load_points(&mut self) -> VectorPoints {
         match self.load_geometry() {
             VectorGeometry::VectorPoints(p) => p,
             VectorGeometry::VectorLines(lines) => {
@@ -99,7 +115,10 @@ impl MapboxVectorFeature {
             }
             VectorGeometry::VectorPolys(polys) => polys
                 .iter()
-                .flat_map(|p| p.iter().flat_map(|p| p.geometry.clone()))
+                .flat_map(|p| {
+                    p.iter()
+                        .flat_map(|p| p.geometry[..p.geometry.len() - 1].to_vec())
+                })
                 .collect(),
             _ => {
                 panic!("unexpected geometry type")
@@ -107,8 +126,12 @@ impl MapboxVectorFeature {
         }
     }
 
+    fn load_points_3d(&mut self) -> VectorPoints3D {
+        panic!("unexpected geometry type")
+    }
+
     /// an array of lines. The offsets will be set to 0
-    pub fn load_lines(&mut self) -> VectorLinesWithOffset {
+    fn load_lines(&mut self) -> VectorLinesWithOffset {
         match self.load_geometry() {
             VectorGeometry::VectorLines(lines) => lines,
             VectorGeometry::VectorPolys(polys) => polys.iter().flat_map(|p| p.clone()).collect(),
@@ -118,8 +141,13 @@ impl MapboxVectorFeature {
         }
     }
 
+    /// an array of 3D lines. The offsets will be set to 0
+    fn load_lines_3d(&mut self) -> VectorLines3DWithOffset {
+        panic!("unexpected geometry type")
+    }
+
     /// (flattened geometry & tesslation if applicable, indices)
-    pub fn load_geometry_flat(&mut self) -> (Vec<f64>, Vec<u32>) {
+    fn load_geometry_flat(&mut self) -> (Vec<f64>, Vec<u32>) {
         // build a multiplier
         let multiplier: f64 = 1.0 / self.extent as f64;
         // grab the geometry, flatten it, and mutate to an f64
@@ -148,7 +176,7 @@ impl MapboxVectorFeature {
     }
 
     /// load the geometry
-    pub fn load_geometry(&mut self) -> VectorGeometry {
+    fn load_geometry(&mut self) -> VectorGeometry {
         if let Some(geometry) = &self.geometry {
             return geometry.clone();
         }
@@ -156,7 +184,7 @@ impl MapboxVectorFeature {
         let mut pbf = self.pbf.borrow_mut();
         pbf.set_pos(self.geometry_index);
 
-        let end: usize = pbf.read_varint::<usize>() + self.geometry_index;
+        let end: usize = pbf.read_varint::<usize>() + pbf.get_pos();
         let mut cmd: usize = 1;
         let mut length: isize = 0;
         let mut x: i32 = 0;
@@ -188,7 +216,7 @@ impl MapboxVectorFeature {
                 }
                 points.push(Point::new(x, y));
             } else if cmd == 4 {
-                // next poly
+                // close poly
                 if !points.is_empty() {
                     lines.push((&points[..]).into());
                 }
@@ -215,7 +243,10 @@ impl MapboxVectorFeature {
             }
             if self.r#type == FeatureType::Line {
                 VectorGeometry::VectorLines(lines)
-            } else if self.r#type == FeatureType::Polygon && !self.is_s2 {
+            } else if (self.r#type == FeatureType::MultiPolygon
+                || self.r#type == FeatureType::Polygon)
+                && !self.is_s2
+            {
                 VectorGeometry::VectorPolys(classify_rings(&lines))
             } else {
                 VectorGeometry::VectorPolys(polys)
@@ -227,7 +258,7 @@ impl MapboxVectorFeature {
     }
 
     /// load the indices
-    pub fn read_indices(&mut self) -> Vec<u32> {
+    fn read_indices(&mut self) -> Vec<u32> {
         if let Some(indices) = &self.indices {
             return indices.clone();
         } else if self.indices_index.is_none() {
@@ -238,7 +269,7 @@ impl MapboxVectorFeature {
         pbf.set_pos(self.indices_index.unwrap());
 
         let mut curr: i32 = 0;
-        let end = pbf.read_varint::<usize>() + self.indices_index.unwrap();
+        let end = pbf.read_varint::<usize>() + pbf.get_pos();
         // build indices
         let mut indices: Vec<u32> = vec![];
         while pbf.get_pos() < end {
@@ -251,7 +282,7 @@ impl MapboxVectorFeature {
     }
 
     /// Add tesselation data to the geometry
-    pub fn add_tesselation(&mut self, geometry: &mut Vec<f64>, multiplier: f64) {
+    fn add_tesselation(&mut self, geometry: &mut Vec<f64>, multiplier: f64) {
         if self.tesselation_index.is_none() {
             return;
         }
@@ -259,7 +290,7 @@ impl MapboxVectorFeature {
         let mut pbf = self.pbf.borrow_mut();
         pbf.set_pos(self.tesselation_index.unwrap());
 
-        let end = pbf.read_varint::<usize>() + self.tesselation_index.unwrap();
+        let end = pbf.read_varint::<usize>() + pbf.get_pos();
         let mut x = 0;
         let mut y = 0;
         while pbf.get_pos() < end {
@@ -269,26 +300,52 @@ impl MapboxVectorFeature {
             geometry.push(y as f64 * multiplier);
         }
     }
+
+    /// Add 3D tesselation data to the geometry
+    fn add_tesselation_3d(&mut self, _geometry: &mut Vec<f64>, _multiplier: f64) {
+        panic!("unexpected geometry type")
+    }
 }
 impl ProtoRead for MapboxVectorFeature {
     fn read(&mut self, tag: u64, pb: &mut Protobuf) {
-        match tag {
-            15 => self.id = Some(pb.read_varint::<u64>()),
-            1 => {
-                let end = pb.get_pos() + pb.read_varint::<usize>();
+        if self.is_s2 {
+            match tag {
+                15 => self.id = Some(pb.read_varint::<u64>()),
+                1 => {
+                    let end = pb.get_pos() + pb.read_varint::<usize>();
 
-                while pb.get_pos() < end {
-                    let key = &self.keys.borrow()[pb.read_varint::<usize>()];
-                    let value = &self.values.borrow()[pb.read_varint::<usize>()];
+                    while pb.get_pos() < end {
+                        let key = &self.keys.borrow()[pb.read_varint::<usize>()];
+                        let value = &self.values.borrow()[pb.read_varint::<usize>()];
 
-                    self.properties.insert(key.clone(), value.clone());
+                        self.properties.insert(key.clone(), value.clone());
+                    }
                 }
+                2 => self.r#type = pb.read_varint::<FeatureType>(),
+                3 => self.geometry_index = pb.get_pos(),
+                4 => self.indices_index = Some(pb.get_pos()),
+                5 => self.tesselation_index = Some(pb.get_pos()),
+                _ => panic!("unknown tag: {}", tag),
             }
-            2 => self.r#type = pb.read_varint::<FeatureType>(),
-            3 => self.geometry_index = pb.read_varint::<usize>(),
-            4 => self.indices_index = Some(pb.read_varint::<usize>()),
-            5 => self.tesselation_index = Some(pb.read_varint::<usize>()),
-            _ => panic!("unknown tag: {}", tag),
+        } else {
+            match tag {
+                1 => self.id = Some(pb.read_varint::<u64>()),
+                2 => {
+                    let end = pb.get_pos() + pb.read_varint::<usize>();
+
+                    while pb.get_pos() < end {
+                        let key = &self.keys.borrow()[pb.read_varint::<usize>()];
+                        let value = &self.values.borrow()[pb.read_varint::<usize>()];
+
+                        self.properties.insert(key.clone(), value.clone());
+                    }
+                }
+                3 => self.r#type = pb.read_varint::<FeatureType>(),
+                4 => self.geometry_index = pb.get_pos(),
+                5 => self.indices_index = Some(pb.get_pos()),
+                6 => self.tesselation_index = Some(pb.get_pos()),
+                _ => panic!("unknown tag: {}", tag),
+            }
         }
     }
 }
@@ -384,60 +441,34 @@ impl BitCast for FeatureType {
 
 /// `Value` is the old type used by Mapbox vector tiles. Properties cannot be nested, so we only
 /// support string, number, boolean, and null (None in Rust).
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq)]
 pub enum Value {
     /// String value
     String(String),
     /// Unsigned integer value
     UInt(u64),
-    /// Signed integer 32-bit value
-    Int(i32),
     /// Signed integer 64-bit value
     SInt(i64),
     /// 32-bit Floating point value
-    Float(f32),
+    Float(CustomOrdWrapper<f32>),
     /// 64-bit Floating point value
-    Double(f64),
+    Double(CustomOrdWrapper<f64>),
     /// Boolean value
     Bool(bool),
     /// Null value
     Null,
-}
-impl PartialOrd for Value {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-impl Eq for Value {}
-impl Ord for Value {
-    fn cmp(&self, other: &Self) -> Ordering {
-        use Value::*;
-
-        match (self, other) {
-            (String(a), String(b)) => a.partial_cmp(b).unwrap(),
-            (UInt(a), UInt(b)) => a.partial_cmp(b).unwrap(),
-            (Int(a), Int(b)) => a.partial_cmp(b).unwrap(),
-            (SInt(a), SInt(b)) => a.partial_cmp(b).unwrap(),
-            (Float(a), Float(b)) => a.partial_cmp(b).unwrap(),
-            (Double(a), Double(b)) => a.partial_cmp(b).unwrap(),
-            (Bool(a), Bool(b)) => a.partial_cmp(b).unwrap(),
-            (Null, Null) => Ordering::Equal,
-            _ => Ordering::Less,
-        }
-    }
 }
 impl ProtoRead for Value {
     fn read(&mut self, tag: u64, pb: &mut Protobuf) {
         match tag {
             0 => *self = Value::Null,
             1 => *self = Value::String(pb.read_string()),
-            2 => *self = Value::Float(pb.read_varint::<f32>()),
-            3 => *self = Value::Double(pb.read_varint::<f64>()),
-            4 => *self = Value::Int(pb.read_s_varint::<i32>()),
+            2 => *self = Value::Float(CustomOrdWrapper(pb.read_varint::<f32>())),
+            3 => *self = Value::Double(CustomOrdWrapper(pb.read_varint::<f64>())),
             5 => *self = Value::UInt(pb.read_varint::<u64>()),
-            6 => *self = Value::SInt(pb.read_s_varint::<i64>()),
+            4 | 6 => *self = Value::SInt(pb.read_s_varint::<i64>()),
             7 => *self = Value::Bool(pb.read_varint::<bool>()),
-            _ => panic!("unknown tag: {}", tag),
+            _ => *self = Value::Null,
         }
     }
 }
@@ -446,9 +477,8 @@ impl ProtoWrite for Value {
         match self {
             Value::Null => pbf.write_field(0, Type::None),
             Value::String(value) => pbf.write_string_field(1, value),
-            Value::Float(value) => pbf.write_varint_field(2, *value),
-            Value::Double(value) => pbf.write_varint_field(3, *value),
-            Value::Int(value) => pbf.write_varint_field(4, *value),
+            Value::Float(value) => pbf.write_varint_field(2, value.0),
+            Value::Double(value) => pbf.write_varint_field(3, value.0),
             Value::UInt(value) => pbf.write_varint_field(5, *value),
             Value::SInt(value) => pbf.write_s_varint_field(6, *value),
             Value::Bool(value) => pbf.write_varint_field(7, *value),
@@ -467,6 +497,7 @@ pub fn write_feature(
     values: &mut BTreeMap<Value, usize>,
 ) -> Vec<u8> {
     let mut pbf = Protobuf::new();
+
     let properties: Properties = feature.properties().clone().into();
     if let Some(id) = feature.id() {
         pbf.write_varint_field(15, id);
@@ -475,7 +506,8 @@ pub fn write_feature(
     let _type: FeatureType = feature.get_type().into();
     pbf.write_varint_field(2, _type);
     // Geometry
-    pbf.write_bytes_field(3, &write_geometry(feature));
+    let written = write_geometry(feature);
+    pbf.write_bytes_field(3, &written);
     // Indices
     if let Some(indices) = feature.indices() {
         pbf.write_bytes_field(4, &write_indices(&indices));

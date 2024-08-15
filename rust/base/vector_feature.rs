@@ -1,11 +1,11 @@
 use crate::mapbox::MapboxVectorFeature;
 use crate::open::{
-    encode_value, ColumnCacheWriter, FeatureType, LineStringMValues, Properties, Shape,
+    encode_value, ColumnCacheWriter, FeatureType, LineStringMValues, Properties, Shape, Value,
 };
 use crate::util::{weave_2d, weave_3d, zigzag};
 use crate::{
-    BBox, BBox3D, Point, Point3D, VectorGeometry, VectorLines3DWithOffset, VectorLinesWithOffset,
-    VectorPoints, VectorPoints3D, BBOX,
+    BBox, BBox3D, Point, Point3D, VectorFeatureMethods, VectorGeometry, VectorLines3DWithOffset,
+    VectorLinesWithOffset, VectorPoints, VectorPoints3D, BBOX,
 };
 
 use alloc::vec::Vec;
@@ -283,7 +283,7 @@ impl VectorFeature for BaseVectorLinesFeature {
         Some(
             self.geometry
                 .iter()
-                .flat_map(|g| g.m_values().unwrap())
+                .flat_map(|g| g.m_values().unwrap_or_default())
                 .collect(),
         )
     }
@@ -300,9 +300,15 @@ impl VectorFeature for BaseVectorLinesFeature {
             }
             indices.push(cache.add_points(line.geometry.clone()) as u32);
             // store the mvalues indexes if they exist
-            if let (Some(m_values), Some(shape)) = (line.m_values(), m_shape) {
-                for m in m_values {
-                    indices.push(encode_value(&m, shape, cache) as u32);
+            if self.has_m_values() {
+                if let (Some(m_values), Some(shape)) = (line.m_values(), m_shape) {
+                    for m in m_values {
+                        indices.push(encode_value(&m, shape, cache) as u32);
+                    }
+                } else if let (None, Some(shape)) = (line.m_values(), m_shape) {
+                    for _ in 0..line.geometry.len() {
+                        indices.push(encode_value(&Value::default(), shape, cache) as u32);
+                    }
                 }
             }
         }
@@ -375,7 +381,7 @@ impl VectorFeature for BaseVectorLines3DFeature {
         Some(
             self.geometry
                 .iter()
-                .flat_map(|g| g.m_values().unwrap())
+                .flat_map(|g| g.m_values().unwrap_or_default())
                 .collect(),
         )
     }
@@ -392,9 +398,15 @@ impl VectorFeature for BaseVectorLines3DFeature {
             }
             indices.push(cache.add_points_3d(line.geometry.clone()) as u32);
             // store the mvalues indexes if they exist
-            if let (Some(m_values), Some(shape)) = (line.m_values(), m_shape) {
-                for m in m_values {
-                    indices.push(encode_value(&m, shape, cache) as u32);
+            if self.has_m_values() {
+                if let (Some(m_values), Some(shape)) = (line.m_values(), m_shape) {
+                    for m in m_values {
+                        indices.push(encode_value(&m, shape, cache) as u32);
+                    }
+                } else if let (None, Some(shape)) = (line.m_values(), m_shape) {
+                    for _ in 0..line.geometry.len() {
+                        indices.push(encode_value(&Value::default(), shape, cache) as u32);
+                    }
                 }
             }
         }
@@ -500,9 +512,15 @@ impl VectorFeature for BaseVectorPolysFeature {
                 }
                 indices.push(cache.add_points(line.geometry.clone()) as u32);
                 // store the mvalues indexes if they exist
-                if let (Some(m_values), Some(shape)) = (line.m_values(), m_shape) {
-                    for m in m_values {
-                        indices.push(encode_value(&m, shape, cache) as u32);
+                if self.has_m_values() {
+                    if let (Some(m_values), Some(shape)) = (line.m_values(), m_shape) {
+                        for m in m_values {
+                            indices.push(encode_value(&m, shape, cache) as u32);
+                        }
+                    } else if let (None, Some(shape)) = (line.m_values(), m_shape) {
+                        for _ in 0..line.geometry.len() {
+                            indices.push(encode_value(&Value::default(), shape, cache) as u32);
+                        }
                     }
                 }
             }
@@ -607,9 +625,15 @@ impl VectorFeature for BaseVectorPolys3DFeature {
                 }
                 indices.push(cache.add_points_3d(line.geometry.clone()) as u32);
                 // store the mvalues indexes if they exist
-                if let (Some(m_values), Some(shape)) = (line.m_values(), m_shape) {
-                    for m in m_values {
-                        indices.push(encode_value(&m, shape, cache) as u32);
+                if self.has_m_values() {
+                    if let (Some(m_values), Some(shape)) = (line.m_values(), m_shape) {
+                        for m in m_values {
+                            indices.push(encode_value(&m, shape, cache) as u32);
+                        }
+                    } else if let (None, Some(shape)) = (line.m_values(), m_shape) {
+                        for _ in 0..line.geometry.len() {
+                            indices.push(encode_value(&Value::default(), shape, cache) as u32);
+                        }
                     }
                 }
             }
@@ -645,6 +669,7 @@ impl TesselationWrapper {
 }
 
 /// A type that encompasses all vector tile feature types
+#[derive(Debug, Clone, PartialEq)]
 pub enum BaseVectorFeature {
     /// Points
     BaseVectorPointsFeature(BaseVectorPointsFeature),

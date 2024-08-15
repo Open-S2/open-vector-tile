@@ -1,19 +1,20 @@
 use crate::base::BaseVectorFeature;
 use crate::mapbox::MapboxVectorLayer;
-use crate::open::Shape;
+use crate::open::{Extent, Shape};
 
 use alloc::string::String;
 use alloc::vec::Vec;
 
 /// Base Vector Layer
 /// This is an intermediary for storing layer data in the Open Vector Tile format.
+#[derive(Debug)]
 pub struct BaseVectorLayer {
     /// the version of the vector tile. This is a number that tracks the OVT specification. and shouldn't be tampered with
     pub version: u8,
     /// the name of the layer
     pub name: String,
     /// the extent of the vector tile (only **512**, **1_024**, **2_048**, **4_096**, and **8_192** are supported)
-    pub extent: usize,
+    pub extent: Extent,
     /// if the shape was already passed in to the constructor
     pub shape_defined: bool,
     /// if the M-Shape was already passed in to the constructor
@@ -29,7 +30,7 @@ impl BaseVectorLayer {
     /// Create a new BaseVectorLayer
     pub fn new(
         name: String,
-        extent: usize,
+        extent: Extent,
         features: Vec<BaseVectorFeature>,
         shape: Option<Shape>,
         m_shape: Option<Shape>,
@@ -80,12 +81,12 @@ impl BaseVectorLayer {
         self.features.is_empty()
     }
 }
-impl From<MapboxVectorLayer> for BaseVectorLayer {
-    fn from(mvt: MapboxVectorLayer) -> Self {
+impl From<&mut MapboxVectorLayer> for BaseVectorLayer {
+    fn from(mvt: &mut MapboxVectorLayer) -> Self {
         let mut bvt = Self {
             version: 1,
-            name: mvt.name,
-            extent: mvt.extent,
+            name: mvt.name.clone(),
+            extent: mvt.extent.into(),
             shape_defined: false,
             m_shape_defined: false,
             shape: Shape::default(),
@@ -93,8 +94,8 @@ impl From<MapboxVectorLayer> for BaseVectorLayer {
             features: Vec::new(),
         };
 
-        for mut feature in mvt.features {
-            bvt.add_feature((&mut feature).into());
+        for feature in mvt.features.values_mut() {
+            bvt.add_feature(feature.into());
         }
 
         bvt

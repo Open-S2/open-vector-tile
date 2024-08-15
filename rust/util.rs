@@ -393,8 +393,6 @@ impl BBox {
         let q_lon2 = quantize_lon(self.right);
         let q_lat2 = quantize_lat(self.top);
 
-        println!("buffer: {:?}", buffer);
-
         pack24_bit_uint(&mut buffer, q_lon1, 0);
         pack24_bit_uint(&mut buffer, q_lat1, 3);
         pack24_bit_uint(&mut buffer, q_lon2, 6);

@@ -1,3 +1,5 @@
+use crate::{VectorLines3DWithOffset, VectorPoints3D};
+
 use pbf::{ProtoRead, Protobuf};
 
 use alloc::collections::BTreeMap;
@@ -7,9 +9,50 @@ use alloc::vec::Vec;
 
 use core::cell::RefCell;
 
-use crate::base::BaseVectorTile;
-use crate::mapbox::MapboxVectorLayer;
-use crate::open::{write_layer, ColumnCacheReader, ColumnCacheWriter, OpenVectorLayer};
+use crate::{
+    base::BaseVectorTile,
+    mapbox::MapboxVectorLayer,
+    open::{
+        write_layer, ColumnCacheReader, ColumnCacheWriter, FeatureType, OpenVectorLayer, Properties,
+    },
+    VectorGeometry, VectorLinesWithOffset, VectorPoints, BBOX,
+};
+
+/// Methods that all vector features should have
+pub trait VectorFeatureMethods {
+    /// the id of the feature
+    fn id(&self) -> Option<u64>;
+    /// the version of the vector tile
+    fn version(&self) -> u16;
+    /// the properties
+    fn properties(&self) -> Properties;
+    /// the extent
+    fn extent(&self) -> usize;
+    /// the feature type
+    fn get_type(&self) -> FeatureType;
+    /// the bounding box
+    fn bbox(&self) -> Option<BBOX>;
+    /// whether the feature has m values
+    fn has_m_values(&self) -> bool;
+    /// regardless of the type, we return a flattend point array
+    fn load_points(&mut self) -> VectorPoints;
+    /// regardless of the type, we return a flattend point3D array
+    fn load_points_3d(&mut self) -> VectorPoints3D;
+    /// an array of lines. The offsets will be set to 0
+    fn load_lines(&mut self) -> VectorLinesWithOffset;
+    /// an array of 3D lines. The offsets will be set to 0
+    fn load_lines_3d(&mut self) -> VectorLines3DWithOffset;
+    /// (flattened geometry & tesslation if applicable, indices)
+    fn load_geometry_flat(&mut self) -> (Vec<f64>, Vec<u32>);
+    /// load the geometry
+    fn load_geometry(&mut self) -> VectorGeometry;
+    /// load the indices
+    fn read_indices(&mut self) -> Vec<u32>;
+    /// Add tesselation data to the geometry
+    fn add_tesselation(&mut self, geometry: &mut Vec<f64>, multiplier: f64);
+    /// Add 3D tesselation data to the geometry
+    fn add_tesselation_3d(&mut self, geometry: &mut Vec<f64>, multiplier: f64);
+}
 
 /// Methods that all vector layers should have
 pub trait VectorLayerMethods {
@@ -20,9 +63,16 @@ pub trait VectorLayerMethods {
     /// the extent of the vector tile (only **512**, **1_024**, **2_048**, **4_096**, and **8_192**
     /// are supported for the open spec)
     fn extent(&self) -> usize;
+    /// grab a feature from the layer
+    fn feature(&mut self, i: usize) -> Option<&mut dyn VectorFeatureMethods>;
+    /// length (layer count)
+    fn len(&self) -> usize;
+    /// empty (layer count is 0)
+    fn is_empty(&self) -> bool;
 }
 
 /// Layer container supporting both mapbox and open vector layers
+#[derive(Debug)]
 pub enum VectorLayer {
     /// Mapbox vector layer
     Mapbox(MapboxVectorLayer),
@@ -50,9 +100,31 @@ impl VectorLayerMethods for VectorLayer {
             VectorLayer::Open(layer) => layer.extent(),
         }
     }
+
+    fn feature(&mut self, i: usize) -> Option<&mut dyn VectorFeatureMethods> {
+        match self {
+            VectorLayer::Mapbox(layer) => layer.feature(i),
+            VectorLayer::Open(layer) => layer.feature(i),
+        }
+    }
+
+    fn len(&self) -> usize {
+        match self {
+            VectorLayer::Mapbox(layer) => layer.len(),
+            VectorLayer::Open(layer) => layer.len(),
+        }
+    }
+
+    fn is_empty(&self) -> bool {
+        match self {
+            VectorLayer::Mapbox(layer) => layer.is_empty(),
+            VectorLayer::Open(layer) => layer.is_empty(),
+        }
+    }
 }
 
 /// The vector tile struct that covers both "open" and "mapbox" specifications
+#[derive(Debug)]
 pub struct VectorTile {
     /// the layers in the vector tile
     pub layers: BTreeMap<String, VectorLayer>,
@@ -68,18 +140,18 @@ impl VectorTile {
     /// Create a new vector tile
     pub fn new(data: Vec<u8>, end: Option<usize>) -> Self {
         let pbf = Rc::new(RefCell::new(data.into()));
-        let pbf_clone = pbf.clone();
         let mut vt = VectorTile {
-            pbf,
+            pbf: pbf.clone(),
             columns: None,
             layer_indexes: Vec::new(),
             layers: BTreeMap::new(),
         };
 
-        let mut tmp_pbf = pbf_clone.borrow_mut();
-        tmp_pbf.read_fields(&mut vt, end);
+        pbf.borrow_mut().read_fields(&mut vt, end);
 
-        vt.read_layers();
+        if !vt.layer_indexes.is_empty() {
+            vt.read_layers();
+        }
 
         vt
     }
@@ -87,30 +159,33 @@ impl VectorTile {
     /// Read the layers
     pub fn read_layers(&mut self) -> Option<()> {
         let layer_indexes = self.layer_indexes.clone();
-        let pbf_clone = self.pbf.clone();
-        let mut tmp_pbf = pbf_clone.borrow_mut();
+        let mut tmp_pbf = self.pbf.borrow_mut();
         let cache = self.columns.as_ref()?.clone();
 
         for pos in layer_indexes {
             tmp_pbf.set_pos(pos);
-            let layer = OpenVectorLayer::new(self.pbf.clone(), cache.clone());
+            let mut layer = OpenVectorLayer::new(cache.clone());
+            tmp_pbf.read_message(&mut layer);
             self.layers
                 .insert(layer.name.clone(), VectorLayer::Open(layer));
         }
 
         Some(())
     }
+
+    /// Get a layer given the name
+    pub fn layer(&mut self, name: &str) -> Option<&mut VectorLayer> {
+        self.layers.get_mut(name)
+    }
 }
 impl ProtoRead for VectorTile {
     fn read(&mut self, tag: u64, pb: &mut Protobuf) {
         match tag {
             1 | 3 => {
-                let layer = VectorLayer::Mapbox(MapboxVectorLayer::new(
-                    self.pbf.clone(),
-                    pb.read_varint::<usize>() + pb.get_pos(),
-                    tag == 3,
-                ));
-                self.layers.insert(pb.read_string(), layer);
+                let mut layer = MapboxVectorLayer::new(self.pbf.clone(), tag == 1);
+                pb.read_message(&mut layer);
+                self.layers
+                    .insert(layer.name.clone(), VectorLayer::Mapbox(layer));
             }
             4 => {
                 // store the position of each layer for later retrieval.
@@ -118,11 +193,9 @@ impl ProtoRead for VectorTile {
                 self.layer_indexes.push(pb.get_pos());
             }
             5 => {
-                // vectorTile.#columns = new ColumnCacheReader(pbf, pbf.readVarint() + pbf.pos);
-                self.columns = Some(Rc::new(RefCell::new(ColumnCacheReader::new(
-                    self.pbf.clone(),
-                    pb.read_varint::<usize>() + pb.get_pos(),
-                ))));
+                let mut column_reader = ColumnCacheReader::new();
+                pb.read_message(&mut column_reader);
+                self.columns = Some(Rc::new(RefCell::new(column_reader)));
             }
             _ => panic!("unknown tag: {}", tag),
         }

@@ -1,5 +1,6 @@
 use crate::mapbox::{Properties as MapboxProperties, Value as MapboxValue};
 use crate::open::{ColumnCacheReader, ColumnCacheWriter, ColumnValue};
+use crate::util::CustomOrdWrapper;
 
 use serde::{Deserialize, Serialize};
 
@@ -41,7 +42,12 @@ pub enum PrimitiveShape {
 }
 impl PrimitiveShape {
     fn encode(&self, shape_store: &mut Vec<ColumnValue>, _cache: &mut ColumnCacheWriter) {
-        shape_store.push(ShapePair::encode(2.into(), self.into()).into());
+        shape_store.push(ShapePair::encode(ShapeDefinition::Primitive, self.into()).into());
+    }
+
+    fn decode(shape_store: &mut Vec<usize>) -> Self {
+        let shape_pair = ShapePair::decode(shape_store.remove(0));
+        shape_pair.count_or_col.into()
     }
 
     /// returns true if the shape is a number type
@@ -151,7 +157,7 @@ impl ShapePrimitiveType {
         match self {
             Self::Primitive(prim) => prim.encode(shape_store, cache),
             Self::NestedPrimitive(nested) => {
-                shape_store.push(ShapePair::encode(1.into(), nested.len()).into());
+                shape_store.push(ShapePair::encode(ShapeDefinition::Object, nested.len()).into());
                 for (key, value) in nested {
                     shape_store.push(cache.add_string(key.clone()).into());
                     value.encode(shape_store, cache);
@@ -171,7 +177,7 @@ impl ShapePrimitiveType {
                 for _ in 0..shape_pair.count_or_col {
                     nested.insert(
                         cache.get_string(store.remove(0)),
-                        PrimitiveShape::from(store.remove(0)),
+                        PrimitiveShape::decode(store),
                     );
                 }
                 Self::NestedPrimitive(nested)
@@ -514,10 +520,9 @@ impl From<&MapboxValue> for PrimitiveValue {
         match mval {
             MapboxValue::String(string) => PrimitiveValue::String(string.clone()),
             MapboxValue::UInt(usigned) => PrimitiveValue::U64(*usigned),
-            MapboxValue::Int(signed) => PrimitiveValue::I64(*signed as i64),
             MapboxValue::SInt(signed) => PrimitiveValue::I64(*signed),
-            MapboxValue::Float(float) => PrimitiveValue::F32(*float),
-            MapboxValue::Double(double) => PrimitiveValue::F64(*double),
+            MapboxValue::Float(float) => PrimitiveValue::F32(float.0),
+            MapboxValue::Double(double) => PrimitiveValue::F64(double.0),
             MapboxValue::Bool(boolean) => PrimitiveValue::Bool(*boolean),
             MapboxValue::Null => PrimitiveValue::Null,
         }
@@ -528,9 +533,9 @@ impl From<PrimitiveValue> for MapboxValue {
         match val {
             PrimitiveValue::String(string) => MapboxValue::String(string),
             PrimitiveValue::U64(usigned) => MapboxValue::UInt(usigned),
-            PrimitiveValue::I64(signed) => MapboxValue::Int(signed as i32),
-            PrimitiveValue::F32(float) => MapboxValue::Float(float),
-            PrimitiveValue::F64(double) => MapboxValue::Double(double),
+            PrimitiveValue::I64(signed) => MapboxValue::SInt(signed),
+            PrimitiveValue::F32(float) => MapboxValue::Float(CustomOrdWrapper(float)),
+            PrimitiveValue::F64(double) => MapboxValue::Double(CustomOrdWrapper(double)),
             PrimitiveValue::Bool(boolean) => MapboxValue::Bool(boolean),
             PrimitiveValue::Null => MapboxValue::Null,
         }

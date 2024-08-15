@@ -16,6 +16,17 @@ pub struct BBox<T = f64> {
     /// top most point; Also represents the top-most latitude
     pub top: T,
 }
+impl<T> BBox<T> {
+    /// Create a new BBox
+    pub fn new(left: T, bottom: T, right: T, top: T) -> Self {
+        Self {
+            left,
+            bottom,
+            right,
+            top,
+        }
+    }
+}
 
 /// A BBOX is defined in lon-lat space and helps with zooming motion to
 /// see the entire 3D line or polygon
@@ -35,6 +46,19 @@ pub struct BBox3D<T = f64> {
     /// front most height (WG) or T (S2)
     /// generic height is relative to the surface of the earth in meters
     pub near: T,
+}
+impl<T> BBox3D<T> {
+    /// Create a new BBox3D
+    pub fn new(left: T, bottom: T, right: T, top: T, near: T, far: T) -> Self {
+        Self {
+            left,
+            bottom,
+            right,
+            top,
+            near,
+            far,
+        }
+    }
 }
 
 /// BBox or BBox3D

@@ -16,6 +16,7 @@ use alloc::vec::Vec;
 /// The Open Vector Layer class represents a layer in an Open Vector Tile.
 /// Contains an extent, name, version, and features.
 /// The features will utilize the layer extent to decode geometry.
+#[derive(Debug)]
 pub struct OpenVectorLayer {
     /// the version of the vector tile
     pub version: u16,
@@ -31,11 +32,8 @@ pub struct OpenVectorLayer {
 }
 impl OpenVectorLayer {
     /// Create a new OpenVectorLayer
-    pub fn new(
-        pbf: Rc<RefCell<Protobuf>>,
-        cache: Rc<RefCell<ColumnCacheReader>>,
-    ) -> OpenVectorLayer {
-        let mut ol = OpenVectorLayer {
+    pub fn new(cache: Rc<RefCell<ColumnCacheReader>>) -> OpenVectorLayer {
+        OpenVectorLayer {
             version: 1,
             name: String::new(),
             extent: Extent::default(),
@@ -43,12 +41,7 @@ impl OpenVectorLayer {
             m_shape: None,
             features: Vec::new(),
             cache,
-        };
-
-        let mut tmp_pbf = pbf.borrow_mut();
-        tmp_pbf.read_message::<OpenVectorLayer>(&mut ol);
-
-        ol
+        }
     }
 }
 impl VectorLayerMethods for OpenVectorLayer {
@@ -60,6 +53,17 @@ impl VectorLayerMethods for OpenVectorLayer {
     }
     fn extent(&self) -> usize {
         self.extent.into()
+    }
+    fn len(&self) -> usize {
+        self.features.len()
+    }
+    fn is_empty(&self) -> bool {
+        self.features.is_empty()
+    }
+    fn feature(&mut self, i: usize) -> Option<&mut dyn crate::VectorFeatureMethods> {
+        self.features
+            .get_mut(i)
+            .map(|f| f as &mut dyn crate::VectorFeatureMethods)
     }
 }
 impl ProtoRead for OpenVectorLayer {
@@ -73,15 +77,13 @@ impl ProtoRead for OpenVectorLayer {
                 }
             }
             3 => self.extent = pb.read_varint::<Extent>(),
-            4 => {
-                read_feature(
-                    pb.read_bytes(),
-                    self.extent,
-                    self.cache.clone(),
-                    &self.shape.clone().unwrap_or_default(),
-                    self.m_shape.clone().unwrap_or_default(),
-                );
-            }
+            4 => self.features.push(read_feature(
+                pb.read_bytes(),
+                self.extent,
+                self.cache.clone(),
+                &self.shape.clone().unwrap_or_default(),
+                self.m_shape.clone().unwrap_or_default(),
+            )),
             5 => {
                 self.shape = {
                     let mut cache = self.cache.borrow_mut();

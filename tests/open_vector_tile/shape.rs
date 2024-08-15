@@ -21,8 +21,16 @@ mod tests {
             "c": {
                 "d": "f64",
                 "e": "bool",
-                "f": "null"
-            }
+                "f": "null",
+                "g": {
+                    "h": "i64",
+                    "i": "string"
+                }
+            },
+            "d": [{
+                "j": "f64",
+                "k": "bool"
+            }]
         }"#;
 
         let shape = serde_json::from_str::<Shape>(json_shape).unwrap();
@@ -40,8 +48,25 @@ mod tests {
                         ("d".to_string(), ShapeType::Primitive(PrimitiveShape::F64)),
                         ("e".to_string(), ShapeType::Primitive(PrimitiveShape::Bool)),
                         ("f".to_string(), ShapeType::Primitive(PrimitiveShape::Null)),
+                        (
+                            "g".to_string(),
+                            ShapeType::Nested(Shape(BTreeMap::from([
+                                ("h".to_string(), ShapeType::Primitive(PrimitiveShape::I64)),
+                                (
+                                    "i".to_string(),
+                                    ShapeType::Primitive(PrimitiveShape::String)
+                                ),
+                            ])))
+                        )
                     ])))
                 ),
+                (
+                    "d".to_string(),
+                    ShapeType::Array(vec![ShapePrimitiveType::NestedPrimitive(BTreeMap::from([
+                        ("j".to_string(), PrimitiveShape::F64),
+                        ("k".to_string(), PrimitiveShape::Bool),
+                    ]))])
+                )
             ])
         );
 
@@ -53,20 +78,33 @@ mod tests {
         assert_eq!(
             shape_store,
             vec![
-                ColumnValue::Number(13),
+                ColumnValue::Number(17),
                 ColumnValue::Number(0),
                 ColumnValue::Number(10),
                 ColumnValue::Number(1),
                 ColumnValue::Number(0),
                 ColumnValue::Number(2),
                 ColumnValue::Number(2),
-                ColumnValue::Number(13),
+                ColumnValue::Number(17),
                 ColumnValue::Number(3),
                 ColumnValue::Number(18),
                 ColumnValue::Number(4),
                 ColumnValue::Number(22),
                 ColumnValue::Number(5),
-                ColumnValue::Number(26)
+                ColumnValue::Number(26),
+                ColumnValue::Number(6),
+                ColumnValue::Number(9),
+                ColumnValue::Number(7),
+                ColumnValue::Number(10),
+                ColumnValue::Number(8),
+                ColumnValue::Number(2),
+                ColumnValue::Number(3),
+                ColumnValue::Number(0),
+                ColumnValue::Number(9),
+                ColumnValue::Number(9),
+                ColumnValue::Number(18),
+                ColumnValue::Number(10),
+                ColumnValue::Number(22)
             ]
         );
 
@@ -82,13 +120,16 @@ mod tests {
         // decode:
         let pbf_read: Rc<RefCell<Protobuf>> = Rc::new(RefCell::new(data.into()));
         let _field = pbf_read.borrow_mut().read_field();
-        let end = pbf_read.borrow_mut().read_varint();
-        let mut reader = ColumnCacheReader::new(pbf_read, end);
+        let mut reader = ColumnCacheReader::new();
+        pbf_read.borrow_mut().read_message(&mut reader);
 
         let mut shape_read = reader.get_shapes(shape_index);
         assert_eq!(
             shape_read,
-            vec![13, 0, 10, 1, 0, 2, 2, 13, 3, 18, 4, 22, 5, 26]
+            vec![
+                17, 0, 10, 1, 0, 2, 2, 17, 3, 18, 4, 22, 5, 26, 6, 9, 7, 10, 8, 2, 3, 0, 9, 9, 18,
+                10, 22
+            ]
         );
 
         // decode shape
@@ -196,8 +237,8 @@ mod tests {
         // Now we decode the column
         let pbf_read: Rc<RefCell<Protobuf>> = Rc::new(RefCell::new(raw_data.into()));
         let _field = pbf_read.borrow_mut().read_field();
-        let end = pbf_read.borrow_mut().read_varint();
-        let mut reader = ColumnCacheReader::new(pbf_read, end);
+        let mut reader = ColumnCacheReader::new();
+        pbf_read.borrow_mut().read_message(&mut reader);
         let mut value_data = reader.get_shapes(encoded_value_index);
 
         let decoded_value = Value::decode(&example_shape, &mut value_data, &mut reader);
@@ -272,9 +313,8 @@ mod tests {
         // Now we decode the column
         let pbf_read: Rc<RefCell<Protobuf>> = Rc::new(RefCell::new(raw_data.into()));
         let _field = pbf_read.borrow_mut().read_field();
-        let end = pbf_read.borrow_mut().read_varint();
-        let mut reader = ColumnCacheReader::new(pbf_read, end);
-        // println!("reader: {:?} - {}", reader, encoded_value_index);
+        let mut reader = ColumnCacheReader::new();
+        pbf_read.borrow_mut().read_message(&mut reader);
         let mut value_data = reader.get_shapes(encoded_value_index);
         let mut value_data_2 = reader.get_shapes(encoded_value_index_2);
 
@@ -364,5 +404,26 @@ mod tests {
                 )
             ]))
         );
+    }
+
+    // ValuePrimitiveType -> ShapePrimitiveType
+    #[test]
+    fn test_value_primitive_type_to_shape_primitive_type() {
+        let vpt: ValuePrimitiveType = ValuePrimitiveType::Primitive(PrimitiveValue::I64(1));
+        let spt = ShapePrimitiveType::Primitive(PrimitiveShape::I64);
+        let res = ShapePrimitiveType::from(vpt);
+        assert_eq!(res, spt);
+
+        // NestedPrimitive
+        let vpt: ValuePrimitiveType = ValuePrimitiveType::NestedPrimitive(BTreeMap::from([
+            ("a".to_string(), PrimitiveValue::I64(1)),
+            ("b".to_string(), PrimitiveValue::String("hello".to_string())),
+        ]));
+        let spt = ShapePrimitiveType::NestedPrimitive(BTreeMap::from([
+            ("a".to_string(), PrimitiveShape::I64),
+            ("b".to_string(), PrimitiveShape::String),
+        ]));
+        let res = ShapePrimitiveType::from(vpt);
+        assert_eq!(res, spt);
     }
 }

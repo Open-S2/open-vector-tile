@@ -54,7 +54,7 @@ function writeTile(tile: BaseVectorTile | VectorTile, pbf: Protobuf): void {
   for (const key in tile.layers) {
     const layer = tile.layers[key];
     if (layer instanceof OVectorLayer) continue;
-    pbf.writeMessage(3, writeLayer, layer);
+    pbf.writeMessage(1, writeLayer, layer);
   }
 }
 
@@ -257,10 +257,8 @@ function writeMultiPolyGeometry(geometry: VectorMultiPoly, pbf: Protobuf): void 
   let x = 0;
   let y = 0;
 
-  for (let p = 0, pl = geometry.length; p < pl; p++) {
-    const poly = geometry[p];
-    for (let r = 0, rl = poly.length; r < rl; r++) {
-      const ring = poly[r];
+  for (const poly of geometry) {
+    for (const ring of poly) {
       pbf.writeVarint(commandEncode(1, 1)); // moveto
       const lineCount = ring.length - 1;
       for (let i = 0; i < lineCount; i++) {

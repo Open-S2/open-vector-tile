@@ -31,7 +31,7 @@ dependencies = [
 
 [[package]]
 name = "open-vector-tile"
-version = "0.2.0"
+version = "1.0.0"
 dependencies = [
  "num-traits",
  "pbf",
@@ -41,9 +41,9 @@ dependencies = [
 
 [[package]]
 name = "pbf"
-version = "0.2.1"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72bb070dd1c0f632d5fe145c8205588fd538411990e6d42e8183fda18da762c8"
+checksum = "78ce7e535daa67c6d2abec6badb0e3d38d02b2f26add6c68e73d5a339086be03"
 
 [[package]]
 name = "proc-macro2"

@@ -23,6 +23,11 @@ mod tests {
         assert_eq!(encode, 84);
         let decode = command_decode(encode);
         assert_eq!(decode, Command { cmd: 4, len: 10 });
+
+        let encode = command_encode(4, 1);
+        assert_eq!(encode, 12);
+        let decode = command_decode(encode);
+        assert_eq!(decode, Command { cmd: 4, len: 1 });
     }
 
     #[test]

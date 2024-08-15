@@ -1,18 +1,16 @@
+use crate::util::CustomOrdWrapper;
 use crate::util::{
     delta_decode_array, delta_encode_array, unweave_and_delta_decode_3d_array,
     unweave_and_delta_decode_array, weave_and_delta_encode_3d_array, weave_and_delta_encode_array,
 };
-use crate::util::{CustomOrd, CustomOrdWrapper};
 use crate::{Point, Point3D, VectorPoints, VectorPoints3D, BBOX};
 
 use pbf::{ProtoRead, ProtoWrite, Protobuf};
 
 use alloc::collections::BTreeMap;
-use alloc::rc::Rc;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::cell::RefCell;
-use core::cmp::Ordering;
 
 /// Column Types take up 3 bits.
 /// ColumnNames define various common data structures to be stored in a column fashion
@@ -98,7 +96,7 @@ pub enum ColumnContainer<T> {
 #[derive(Debug, Default)]
 pub struct ColumnCacheReader {
     /// strings are stored in a column of strings
-    string: Vec<ColumnContainer<String>>,
+    string: Vec<String>,
     /// unsigned whole numbers are stored in unsigned
     unsigned: Vec<u64>,
     /// negative numbers are stored in signed
@@ -108,39 +106,27 @@ pub struct ColumnCacheReader {
     /// non-whole numbers greater than 32-bit are stored in double
     double: Vec<f64>,
     /// for geometry types each column is individually weaved and delta encoded
-    points: Vec<ColumnContainer<VectorPoints>>,
+    points: Vec<VectorPoints>,
     /// for geometry types each column is individually weaved and delta encoded
-    points_3d: Vec<ColumnContainer<VectorPoints3D>>,
+    points_3d: Vec<VectorPoints3D>,
     /// store M-Value indices>, geometry indices>, and geometry shapes
-    indices: Vec<ColumnContainer<Vec<u32>>>,
+    indices: Vec<Vec<u32>>,
     /// shapes and possibly value indices are stored in a number[] to be decoded by readShape
-    shapes: Vec<ColumnContainer<Vec<usize>>>,
+    shapes: Vec<Vec<usize>>,
     /// Stores both BBox and BBox3D in a single column
-    bbox: Vec<ColumnContainer<BBOX>>,
-
-    /// keep tabs on the pbf
-    pbf: Rc<RefCell<Protobuf>>,
+    bbox: Vec<BBOX>,
 }
 impl ColumnCacheReader {
     /// create an instance
-    pub fn new(pbf: Rc<RefCell<Protobuf>>, end: usize) -> Self {
-        let pbf_clone = pbf.clone();
-        let mut ccr = ColumnCacheReader {
-            pbf,
+    pub fn new() -> Self {
+        ColumnCacheReader {
             ..Default::default()
-        };
-
-        let mut tmp_pbf = pbf_clone.borrow_mut();
-        tmp_pbf.read_fields(&mut ccr, Some(end));
-
-        ccr
+        }
     }
 
     /// get a string
     pub fn get_string(&mut self, index: usize) -> String {
-        get_value(index, self.pbf.clone(), &mut self.string, |pbf| {
-            pbf.read_string()
-        })
+        self.string[index].clone()
     }
 
     /// get an unsigned integer
@@ -165,78 +151,50 @@ impl ColumnCacheReader {
 
     /// get a vector of points used by all geometry types
     pub fn get_points(&mut self, index: usize) -> VectorPoints {
-        get_value(index, self.pbf.clone(), &mut self.points, |pbf| {
-            unweave_and_delta_decode_array(&pbf.read_packed::<u64>())
-        })
+        self.points[index].clone()
     }
 
     /// get a vector of 3D points used by all geometry types
     pub fn get_points_3d(&mut self, index: usize) -> VectorPoints3D {
-        get_value(index, self.pbf.clone(), &mut self.points_3d, |pbf| {
-            unweave_and_delta_decode_3d_array(&pbf.read_packed::<u64>())
-        })
+        self.points_3d[index].clone()
     }
 
     /// get a vector of indices used by all geometry types
     pub fn get_indices(&mut self, index: usize) -> Vec<u32> {
-        get_value(index, self.pbf.clone(), &mut self.indices, |pbf| {
-            delta_decode_array(&pbf.read_packed::<u32>())
-        })
+        self.indices[index].clone()
     }
 
     /// get a vector of encoded data that helps decode shapes
     pub fn get_shapes(&mut self, index: usize) -> Vec<usize> {
-        get_value(index, self.pbf.clone(), &mut self.shapes, |pbf| {
-            pbf.read_packed::<usize>()
-        })
+        self.shapes[index].clone()
     }
 
     /// get a BBox
     pub fn get_bbox(&mut self, index: usize) -> BBOX {
-        get_value(index, self.pbf.clone(), &mut self.bbox, |pbf| {
-            let buf = pbf.read_packed::<u8>();
-            (&buf[..]).into()
-        })
+        self.bbox[index]
     }
 }
 impl ProtoRead for ColumnCacheReader {
     fn read(&mut self, tag: u64, pb: &mut Protobuf) {
-        let pos = pb.get_pos();
         match tag {
-            0 => self.string.push(ColumnContainer::Pos(pos)),
+            0 => self.string.push(pb.read_string()),
             1 => self.unsigned.push(pb.read_varint::<u64>()),
             2 => self.signed.push(pb.read_s_varint::<i64>()),
             3 => self.float.push(pb.read_varint::<f32>()),
             4 => self.double.push(pb.read_varint::<f64>()),
-            5 => self.points.push(ColumnContainer::Pos(pos)),
-            6 => self.points_3d.push(ColumnContainer::Pos(pos)),
-            7 => self.indices.push(ColumnContainer::Pos(pos)),
-            8 => self.shapes.push(ColumnContainer::Pos(pos)),
-            9 => self.bbox.push(ColumnContainer::Pos(pos)),
+            5 => self
+                .points
+                .push(unweave_and_delta_decode_array(&pb.read_packed::<u64>())),
+            6 => self
+                .points_3d
+                .push(unweave_and_delta_decode_3d_array(&pb.read_packed::<u64>())),
+            7 => self
+                .indices
+                .push(delta_decode_array(&pb.read_packed::<u32>())),
+            8 => self.shapes.push(pb.read_packed::<usize>()),
+            9 => self.bbox.push((&pb.read_packed::<u8>()[..]).into()),
             _ => panic!("Unknown column type"),
         }
-    }
-}
-
-fn get_value<T, F>(
-    index: usize,
-    pbf: Rc<RefCell<Protobuf>>,
-    container: &mut [ColumnContainer<T>],
-    read_func: F,
-) -> T
-where
-    T: Clone,
-    F: FnOnce(&mut Protobuf) -> T,
-{
-    match &container[index] {
-        ColumnContainer::Pos(pos) => {
-            let mut tmp_pbf = pbf.borrow_mut();
-            tmp_pbf.set_pos(*pos);
-            let data = read_func(&mut tmp_pbf);
-            container[index] = ColumnContainer::Data(data.clone());
-            data
-        }
-        ColumnContainer::Data(data) => data.clone(),
     }
 }
 
@@ -432,9 +390,6 @@ impl ProtoWrite for ColumnCacheWriter {
         }
         // shapes
         for s in shapes {
-            println!("SHAPE!!!: {:?}", s.0);
-            println!();
-            println!();
             let packed: Vec<usize> =
                 s.0.iter()
                     .map(|v| match v {
@@ -446,8 +401,7 @@ impl ProtoWrite for ColumnCacheWriter {
         }
         // bbox
         for bbox in bbox {
-            let quantized = bbox.0.quantize();
-            pbf.write_packed_varint(OColumnName::BBox.into(), &quantized);
+            pbf.write_packed_varint(OColumnName::BBox.into(), &bbox.0.quantize());
         }
     }
 }
@@ -487,47 +441,22 @@ where
     }
 }
 
-/// Sort number types and value types by index then update the index of each row for better
-/// compression down the line.
-pub fn sort_column<T: CustomOrd + core::fmt::Debug>(
-    input: &mut [(&T, &RefCell<OColumnBaseChunk>)],
-) {
-    // first sort
-    println!("BEFORE SORT: {:?}", input);
-    input.sort_by(|a, b| {
-        // First sort by count in descending order
-        match b.1.borrow().count.cmp(&a.1.borrow().count) {
-            Ordering::Equal => a.0.custom_cmp(b.0), // Then sort by data if counts are equal
-            other => other,
-        }
-    });
-    println!("AFTER SORT: {:?}", input);
-    // than update indexes
-    input
-        .iter_mut()
-        .enumerate()
-        .for_each(|(i, v)| v.1.borrow_mut().index = i);
-    println!("AFTER INDEX: {:?}", input);
-    println!();
-    println!();
-}
-
-// SHAPE!!!: [Column(RefCell { value: OColumnBaseChunk { index: 0, count: 1 } }), Number(2), Number(0), Number(1), Column(RefCell { value: OColumnBase
-// Chunk { index: 0, count: 1 } }), Column(RefCell { value: OColumnBaseChunk { index: 0, count: 1 } }), Column(RefCell { value: OColumnBaseChunk { ind▐
-// ex: 0, count: 1 } }), Column(RefCell { value: OColumnBaseChunk { index: 1, count: 1 } })]                                                          ▐
-
-// SHAPE!!!: [Column(RefCell { value: OColumnBaseChunk { index: 0, count: 1 } }), Number(2), Number(0), Number(1), Column(RefCell { value: OColumnBase▐
-// Chunk { index: 0, count: 1 } }), Column(RefCell { value: OColumnBaseChunk { index: 0, count: 1 } }), Column(RefCell { value: OColumnBaseChunk { ind▐
-// ex: 0, count: 1 } }), Column(RefCell { value: OColumnBaseChunk { index: 1, count: 1 } })]                                                          ▐
-
-//                                                                                                                                                     ▐
-//                                                                                                                                                     ▐
-// SHAPE!!!: [Column(RefCell { value: OColumnBaseChunk { index: 1, count: 1 } }), Number(3), Number(2), Number(3), Number(0), Column(RefCell { value: ▐
-// OColumnBaseChunk { index: 1, count: 1 } }), Column(RefCell { value: OColumnBaseChunk { index: 2, count: 1 } }), Column(RefCell { value: OColumnBase▐
-// Chunk { index: 1, count: 1 } }), Column(RefCell { value: OColumnBaseChunk { index: 2, count: 2 } })]
-
-//                                                                                                                                                     ▐
-//                                                                                                                                                     ▐
-// SHAPE!!!: [Column(RefCell { value: OColumnBaseChunk { index: 1, count: 1 } }), Number(3), Number(2), Number(3), Number(0), Column(RefCell { value: ▐
-// OColumnBaseChunk { index: 1, count: 1 } }), Column(RefCell { value: OColumnBaseChunk { index: 2, count: 1 } }), Column(RefCell { value: OColumnBase▐
-// Chunk { index: 1, count: 1 } }), Column(RefCell { value: OColumnBaseChunk { index: 2, count: 2 } })]
+// /// Sort number types and value types by index then update the index of each row for better
+// /// compression down the line.
+// pub fn sort_column<T: CustomOrd + core::fmt::Debug>(
+//     input: &mut [(&T, &RefCell<OColumnBaseChunk>)],
+// ) {
+//     // first sort
+//     input.sort_by(|a, b| {
+//         // First sort by count in descending order
+//         match b.1.borrow().count.cmp(&a.1.borrow().count) {
+//             Ordering::Equal => a.0.custom_cmp(b.0), // Then sort by data if counts are equal
+//             other => other,
+//         }
+//     });
+//     // than update indexes
+//     input
+//         .iter_mut()
+//         .enumerate()
+//         .for_each(|(i, v)| v.1.borrow_mut().index = i);
+// }
