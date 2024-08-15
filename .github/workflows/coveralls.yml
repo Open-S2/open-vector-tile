@@ -56,8 +56,8 @@ jobs:
         export CARGO_INCREMENTAL=0
         export RUSTFLAGS='-Cinstrument-coverage'
         export LLVM_PROFILE_FILE='cargo-test-%p-%m.profraw'
-        cargo test
-        grcov . --binary-path ./target/debug/ -s . -t lcov --branch --ignore-not-existing -o ./coverage/rust-lcov.info
+        cargo test --lib
+        grcov . --binary-path ./target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*/.cargo/*" --ignore "/*/target/*" -o ./coverage/rust-lcov.info
       shell: bash
 
     # Merge LCOV reports 
