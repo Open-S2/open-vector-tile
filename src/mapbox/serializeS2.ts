@@ -54,7 +54,7 @@ function writeTile(tile: BaseVectorTile | VectorTile, pbf: Protobuf): void {
   for (const key in tile.layers) {
     const layer = tile.layers[key];
     if (layer instanceof OVectorLayer) continue;
-    pbf.writeMessage(1, writeLayer, layer);
+    pbf.writeMessage(3, writeLayer, layer);
   }
 }
 
