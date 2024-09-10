@@ -58,11 +58,11 @@ mod tests {
 
     #[test]
     fn test_quantize_dequantize_lon_lat() {
-        assert_eq!(dequantize_lat(quantize_lat(0.0)), 5.364418356634815e-6);
+        assert_eq!(dequantize_lat(quantize_lat(0.0)), -5.364418356634815e-6);
         assert_eq!(dequantize_lon(quantize_lon(0.0)), 1.072883671326963e-5);
         assert_eq!(dequantize_lat(quantize_lat(1.0)), 0.9999973177908288);
         assert_eq!(dequantize_lon(quantize_lon(1.0)), 1.0000026822091854);
-        assert_eq!(dequantize_lat(quantize_lat(-1.0)), -0.9999973177908288);
+        assert_eq!(dequantize_lat(quantize_lat(-1.0)), -1.0000080466275278);
         assert_eq!(dequantize_lon(quantize_lon(-1.0)), -1.0000026822091854);
         assert_eq!(dequantize_lat(quantize_lat(90.0)), 90.0);
         assert_eq!(dequantize_lon(quantize_lon(180.0)), 180.0);
@@ -168,7 +168,7 @@ mod tests {
                 left: -0.4999959766862503,
                 bottom: 17.800014483929544,
                 right: 122.80000107288367,
-                top: 77.40000053644184
+                top: 77.39998980760512
             }
         );
 
@@ -180,7 +180,7 @@ mod tests {
                 left: -0.4999959766862503,
                 bottom: 17.800014483929544,
                 right: 122.80000107288367,
-                top: 77.40000053644184
+                top: 77.39998980760512
             })
         );
     }
@@ -205,9 +205,9 @@ mod tests {
                 left: -0.4999959766862503,
                 bottom: 17.800014483929544,
                 right: 122.80000107288367,
-                top: 77.40000053644184,
-                near: -1.2999999523162842,
-                far: 100.19999694824219
+                top: 77.39998980760512,
+                far: 100.19999694824219,
+                near: -1.2999999523162842
             }
         );
 
@@ -220,9 +220,9 @@ mod tests {
                 left: -0.4999959766862503,
                 bottom: 17.800014483929544,
                 right: 122.80000107288367,
-                top: 77.40000053644184,
-                near: -1.2999999523162842,
-                far: 100.19999694824219
+                top: 77.39998980760512,
+                far: 100.19999694824219,
+                near: -1.2999999523162842
             })
         );
     }

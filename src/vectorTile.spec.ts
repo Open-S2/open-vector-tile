@@ -89,31 +89,23 @@ export interface Point3D {
   m?: OProperties;
 }
 
-/**
- * Built array line data with associated offset to help render dashed lines across tiles.
- */
+/** Built array line data with associated offset to help render dashed lines across tiles. */
 export interface VectorLineWithOffset {
   /** the offset of the line to start processing the dash position */
   offset: number;
   /** the line data */
   geometry: VectorLine;
 }
-/**
- * Built array line data with associated offset to help render dashed lines across tiles.
- */
+/** Built array line data with associated offset to help render dashed lines across tiles. */
 export type VectorLinesWithOffset = VectorLineWithOffset[];
-/**
- * Built array line data with associated offset to help render dashed lines across tiles.
- */
+/** Built array line data with associated offset to help render dashed lines across tiles. */
 export interface VectorLine3DWithOffset {
   /** the offset of the line to start processing the dash position */
   offset: number;
   /** the line data */
   geometry: VectorLine3D;
 }
-/**
- * Built array line data with associated offset to help render dashed lines across tiles.
- */
+/** Built array line data with associated offset to help render dashed lines across tiles. */
 export type VectorLines3DWithOffset = VectorLine3DWithOffset[];
 
 /** A set of points */
@@ -146,3 +138,47 @@ export type VectorGeometry =
   | VectorLines3D
   | VectorPoly3D
   | VectorMultiPoly3D;
+
+/** All possible geometry coordinates */
+export type VectorCoordinates =
+  | Point[] // points
+  | Point3D[] // 3D points
+  | VectorLineWithOffset[] // lines
+  | VectorLine3DWithOffset[] // 3D lines
+  | VectorLineWithOffset[][] // polys
+  | VectorLine3DWithOffset[][]; // 3D polys
+
+/** BaseGeometry with MValues is the a generic geometry type that includes MValues */
+export interface BaseGeometry<T = VectorFeatureType, C = VectorCoordinates, B = BBOX> {
+  type: T;
+  coordinates: C;
+  bbox?: B;
+}
+
+/** PointsGeometry is a point array container */
+export type PointsGeometry = BaseGeometry<1, Point[], BBox>;
+/** LinesGeometry is a line array container */
+export type LinesGeometry = BaseGeometry<2, VectorLineWithOffset[], BBox>;
+/** PolysGeometry is a polygon array container */
+export interface PolysGeometry extends BaseGeometry<3, VectorLineWithOffset[][], BBox> {
+  indices: number[];
+  tesselation: number[];
+}
+/** Points3DGeometry is a 3D point array container */
+export type Points3DGeometry = BaseGeometry<4, Point3D[], BBox3D>;
+/** Lines3DGeometry is a 3D line array container */
+export type Lines3DGeometry = BaseGeometry<5, VectorLine3DWithOffset[], BBox3D>;
+/** Polys3DGeometry is a 3D polygon array container */
+export interface Polys3DGeometry extends BaseGeometry<6, VectorLine3DWithOffset[][], BBox3D> {
+  indices: number[];
+  tesselation: number[];
+}
+
+/** All possible geometry types used by vector geometry */
+export type BaseVectorGeometry =
+  | PointsGeometry
+  | LinesGeometry
+  | PolysGeometry
+  | Points3DGeometry
+  | Lines3DGeometry
+  | Polys3DGeometry;

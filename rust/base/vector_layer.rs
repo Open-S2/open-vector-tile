@@ -1,6 +1,8 @@
-use crate::base::BaseVectorFeature;
-use crate::mapbox::MapboxVectorLayer;
-use crate::open::{Extent, Shape};
+use crate::{
+    base::BaseVectorFeature,
+    mapbox::MapboxVectorLayer,
+    open::{Extent, Shape},
+};
 
 use alloc::string::String;
 use alloc::vec::Vec;

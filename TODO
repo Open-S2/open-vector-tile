@@ -1,3 +1,6 @@
+- [ ] tests for elevation tool for TS and rust
+- [ ] s2json-spec Tile -> OpenVectorTile to (for TS and Rust)
+
 // PLAIN: 466_594 bytes
 // WITHOUT PROPERTY DATA: 176_751 bytes (~62%)
 // WITHOUT GEOMETRY: 315_858 bytes (~32%)

@@ -4,6 +4,7 @@ import { weave2D, weave3D, zigzag } from '../util';
 
 import type { ColumnCacheWriter } from '../open/columnCache';
 import type MapboxVectorFeature from '../mapbox/vectorFeature';
+import type { VectorFeatures as S2JSONFeature } from 's2json-spec';
 import type { Shape } from '../open/shape';
 import type {
   BBOX,
@@ -410,6 +411,141 @@ export function fromMapboxVectorFeature(feature: MapboxVectorFeature): BaseVecto
     }
     default:
       throw new Error(`Unknown feature type: ${feature.type}`);
+  }
+}
+
+/**
+ * @param feature - An S2JSON feature
+ * @returns - A base feature to help build a vector tile
+ */
+export function fromS2JSONFeature(feature: S2JSONFeature): BaseVectorFeature {
+  const { geometry, properties, id } = feature;
+  const { type, is3D, coordinates, bbox, offset } = geometry;
+
+  if (type === 'Point') {
+    if (is3D)
+      return new BaseVectorPoints3DFeature(
+        [{ ...coordinates, z: coordinates.z ?? 0 }],
+        properties,
+        id,
+        bbox as BBox3D,
+      );
+    else return new BaseVectorPointsFeature([coordinates], properties, id, bbox as BBox);
+  } else if (type === 'MultiPoint') {
+    if (is3D)
+      return new BaseVectorPoints3DFeature(
+        coordinates.map((p) => ({ ...p, z: p.z ?? 0 })),
+        properties,
+        id,
+        bbox as BBox3D,
+      );
+    else return new BaseVectorPointsFeature(coordinates, properties, id, bbox as BBox);
+  } else if (type === 'LineString') {
+    if (is3D)
+      return new BaseVectorLines3DFeature(
+        [
+          new BaseVectorLine(
+            coordinates.map((p) => ({ ...p, z: p.z ?? 0 })),
+            offset,
+          ),
+        ],
+        properties,
+        id,
+        bbox as BBox3D,
+      );
+    else
+      return new BaseVectorLinesFeature(
+        [new BaseVectorLine(coordinates, offset)],
+        properties,
+        id,
+        bbox as BBox,
+      );
+  } else if (type === 'MultiLineString') {
+    if (is3D)
+      return new BaseVectorLines3DFeature(
+        coordinates.map((line, i) => {
+          return new BaseVectorLine(
+            line.map((p) => ({ ...p, z: p.z ?? 0 })),
+            offset?.[i],
+          );
+        }),
+        properties,
+        id,
+        bbox as BBox3D,
+      );
+    else
+      return new BaseVectorLinesFeature(
+        coordinates.map((line, i) => {
+          return new BaseVectorLine(line, offset?.[i]);
+        }),
+        properties,
+        id,
+        bbox as BBox,
+      );
+  } else if (type === 'Polygon') {
+    const { indices, tesselation } = geometry;
+    if (is3D)
+      return new BaseVectorPolys3DFeature(
+        [
+          coordinates.map((line, i) => {
+            return new BaseVectorLine(
+              line.map((p) => ({ ...p, z: p.z ?? 0 })),
+              offset?.[i],
+            );
+          }),
+        ],
+        indices,
+        tesselation,
+        properties,
+        id,
+        bbox as BBox3D,
+      );
+    else
+      return new BaseVectorPolysFeature(
+        [
+          coordinates.map((line, i) => {
+            return new BaseVectorLine(line, offset?.[i]);
+          }),
+        ],
+        indices,
+        tesselation,
+        properties,
+        id,
+        bbox as BBox,
+      );
+  } else if (type === 'MultiPolygon') {
+    const { indices, tesselation } = geometry;
+    if (is3D)
+      return new BaseVectorPolys3DFeature(
+        coordinates.map((poly, i) => {
+          return poly.map((line, j) => {
+            return new BaseVectorLine(
+              line.map((p) => ({ ...p, z: p.z ?? 0 })),
+              offset?.[i]?.[j],
+            );
+          });
+        }),
+        indices,
+        tesselation,
+        properties,
+        id,
+        bbox as BBox3D,
+      );
+    else
+      return new BaseVectorPolysFeature(
+        coordinates.map((poly, i) => {
+          return poly.map((line, j) => {
+            return new BaseVectorLine(line, offset?.[i]?.[j]);
+          });
+        }),
+        indices,
+        tesselation,
+        properties,
+        id,
+        bbox as BBox,
+      );
+  } else {
+    throw new Error(`Unknown geometry type: ${type}`);
   }
 }
 

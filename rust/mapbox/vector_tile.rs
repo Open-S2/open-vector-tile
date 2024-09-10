@@ -7,8 +7,10 @@ use alloc::vec::Vec;
 
 use core::cell::RefCell;
 
-use crate::base::BaseVectorTile;
-use crate::mapbox::{write_layer, MapboxVectorLayer};
+use crate::{
+    base::BaseVectorTile,
+    mapbox::{write_layer, MapboxVectorLayer},
+};
 
 /// The vector tile struct that covers both "open" and "mapbox" specifications
 #[derive(Debug)]

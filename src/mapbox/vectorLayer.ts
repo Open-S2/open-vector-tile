@@ -1,5 +1,6 @@
 import VectorFeature from './vectorFeature';
 
+import type { Extents } from '../open';
 import type { Pbf as Protobuf } from '../pbf';
 import type { Value } from '../vectorTile.spec';
 
@@ -11,7 +12,7 @@ import type { Value } from '../vectorTile.spec';
 export default class MapboxVectorLayer {
   version = 5;
   name = 'default';
-  extent = 4_096;
+  extent: Extents = 4_096;
   length = 0;
   isS2: boolean;
   #pbf: Protobuf;
@@ -42,7 +43,7 @@ export default class MapboxVectorLayer {
     else if (tag === 2) layer.#featuresPos.push(pbf.pos);
     else if (tag === 3) layer.#keys.push(pbf.readString());
     else if (tag === 4) layer.#values.push(layer.#readValueMessage(pbf));
-    else if (tag === 5) layer.extent = pbf.readVarint();
+    else if (tag === 5) layer.extent = pbf.readVarint() as Extents;
   }
 
   /**

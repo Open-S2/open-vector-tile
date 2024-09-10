@@ -1,5 +1,3 @@
-use crate::{VectorLines3DWithOffset, VectorPoints3D};
-
 use pbf::{ProtoRead, Protobuf};
 
 use alloc::collections::BTreeMap;
@@ -13,9 +11,11 @@ use crate::{
     base::BaseVectorTile,
     mapbox::MapboxVectorLayer,
     open::{
-        write_layer, ColumnCacheReader, ColumnCacheWriter, FeatureType, OpenVectorLayer, Properties,
+        write_layer, ColumnCacheReader, ColumnCacheWriter, ElevationData, FeatureType,
+        OpenVectorLayer, Properties,
     },
-    VectorGeometry, VectorLinesWithOffset, VectorPoints, BBOX,
+    VectorGeometry, VectorLines3DWithOffset, VectorLinesWithOffset, VectorPoints, VectorPoints3D,
+    BBOX,
 };
 
 /// Methods that all vector features should have
@@ -135,6 +135,8 @@ pub struct VectorTile {
     pbf: Rc<RefCell<Protobuf>>,
     /// the column cache
     columns: Option<Rc<RefCell<ColumnCacheReader>>>,
+    /// Elevation data
+    pub elevation: Option<ElevationData>,
 }
 impl VectorTile {
     /// Create a new vector tile
@@ -145,6 +147,7 @@ impl VectorTile {
             columns: None,
             layer_indexes: Vec::new(),
             layers: BTreeMap::new(),
+            elevation: None,
         };
 
         pbf.borrow_mut().read_fields(&mut vt, end);
@@ -197,6 +200,11 @@ impl ProtoRead for VectorTile {
                 pb.read_message(&mut column_reader);
                 self.columns = Some(Rc::new(RefCell::new(column_reader)));
             }
+            6 => {
+                let mut elevation = ElevationData::default();
+                pb.read_message(&mut elevation);
+                self.elevation = Some(elevation);
+            }
             _ => panic!("unknown tag: {}", tag),
         }
     }
@@ -213,6 +221,15 @@ pub fn write_tile(tile: &mut BaseVectorTile) -> Vec<u8> {
     }
     // now we can write columns
     pbf.write_message(5, &cache);
+
+    pbf.take()
+}
+
+/// write elevation tile
+pub fn write_elevation_tile(e_data: &mut ElevationData) -> Vec<u8> {
+    let mut pbf = Protobuf::new();
+
+    pbf.write_message(6, e_data);
 
     pbf.take()
 }

@@ -1,11 +1,13 @@
 use pbf::{ProtoRead, Protobuf};
 
-use crate::base::BaseVectorLayer;
-use crate::open::{
-    decode_shape, encode_shape, read_feature, write_feature, ColumnCacheReader, ColumnCacheWriter,
-    Extent, OpenVectorFeature, Shape,
+use crate::{
+    base::BaseVectorLayer,
+    open::{
+        decode_shape, encode_shape, read_feature, write_feature, ColumnCacheReader,
+        ColumnCacheWriter, Extent, OpenVectorFeature, Shape,
+    },
+    VectorLayerMethods,
 };
-use crate::VectorLayerMethods;
 
 use core::cell::RefCell;
 

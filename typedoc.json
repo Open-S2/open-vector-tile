@@ -9,6 +9,7 @@
   "excludePrivate": true,
   "excludeProtected": true,
   "excludeExternals": true,
+  "excludeInternal": true,
   "excludeNotDocumented": true,
   "hideGenerator": true,
   "disableSources": true,

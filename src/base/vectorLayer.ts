@@ -1,15 +1,17 @@
 import MapboxVectorLayer from '../mapbox/vectorLayer';
-import { fromMapboxVectorFeature } from './vectorFeature';
 import { updateShapeFromData } from '../open/shape';
+import { fromMapboxVectorFeature, fromS2JSONFeature } from './vectorFeature';
 
 import type { BaseVectorFeature } from './vectorFeature';
+import type { Extents } from '../open';
+import type { Layer as S2JSONLayer } from 's2json-spec';
 import type { Shape } from '../open/shape';
 
 /**
  * Base Vector Layer
  * This is an intermediary for storing layer data in the Open Vector Tile format.
  */
-export default class BaseVectorLayer {
+export class BaseVectorLayer {
   // if the shape was already passed in to the constructor
   #shapeDefined: boolean = false;
   // if the M-Shape was already passed in to the constructor
@@ -27,7 +29,7 @@ export default class BaseVectorLayer {
   constructor(
     public version: number = 1,
     public name: string = '',
-    public extent: number = 4096,
+    public extent: Extents = 4096,
     public features: BaseVectorFeature[] = [],
     shape?: Shape,
     public mShape?: Shape,
@@ -89,4 +91,38 @@ export default class BaseVectorLayer {
     }
     return vectorLayer;
   }
+
+  /**
+   * @param layer - a S2JSON Layer
+   * @param layerMap - the layer guide on what extent and shapes to use if user provided
+   * @returns A Base Vector Layer
+   */
+  static fromS2JSONLayer(layer: S2JSONLayer, layerMap?: S2JSONLayerGuide): BaseVectorLayer {
+    const { name, features } = layer;
+    const { extent, shape, mShape } = layerMap ?? {
+      extent: 4_096,
+      shape: undefined,
+      mShape: undefined,
+    };
+    const vectorLayer = new BaseVectorLayer(undefined, name, extent, [], shape, mShape);
+    for (const feature of features) {
+      const bFeature = fromS2JSONFeature(feature);
+      vectorLayer.addFeature(bFeature);
+    }
+
+    return vectorLayer;
+  }
 }
+
+/** object containing a layer guide for extent, shape, and mShape */
+export interface S2JSONLayerGuide {
+  /** The extent to encode the feature geometry to */
+  extent?: Extents;
+  /** The shape to encode the feature properties to */
+  shape?: Shape;
+  /** The shape to encode the feature M-Values to */
+  mShape?: Shape;
+}
+
+/** object containing the layer, extent, and shape */
+export type S2JSONLayerMap = Record<string, S2JSONLayerGuide>;

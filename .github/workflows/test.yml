@@ -18,7 +18,7 @@ jobs:
     - name: Set up Bun
       uses: oven-sh/setup-bun@v1
       with:
-        bun-version: 1.1.16
+        bun-version: 1.1.26
 
     - name: Install dependencies
       run: bun install
@@ -31,6 +31,9 @@ jobs:
       with:
         toolchain: stable
         override: true
+    
+    - name: Install Rustfmt
+      run: rustup component add rustfmt
 
     - name: Install Clippy
       run: rustup component add clippy
@@ -41,6 +44,10 @@ jobs:
 
     - name: Build Rust project
       run: cargo build
+      shell: bash
+
+    - name: Check Formatting
+      run: cargo fmt -- --check
       shell: bash
 
     - name: Run Rust tests

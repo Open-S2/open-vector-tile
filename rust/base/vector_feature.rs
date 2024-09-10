@@ -1,14 +1,15 @@
-use crate::mapbox::MapboxVectorFeature;
-use crate::open::{
-    encode_value, ColumnCacheWriter, FeatureType, LineStringMValues, Properties, Shape, Value,
-};
-use crate::util::{weave_2d, weave_3d, zigzag};
 use crate::{
-    BBox, BBox3D, Point, Point3D, VectorFeatureMethods, VectorGeometry, VectorLines3DWithOffset,
-    VectorLinesWithOffset, VectorPoints, VectorPoints3D, BBOX,
+    mapbox::MapboxVectorFeature,
+    open::{
+        encode_value, ColumnCacheWriter, FeatureType, LineStringMValues, Properties, Shape, Value,
+    },
+    weave_2d, weave_3d, zigzag, BBox, BBox3D, Point, Point3D, VectorFeatureMethods, VectorGeometry,
+    VectorLines3DWithOffset, VectorLinesWithOffset, VectorPoints, VectorPoints3D, BBOX,
 };
 
 use alloc::vec::Vec;
+
+use libm::round;
 
 /// Vector Feature functions that are common to all vector features
 pub trait VectorFeature {
@@ -844,7 +845,7 @@ impl From<&mut MapboxVectorFeature> for BaseVectorFeature {
 
 /// Encode offset values into a signed integer to reduce byte cost without too much loss
 pub fn encode_offset(offset: f64) -> u32 {
-    (offset * 1_000.0).round() as u32
+    round(offset * 1_000.0) as u32
 }
 
 /// Decode offset from a signed integer into a float or double

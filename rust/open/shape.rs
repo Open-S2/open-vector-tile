@@ -1,6 +1,8 @@
-use crate::mapbox::{Properties as MapboxProperties, Value as MapboxValue};
-use crate::open::{ColumnCacheReader, ColumnCacheWriter, ColumnValue};
-use crate::util::CustomOrdWrapper;
+use crate::{
+    mapbox::{Properties as MapboxProperties, Value as MapboxValue},
+    open::{ColumnCacheReader, ColumnCacheWriter, ColumnValue},
+    CustomOrdWrapper,
+};
 
 use serde::{Deserialize, Serialize};
 

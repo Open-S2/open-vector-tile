@@ -1,6 +1,6 @@
-use crate::base::BaseVectorLayer;
-use crate::mapbox::vector_tile::MapboxVectorTile;
-use crate::{VectorLayer, VectorTile};
+use crate::{
+    base::BaseVectorLayer, mapbox::vector_tile::MapboxVectorTile, VectorLayer, VectorTile,
+};
 
 use alloc::collections::BTreeMap;
 use alloc::string::String;

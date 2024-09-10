@@ -1,11 +1,11 @@
 use pbf::{BitCast, ProtoRead, ProtoWrite, Protobuf, Type};
 
-use crate::base::{BaseVectorFeature, TesselationWrapper};
-use crate::open::{FeatureType as OpenFeatureType, Properties as OpenProperties};
-use crate::util::{command_encode, zigzag, CustomOrdWrapper};
 use crate::{
-    Point, VectorFeatureMethods, VectorGeometry, VectorLineWithOffset, VectorLines3DWithOffset,
-    VectorLinesWithOffset, VectorPoints, VectorPoints3D, BBOX,
+    base::{BaseVectorFeature, TesselationWrapper},
+    command_encode,
+    open::{FeatureType as OpenFeatureType, Properties as OpenProperties},
+    zigzag, CustomOrdWrapper, Point, VectorFeatureMethods, VectorGeometry, VectorLineWithOffset,
+    VectorLines3DWithOffset, VectorLinesWithOffset, VectorPoints, VectorPoints3D, BBOX,
 };
 
 use core::cell::RefCell;

@@ -15,3 +15,4 @@ benchmarks/
 tools/
 *.profraw
 coverage/
+experiments/

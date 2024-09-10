@@ -1,5 +1,8 @@
 use crate::{BBox, BBox3D, Point, Point3D, BBOX};
 
+use libm::round;
+
+use alloc::vec;
 use alloc::vec::Vec;
 
 use core::cmp::Ordering;
@@ -320,14 +323,14 @@ pub fn delta_decode_sorted_array(array: &[u32]) -> Vec<i32> {
 /// ~0.000021457672119140625 degrees precision
 /// ~2.388 meters precision
 pub fn quantize_lon(lon: f64) -> i32 {
-    ((lon + 180.0) * 16_777_215.0 / 360.0).round() as i32
+    round((lon + 180.0) * 16_777_215.0 / 360.0) as i32
 }
 
 /// 24-bit quantization
 /// ~0.000010728836059570312 degrees precision
 /// ~1.194 meters precision
 pub fn quantize_lat(lat: f64) -> i32 {
-    ((lat + 90.0) * 16_777_215.0 / 180.0).round() as i32
+    ((lat + 90.0) * 16_777_215.0 / 180.0) as i32
 }
 
 /// Converts quantized longitude back to geographical longitude

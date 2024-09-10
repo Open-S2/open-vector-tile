@@ -1,13 +1,12 @@
 use pbf::{BitCast, Protobuf};
 
-use crate::base::{decode_offset, BaseVectorFeature, TesselationWrapper};
-use crate::mapbox::FeatureType as MapboxFeatureType;
-use crate::open::{encode_value, ColumnCacheReader, ColumnCacheWriter, Properties, Shape};
-use crate::util::{unweave_2d, unweave_3d, zagzig};
 use crate::{
-    Point, Point3D, VectorFeatureMethods, VectorGeometry, VectorLine3DWithOffset,
-    VectorLineWithOffset, VectorLines3DWithOffset, VectorLinesWithOffset, VectorPoints,
-    VectorPoints3D, BBOX,
+    base::{decode_offset, BaseVectorFeature, TesselationWrapper},
+    mapbox::FeatureType as MapboxFeatureType,
+    open::{encode_value, ColumnCacheReader, ColumnCacheWriter, Properties, Shape},
+    unweave_2d, unweave_3d, zagzig, Point, Point3D, VectorFeatureMethods, VectorGeometry,
+    VectorLine3DWithOffset, VectorLineWithOffset, VectorLines3DWithOffset, VectorLinesWithOffset,
+    VectorPoints, VectorPoints3D, BBOX,
 };
 
 use core::cell::RefCell;
@@ -24,26 +23,36 @@ pub enum Extent {
     /// 512x512
     Extent512 = 512,
     /// 1024x1024
-    Extent1024 = 1024,
+    Extent1024 = 1_024,
     /// 2048x2048
-    Extent2048 = 2048,
+    Extent2048 = 2_048,
     /// 4096x4096 (default)
     #[default]
-    Extent4096 = 4096,
-    /// 8192x8192
-    Extent8192 = 8192,
+    Extent4096 = 4_096,
+    /// 8_192x8_192
+    Extent8192 = 8_192,
+    /// 16_384x16_384
+    Extent16384 = 16_384,
 }
 impl BitCast for Extent {
     fn to_u64(&self) -> u64 {
-        *self as u64
+        match self {
+            Extent::Extent512 => 0,
+            Extent::Extent1024 => 1,
+            Extent::Extent2048 => 2,
+            Extent::Extent4096 => 3,
+            Extent::Extent8192 => 4,
+            Extent::Extent16384 => 5,
+        }
     }
 
     fn from_u64(value: u64) -> Self {
         match value {
-            1024 => Extent::Extent1024,
-            2048 => Extent::Extent2048,
-            4096 => Extent::Extent4096,
-            8192 => Extent::Extent8192,
+            1 => Extent::Extent1024,
+            2 => Extent::Extent2048,
+            3 => Extent::Extent4096,
+            4 => Extent::Extent8192,
+            5 => Extent::Extent16384,
             _ => Extent::Extent512,
         }
     }
@@ -52,10 +61,11 @@ impl From<usize> for Extent {
     fn from(extent: usize) -> Self {
         match extent {
             512 => Extent::Extent512,
-            1024 => Extent::Extent1024,
-            2048 => Extent::Extent2048,
-            4096 => Extent::Extent4096,
-            8192 => Extent::Extent8192,
+            1_024 => Extent::Extent1024,
+            2_048 => Extent::Extent2048,
+            4_096 => Extent::Extent4096,
+            8_192 => Extent::Extent8192,
+            16_384 => Extent::Extent16384,
             _ => Extent::Extent512,
         }
     }

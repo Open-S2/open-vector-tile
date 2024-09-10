@@ -1,9 +1,8 @@
-use crate::util::CustomOrdWrapper;
-use crate::util::{
+use crate::{
     delta_decode_array, delta_encode_array, unweave_and_delta_decode_3d_array,
     unweave_and_delta_decode_array, weave_and_delta_encode_3d_array, weave_and_delta_encode_array,
+    CustomOrdWrapper, Point, Point3D, VectorPoints, VectorPoints3D, BBOX,
 };
-use crate::{Point, Point3D, VectorPoints, VectorPoints3D, BBOX};
 
 use pbf::{ProtoRead, ProtoWrite, Protobuf};
 

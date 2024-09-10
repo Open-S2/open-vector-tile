@@ -7,10 +7,8 @@ import type { BaseVectorLayer } from '../base';
 import type { Shape } from './shape';
 import type { ColumnCacheReader, ColumnCacheWriter } from './columnCache';
 
-/**
- * Extents are the tile size limits of what a user can use to encode a geometry.
- */
-export type Extents = 8_192 | 4_096 | 2_048 | 1_024 | 512;
+/** Extents are the tile size limits of what a user can use to encode a geometry. */
+export type Extents = 16_384 | 8_192 | 4_096 | 2_048 | 1_024 | 512;
 
 /**
  * The Open Vector Layer class represents a layer in an Open Vector Tile.
@@ -53,23 +51,17 @@ export class OVectorLayer {
     else if (tag === 6) layer.#mShapeIndex = pbf.readVarint();
   }
 
-  /**
-   * @returns - The number of features in the layer
-   */
+  /** @returns - The number of features in the layer */
   get length(): number {
     return this.#featuresPos.length;
   }
 
-  /**
-   * @returns - The shape of the features properties
-   */
+  /** @returns - The shape of the features properties */
   get shape(): Shape {
     return decodeShape(this.#shapeIndex, this.#cache);
   }
 
-  /**
-   * @returns - The shape of the M-Values
-   */
+  /** @returns - The shape of the M-Values */
   get mShape(): Shape | undefined {
     if (this.#mShapeIndex === -1) return undefined;
     return decodeShape(this.#mShapeIndex, this.#cache);
@@ -94,6 +86,34 @@ export class OVectorLayer {
 }
 
 /**
+ * @param extent - number are in 512, 1024, 2048, 4096, 8192
+ * @returns - remap to smaller values: 0 -> 512, 1 -> 1024, 2 -> 2048, 3 -> 4096, 4 -> 8192
+ */
+export function encodeExtent(extent: Extents): number {
+  if (extent === 16_384) return 5;
+  else if (extent === 8_192) return 4;
+  else if (extent === 4_096) return 3;
+  else if (extent === 2_048) return 2;
+  else if (extent === 1_024) return 1;
+  else if (extent === 512) return 0;
+  else throw new Error('invalid extent, must be 512, 1_024, 2_048, 4_096, 8_192, or 16_384');
+}
+
+/**
+ * @param encExtent - number are in 0, 1, 2, 3, 4
+ * @returns - remap to smaller values: 0 -> 512, 1 -> 1024, 2 -> 2048, 3 -> 4096, 4 -> 8192
+ */
+export function decodeExtent(encExtent: number): Extents {
+  if (encExtent === 5) return 16_384;
+  else if (encExtent === 4) return 8192;
+  else if (encExtent === 3) return 4096;
+  else if (encExtent === 2) return 2048;
+  else if (encExtent === 1) return 1024;
+  else if (encExtent === 0) return 512;
+  else throw new Error('invalid encoded extent, must be 0, 1, 2, 3, 4, or 5');
+}
+
+/**
  * Because of the Column Cache, a layer will contain:
  * - version 1 byte
  * - extent (1 byte) - 1 -> 1024, 2 -> 2048, 3 -> 4096, 4 -> 8192
@@ -102,18 +122,17 @@ export class OVectorLayer {
  * @param layerCache - object containing the layer and the cache
  * @param layerCache.layer - the layer to encode into the Protobuffer
  * @param layerCache.cache - the cache where all column level data is stored
+ * @param layerCache.verbose - set to true to print out write information
  * @param pbf - the pbf protocol we are writing to
- * @param verbose - set to true to print out write information
  */
 export function writeOVLayer(
-  layerCache: { layer: BaseVectorLayer; cache: ColumnCacheWriter },
+  layerCache: { layer: BaseVectorLayer; cache: ColumnCacheWriter; verbose: boolean },
   pbf: Protobuf,
-  verbose = false,
 ): void {
-  const { layer, cache } = layerCache;
+  const { layer, cache, verbose } = layerCache;
   pbf.writeVarintField(1, layer.version);
   pbf.writeVarintField(2, cache.addColumnData(OColumnName.string, layer.name));
-  pbf.writeVarintField(3, encodeExtent(layer.extent as Extents));
+  pbf.writeVarintField(3, encodeExtent(layer.extent));
   pbf.writeVarintField(5, encodeShape(cache, layer.shape));
   if (layer.mShape) pbf.writeVarintField(6, encodeShape(cache, layer.mShape));
 
@@ -139,30 +158,4 @@ export function writeOVLayer(
       `wrote "${layer.name}" with extent "${layer.extent}" and version "${layer.version}"\n`,
     );
   }
-}
-
-/**
- * @param extent - number are in 512, 1024, 2048, 4096, 8192
- * @returns - remap to smaller values: 0 -> 512, 1 -> 1024, 2 -> 2048, 3 -> 4096, 4 -> 8192
- */
-export function encodeExtent(extent: Extents): number {
-  if (extent === 8192) return 4;
-  else if (extent === 4096) return 3;
-  else if (extent === 2048) return 2;
-  else if (extent === 1024) return 1;
-  else if (extent === 512) return 0;
-  else throw new Error('invalid extent, must be 1024, 2048, 4096, or 8192');
-}
-
-/**
- * @param encExtent - number are in 0, 1, 2, 3, 4
- * @returns - remap to smaller values: 0 -> 512, 1 -> 1024, 2 -> 2048, 3 -> 4096, 4 -> 8192
- */
-export function decodeExtent(encExtent: number): Extents {
-  if (encExtent === 4) return 8192;
-  else if (encExtent === 3) return 4096;
-  else if (encExtent === 2) return 2048;
-  else if (encExtent === 1) return 1024;
-  else if (encExtent === 0) return 512;
-  else throw new Error('invalid encoded extent, must be 1, 2, 3, or 4');
 }

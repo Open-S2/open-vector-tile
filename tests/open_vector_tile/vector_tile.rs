@@ -241,7 +241,7 @@ mod tests {
                 o_feature.bbox(),
                 Some(BBOX::BBox(BBox {
                     left: -1.0999954402444132,
-                    bottom: 5.364418356634815e-6,
+                    bottom: -5.364418356634815e-6,
                     right: 1.0000026822091854,
                     top: 0.9999973177908288
                 }))
@@ -913,11 +913,11 @@ mod tests {
                 o_feature.bbox(),
                 Some(BBOX::BBox3D(BBox3D {
                     left: -1.0999954402444132,
-                    bottom: 5.364418356634815e-6,
+                    bottom: -5.364418356634815e-6,
                     right: 1.0000026822091854,
                     top: 0.9999973177908288,
-                    near: -20.0,
-                    far: 20.0
+                    far: 20.0,
+                    near: -20.0
                 }))
             );
             // has_m_values

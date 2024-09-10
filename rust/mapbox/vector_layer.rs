@@ -1,6 +1,8 @@
-use crate::base::BaseVectorLayer;
-use crate::mapbox::{write_feature, MapboxVectorFeature, Value};
-use crate::{VectorFeatureMethods, VectorLayerMethods};
+use crate::{
+    base::BaseVectorLayer,
+    mapbox::{write_feature, MapboxVectorFeature, Value},
+    VectorFeatureMethods, VectorLayerMethods,
+};
 
 use pbf::{ProtoRead, Protobuf};
 
@@ -141,7 +143,7 @@ pub fn write_layer(layer: &BaseVectorLayer) -> Vec<u8> {
     for (value, _) in values.iter() {
         pbf.write_message(4, value);
     }
-    pbf.write_varint_field(5, layer.extent);
+    pbf.write_varint_field(5, layer.extent as usize);
 
     pbf.take()
 }

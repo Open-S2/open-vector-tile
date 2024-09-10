@@ -1,7 +1,16 @@
 import { MapboxVectorLayer } from './mapbox';
 import { Pbf as Protobuf } from './pbf';
 import { BaseVectorLayer, BaseVectorTile } from './base';
-import { ColumnCacheReader, ColumnCacheWriter, OVectorLayer, writeOVLayer } from './open';
+import {
+  ColumnCacheReader,
+  ColumnCacheWriter,
+  ElevationData,
+  OVectorLayer,
+  writeElevationData,
+  writeOVLayer,
+} from './open';
+
+import type { ElevationInput } from './open';
 
 /**
  * Layers are a storage structure for the vector tile.
@@ -28,6 +37,7 @@ export class VectorTile {
   #columns!: ColumnCacheReader;
   readonly layers: Layers = {};
   #layerIndexes: number[] = [];
+  elevationData = new ElevationData();
   /**
    * @param data - the input data to parse
    * @param end - the size of the data, leave blank to parse the entire data
@@ -36,6 +46,15 @@ export class VectorTile {
     const pbf = new Protobuf(data);
     pbf.readFields(this.#readTile, this, end);
     this.#readLayers(pbf);
+  }
+
+  /**
+   * Read the elevation data if it exists
+   * @returns - the elevation data
+   */
+  readElevationData(): number[] | undefined {
+    if (this.elevationData.data.length === 0) return;
+    return this.elevationData.data;
   }
 
   /**
@@ -54,6 +73,10 @@ export class VectorTile {
       vectorTile.#layerIndexes.push(pbf.pos);
     } else if (tag === 5) {
       vectorTile.#columns = new ColumnCacheReader(pbf, pbf.readVarint() + pbf.pos);
+    } else if (tag === 6) {
+      const elevationData = new ElevationData();
+      pbf.readMessage(elevationData._read, elevationData);
+      vectorTile.elevationData = elevationData;
     }
   }
 
@@ -91,5 +114,17 @@ export function writeOVTile(tile: BaseVectorTile | VectorTile, verbose = false):
   // now we can write columns
   pbf.writeMessage(5, ColumnCacheWriter.write, cache);
 
+  return pbf.commit();
+}
+
+/**
+ * @param elevationData - the elevation data to encode with specs on how to encode
+ * @returns - the encoded data
+ */
+export function writeElevationTile(elevationData: ElevationInput): Uint8Array {
+  const pbf = new Protobuf();
+
+  const data = writeElevationData(elevationData);
+  pbf.writeBytesField(6, Buffer.from(data.buffer, data.byteOffset, data.byteLength));
   return pbf.commit();
 }
