@@ -1,4 +1,4 @@
-import { Pbf } from '../../src/pbf';
+import { Pbf } from 's2-tools';
 import {
   BaseVectorLine,
   BaseVectorLines3DFeature,
@@ -104,6 +104,12 @@ describe('encodePointFeature and decodePointFeature', () => {
     expect(decodedPointFeatureA.extent).toBe(4_096);
     expect(decodedPointFeatureA.type).toBe(1);
     expect(decodedPointFeatureA.loadGeometry()).toEqual([{ x: 3_805, y: 5_645 }]);
+    expect(decodedPointFeatureA.isPoints()).toBeTrue();
+    expect(decodedPointFeatureA.isLines()).toBeFalse();
+    expect(decodedPointFeatureA.isPolygons()).toBeFalse();
+    expect(decodedPointFeatureA.isPoints3D()).toBeFalse();
+    expect(decodedPointFeatureA.isLines3D()).toBeFalse();
+    expect(decodedPointFeatureA.isPolygons3D()).toBeFalse();
 
     // ensure accuracy of feature B:
     expect(decodedPointFeatureB.id).toBe(2);
@@ -192,6 +198,12 @@ describe('encodePoint3DFeature and decodePoint3DFeature', () => {
     expect(decodedPointFeatureA.extent).toBe(4_096);
     expect(decodedPointFeatureA.type).toBe(4);
     expect(decodedPointFeatureA.loadGeometry()).toEqual([{ x: 3_805, y: 5_645, z: 3_212 }]);
+    expect(decodedPointFeatureA.isPoints()).toBeFalse();
+    expect(decodedPointFeatureA.isLines()).toBeFalse();
+    expect(decodedPointFeatureA.isPolygons()).toBeFalse();
+    expect(decodedPointFeatureA.isPoints3D()).toBeTrue();
+    expect(decodedPointFeatureA.isLines3D()).toBeFalse();
+    expect(decodedPointFeatureA.isPolygons3D()).toBeFalse();
 
     // ensure accuracy of feature B:
     expect(decodedPointFeatureB.id).toBe(2);
@@ -288,7 +300,7 @@ describe('encodeLineFeature and decodeLineFeature', () => {
     mShape,
   ) as OVectorLinesFeature;
 
-  it('point features are decoded correctly', () => {
+  it('line features are decoded correctly', () => {
     // ensure data type is accurate:
     expect(decodedPointFeatureA).toBeInstanceOf(OVectorLinesFeature);
     expect(decodedPointFeatureB).toBeInstanceOf(OVectorLinesFeature);
@@ -305,6 +317,12 @@ describe('encodeLineFeature and decodeLineFeature', () => {
         { x: 1, y: 0 },
       ],
     ]);
+    expect(decodedPointFeatureA.isPoints()).toBeFalse();
+    expect(decodedPointFeatureA.isLines()).toBeTrue();
+    expect(decodedPointFeatureA.isPolygons()).toBeFalse();
+    expect(decodedPointFeatureA.isPoints3D()).toBeFalse();
+    expect(decodedPointFeatureA.isLines3D()).toBeFalse();
+    expect(decodedPointFeatureA.isPolygons3D()).toBeFalse();
 
     // ensure accuracy of feature B:
     expect(decodedPointFeatureB.id).toBe(2);
@@ -436,6 +454,12 @@ describe('encodeLine3DFeature and decodeLine3DFeature', () => {
         { x: 1, y: 0, z: 2 },
       ],
     ]);
+    expect(decodedPointFeatureA.isPoints()).toBeFalse();
+    expect(decodedPointFeatureA.isLines()).toBeFalse();
+    expect(decodedPointFeatureA.isPolygons()).toBeFalse();
+    expect(decodedPointFeatureA.isPoints3D()).toBeFalse();
+    expect(decodedPointFeatureA.isLines3D()).toBeTrue();
+    expect(decodedPointFeatureA.isPolygons3D()).toBeFalse();
 
     // ensure accuracy of feature B:
     expect(decodedPointFeatureB.id).toBe(2);
@@ -623,6 +647,12 @@ describe('encodePolysFeature and decodePolysFeature', () => {
         ],
       ],
     ]);
+    expect(decodedPolyFeatureA.isPoints()).toBeFalse();
+    expect(decodedPolyFeatureA.isLines()).toBeFalse();
+    expect(decodedPolyFeatureA.isPolygons()).toBeTrue();
+    expect(decodedPolyFeatureA.isPoints3D()).toBeFalse();
+    expect(decodedPolyFeatureA.isLines3D()).toBeFalse();
+    expect(decodedPolyFeatureA.isPolygons3D()).toBeFalse();
 
     // ensure accuracy of feature B:
     expect(decodedPolyFeatureB.id).toBe(5_555);
@@ -893,6 +923,12 @@ describe('encodePolys3DFeature and decodePolys3DFeature', () => {
         ],
       ],
     ]);
+    expect(decodedPolyFeatureA.isPoints()).toBeFalse();
+    expect(decodedPolyFeatureA.isLines()).toBeFalse();
+    expect(decodedPolyFeatureA.isPolygons()).toBeFalse();
+    expect(decodedPolyFeatureA.isPoints3D()).toBeFalse();
+    expect(decodedPolyFeatureA.isLines3D()).toBeFalse();
+    expect(decodedPolyFeatureA.isPolygons3D()).toBeTrue();
 
     // ensure accuracy of feature B:
     expect(decodedPolyFeatureB.id).toBe(5_555);

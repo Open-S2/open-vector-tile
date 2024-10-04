@@ -106,6 +106,36 @@ impl VectorFeatureMethods for MapboxVectorFeature {
         false
     }
 
+    /// whether the feature is a points type
+    fn is_points(&self) -> bool {
+        self.r#type == FeatureType::Point
+    }
+
+    /// whether the feature is a line type
+    fn is_lines(&self) -> bool {
+        self.r#type == FeatureType::Line
+    }
+
+    /// whether the feature is a polygon type
+    fn is_polygons(&self) -> bool {
+        self.r#type == FeatureType::Polygon || self.r#type == FeatureType::MultiPolygon
+    }
+
+    /// whether the feature is a points 3D type
+    fn is_points_3d(&self) -> bool {
+        false
+    }
+
+    /// whether the feature is a line 3D type
+    fn is_lines_3d(&self) -> bool {
+        false
+    }
+
+    /// whether the feature is a polygon 3D type
+    fn is_polygons_3d(&self) -> bool {
+        false
+    }
+
     /// regardless of the type, we return a flattend point array
     fn load_points(&mut self) -> VectorPoints {
         match self.load_geometry() {

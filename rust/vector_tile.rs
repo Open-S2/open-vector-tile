@@ -34,6 +34,18 @@ pub trait VectorFeatureMethods {
     fn bbox(&self) -> Option<BBOX>;
     /// whether the feature has m values
     fn has_m_values(&self) -> bool;
+    /// whether the feature is a points type
+    fn is_points(&self) -> bool;
+    /// whether the feature is a line type
+    fn is_lines(&self) -> bool;
+    /// whether the feature is a polygon type
+    fn is_polygons(&self) -> bool;
+    /// whether the feature is a points 3D type
+    fn is_points_3d(&self) -> bool;
+    /// whether the feature is a line 3D type
+    fn is_lines_3d(&self) -> bool;
+    /// whether the feature is a polygon 3D type
+    fn is_polygons_3d(&self) -> bool;
     /// regardless of the type, we return a flattend point array
     fn load_points(&mut self) -> VectorPoints;
     /// regardless of the type, we return a flattend point3D array

@@ -417,6 +417,36 @@ impl VectorFeatureMethods for OpenVectorFeature {
         self.has_m_values
     }
 
+    /// whether the feature is a points type
+    fn is_points(&self) -> bool {
+        self.r#type == FeatureType::Points
+    }
+
+    /// whether the feature is a line type
+    fn is_lines(&self) -> bool {
+        self.r#type == FeatureType::Lines
+    }
+
+    /// whether the feature is a polygon type
+    fn is_polygons(&self) -> bool {
+        self.r#type == FeatureType::Polygons
+    }
+
+    /// whether the feature is a points 3D type
+    fn is_points_3d(&self) -> bool {
+        self.r#type == FeatureType::Points3D
+    }
+
+    /// whether the feature is a line 3D type
+    fn is_lines_3d(&self) -> bool {
+        self.r#type == FeatureType::Lines3D
+    }
+
+    /// whether the feature is a polygon 3D type
+    fn is_polygons_3d(&self) -> bool {
+        self.r#type == FeatureType::Polygons3D
+    }
+
     /// regardless of the type, we return a flattend point array
     fn load_points(&mut self) -> VectorPoints {
         match self.load_geometry() {

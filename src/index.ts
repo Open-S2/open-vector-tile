@@ -1,7 +1,6 @@
 export * from './base';
 export * from './vectorTile.spec';
 export * from './vectorTile';
-export * from './pbf';
 export * from './open';
 export * from './mapbox';
 

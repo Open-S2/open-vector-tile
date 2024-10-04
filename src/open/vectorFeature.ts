@@ -1,5 +1,5 @@
 import { OColumnName } from './columnCache';
-import { Pbf as Protobuf } from '../pbf';
+import { Pbf as Protobuf } from 's2-tools';
 import { decodeOffset } from '../base';
 import { decodeValue, encodeValue } from './shape';
 import { unweave2D, unweave3D, zagzig } from '../util';
@@ -32,6 +32,7 @@ import type { ColumnCacheReader, ColumnCacheWriter } from './columnCache';
  * Common variables and functions shared by all vector features
  */
 export class OVectorFeatureBase {
+  type = 0;
   /**
    * @param cache - the column cache for future retrieval
    * @param id - the id of the feature
@@ -60,6 +61,36 @@ export class OVectorFeatureBase {
     readonly indicesIndex: number, // -1 if there are no indices
     readonly tesselationIndex: number, // -1 if there is no tesselation
   ) {}
+
+  /** @returns - true if the type of the feature is points */
+  isPoints(): boolean {
+    return this.type === 1;
+  }
+
+  /** @returns - true if the type of the feature is lines */
+  isLines(): boolean {
+    return this.type === 2;
+  }
+
+  /** @returns - true if the type of the feature is polygons */
+  isPolygons(): boolean {
+    return this.type === 3;
+  }
+
+  /** @returns - true if the type of the feature is points 3D */
+  isPoints3D(): boolean {
+    return this.type === 4;
+  }
+
+  /** @returns - true if the type of the feature is lines 3D */
+  isLines3D(): boolean {
+    return this.type === 5;
+  }
+
+  /** @returns - true if the type of the feature is polygons 3D */
+  isPolygons3D(): boolean {
+    return this.type === 6;
+  }
 
   /**
    * adds the tesselation to the geometry
@@ -134,7 +165,7 @@ export class OVectorPointsFeature extends OVectorFeatureBase2D {
     const { cache, hasMValues, single, geometryIndices: indices } = this;
     let indexPos = 0;
     const geometryIndex = indices[indexPos++];
-    if (!this.geometry) {
+    if (this.geometry === undefined) {
       if (single) {
         const { a, b } = unweave2D(geometryIndex);
         this.geometry = [{ x: zagzig(a), y: zagzig(b) }];
@@ -172,7 +203,7 @@ export class OVectorLinesFeature extends OVectorFeatureBase2D {
 
   /** @returns the geometry as an array of lines objects that include offsets */
   loadLines(): VectorLinesWithOffset {
-    if (this.geometry) return this.geometry;
+    if (this.geometry !== undefined) return this.geometry;
     // prepare variables
     const { hasOffsets, hasMValues, geometryIndices: indices, cache, single } = this;
     const lines: VectorLinesWithOffset = [];
@@ -220,7 +251,7 @@ export class OVectorPolysFeature extends OVectorFeatureBase2D {
    * @returns the geometry as an array of lines objects that include offsets
    */
   #loadLinesWithOffsets(): VectorLinesWithOffset[] {
-    if (this.geometry) return this.geometry;
+    if (this.geometry !== undefined) return this.geometry;
 
     // prepare variables
     const { hasOffsets, hasMValues, geometryIndices: indices, cache, single } = this;
@@ -345,7 +376,7 @@ export class OVectorPoints3DFeature extends OVectorFeatureBase3D {
     const { cache, hasMValues, single, geometryIndices: indices } = this;
     let indexPos = 0;
     const geometryIndex = indices[indexPos++];
-    if (!this.geometry) {
+    if (this.geometry === undefined) {
       if (single) {
         const { a, b, c } = unweave3D(geometryIndex);
         this.geometry = [{ x: zagzig(a), y: zagzig(b), z: zagzig(c) }];
@@ -382,7 +413,7 @@ export class OVectorLines3DFeature extends OVectorFeatureBase3D {
 
   /** @returns the geometry as an array of lines objects that include offsets */
   loadLines(): VectorLines3DWithOffset {
-    if (this.geometry) return this.geometry;
+    if (this.geometry !== undefined) return this.geometry;
     // prepare variables
     const { hasOffsets, hasMValues, geometryIndices: indices, cache, single } = this;
     const lines: VectorLines3DWithOffset = [];
@@ -428,7 +459,7 @@ export class OVectorPolys3DFeature extends OVectorFeatureBase3D {
    * @returns the geometry as an array of lines objects that include offsets
    */
   #loadLinesWithOffsets(): VectorLines3DWithOffset[] {
-    if (this.geometry) return this.geometry;
+    if (this.geometry !== undefined) return this.geometry;
 
     // prepare variables
     const { hasOffsets, hasMValues, geometryIndices: indices, cache, single } = this;
@@ -582,7 +613,7 @@ export function readFeature(
   // next the flags
   const flags = pbf.readVarint();
   // read the id if it exists
-  const id = flags & 1 ? pbf.readVarint() : undefined;
+  const id = (flags & 1) > 0 ? pbf.readVarint() : undefined;
   const hashBBOX = (flags & (1 << 1)) > 0;
   const hasOffsets = (flags & (1 << 2)) > 0;
   const hasIndices = (flags & (1 << 3)) > 0;

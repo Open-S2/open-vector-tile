@@ -1,16 +1,18 @@
 import { MapboxVectorLayer } from './mapbox';
-import { Pbf as Protobuf } from './pbf';
+import { Pbf as Protobuf } from 's2-tools';
 import { BaseVectorLayer, BaseVectorTile } from './base';
 import {
   ColumnCacheReader,
   ColumnCacheWriter,
   ElevationData,
+  ImageData,
   OVectorLayer,
   writeElevationData,
+  writeImageData,
   writeOVLayer,
 } from './open';
 
-import type { ElevationInput } from './open';
+import type { ElevationInput, ImageDataInput } from './open';
 
 /**
  * Layers are a storage structure for the vector tile.
@@ -37,7 +39,8 @@ export class VectorTile {
   #columns!: ColumnCacheReader;
   readonly layers: Layers = {};
   #layerIndexes: number[] = [];
-  elevationData = new ElevationData();
+  imageData?: ImageData;
+  elevationData?: ElevationData;
   /**
    * @param data - the input data to parse
    * @param end - the size of the data, leave blank to parse the entire data
@@ -53,7 +56,7 @@ export class VectorTile {
    * @returns - the elevation data
    */
   readElevationData(): number[] | undefined {
-    if (this.elevationData.data.length === 0) return;
+    if (this.elevationData === undefined || this.elevationData.data.length === 0) return;
     return this.elevationData.data;
   }
 
@@ -77,6 +80,10 @@ export class VectorTile {
       const elevationData = new ElevationData();
       pbf.readMessage(elevationData._read, elevationData);
       vectorTile.elevationData = elevationData;
+    } else if (tag === 7) {
+      const imageData = new ImageData();
+      pbf.readMessage(imageData._read, imageData);
+      vectorTile.imageData = imageData;
     }
   }
 
@@ -95,10 +102,15 @@ export class VectorTile {
 /**
  * Write a tile to a Protobuf. and return a buffer
  * @param tile - the tile may be a base vector tile or a S2/Mapbox vector tile
+ * @param image - if provided, the tile will include an image
  * @param verbose - whether to print debug messages
  * @returns - a protobuffer encoded buffer using the Open Vector Tile Spec
  */
-export function writeOVTile(tile: BaseVectorTile | VectorTile, verbose = false): Uint8Array {
+export function writeOVTile(
+  tile: BaseVectorTile | VectorTile = new BaseVectorTile(),
+  image?: ImageDataInput,
+  verbose = false,
+): Uint8Array {
   const pbf = new Protobuf();
   const cache = new ColumnCacheWriter();
 
@@ -113,6 +125,14 @@ export function writeOVTile(tile: BaseVectorTile | VectorTile, verbose = false):
   }
   // now we can write columns
   pbf.writeMessage(5, ColumnCacheWriter.write, cache);
+  // write the image if applicable
+  if (image !== undefined) {
+    const imageTile = writeImageData(image);
+    pbf.writeBytesField(
+      7,
+      Buffer.from(imageTile.buffer, imageTile.byteOffset, imageTile.byteLength),
+    );
+  }
 
   return pbf.commit();
 }

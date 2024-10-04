@@ -3,7 +3,7 @@ import MapboxVectorLayer from '../mapbox/vectorLayer';
 import { VectorTile } from '../vectorTile';
 
 import type { S2JSONLayerMap } from './vectorLayer';
-import type { Tile as S2JSONTile } from 's2json-spec';
+import type { Tile as S2JSONTile } from 's2-tools';
 
 /**
  * Base Vector Tile
@@ -41,7 +41,7 @@ export class BaseVectorTile {
 
     if (!tile.transformed) throw Error('The vector tile must be transformed first');
 
-    for (const [layerName, layer] of Object.entries(tile)) {
+    for (const [layerName, layer] of Object.entries(tile.layers)) {
       vectorTile.layers[layerName] = BaseVectorLayer.fromS2JSONLayer(layer, layerMap[layerName]);
     }
 

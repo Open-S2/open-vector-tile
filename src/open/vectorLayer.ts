@@ -1,5 +1,5 @@
 import { OColumnName } from './columnCache';
-import { Pbf as Protobuf } from '../pbf';
+import { Pbf as Protobuf } from 's2-tools';
 import { OVectorFeature, readFeature, writeOVFeature } from './vectorFeature';
 import { decodeShape, encodeShape } from './shape';
 
@@ -134,7 +134,7 @@ export function writeOVLayer(
   pbf.writeVarintField(2, cache.addColumnData(OColumnName.string, layer.name));
   pbf.writeVarintField(3, encodeExtent(layer.extent));
   pbf.writeVarintField(5, encodeShape(cache, layer.shape));
-  if (layer.mShape) pbf.writeVarintField(6, encodeShape(cache, layer.mShape));
+  if (layer.mShape !== undefined) pbf.writeVarintField(6, encodeShape(cache, layer.mShape));
 
   // sort by feature type
   layer.features = layer.features.sort((a, b) => a.type - b.type);

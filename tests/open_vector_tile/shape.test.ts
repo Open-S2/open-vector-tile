@@ -1,5 +1,5 @@
 import Ajv from 'ajv';
-import { Pbf } from '../../src/pbf';
+import { Pbf } from 's2-tools';
 import { ShapeSchema } from '../../src';
 import { ColumnCacheReader, ColumnCacheWriter } from '../../src/open/columnCache';
 import {

@@ -1,13 +1,14 @@
+/* eslint-disable @typescript-eslint/no-misused-promises */
 import MapboxProtobuf from 'pbf';
 import { VectorTile as MapboxVectorTile } from '@mapbox/vector-tile';
-import { Pbf as Protobuf } from '../src/pbf';
+import { Pbf as Protobuf } from 's2-tools';
 import { VectorTile } from '../src';
 import { MapboxVectorFeature, MapboxVectorLayer } from '../src/mapbox';
 import { describe, expect, it, test } from 'bun:test';
 
 import type { VectorGeometry } from '../src/vectorTile.spec';
 
-describe('parsing vector tiles', async () => {
+describe('parsing vector tiles', async (): Promise<void> => {
   const data = await Bun.file(`${__dirname}/fixtures/14-8801-5371.vector.pbf`).arrayBuffer();
   const uint8 = new Uint8Array(data, 0, data.byteLength);
   const tile = new VectorTile(uint8);
@@ -34,6 +35,12 @@ describe('parsing vector tiles', async () => {
   it('shoulnd contain mValues and have an empty bbox', () => {
     const poi_label = tile.layers.poi_label;
     const feature = poi_label.feature(11);
+    expect(feature.isPoints()).toBeTrue();
+    expect(feature.isLines()).toBeFalse();
+    expect(feature.isPolygons()).toBeFalse();
+    expect(feature.isPoints3D()).toBeFalse();
+    expect(feature.isLines3D()).toBeFalse();
+    expect(feature.isPolygons3D()).toBeFalse();
 
     expect(feature.hasMValues).toEqual(false);
     expect(feature.bbox()).toEqual([0, 0, 0, 0]);

@@ -66,8 +66,8 @@ export function unweave2D(num: number): { a: number; b: number } {
   let b = 0;
   for (let i = 0; i < 16; i++) {
     const bit = 1 << i;
-    if (num & 1) a |= bit;
-    if (num & 2) b |= bit;
+    if ((num & 1) > 0) a |= bit;
+    if ((num & 2) > 0) b |= bit;
     num >>= 2;
   }
   return { a, b };
@@ -89,9 +89,9 @@ export function weave3D(a: number, b: number, c: number): number {
   let bigC = BigInt(c);
 
   for (let i = 0; i < 16; i++) {
-    if (bigA & 1n) result |= 1n << BigInt(i * 3); // Take ith bit from `a` and put it at position 3*i
-    if (bigB & 1n) result |= 1n << BigInt(i * 3 + 1); // Take ith bit from `b` and put it at position 3*i+1
-    if (bigC & 1n) result |= 1n << BigInt(i * 3 + 2); // Take ith bit from `c` and put it at position 3*i+2
+    if ((bigA & 1n) > 0n) result |= 1n << BigInt(i * 3); // Take ith bit from `a` and put it at position 3*i
+    if ((bigB & 1n) > 0n) result |= 1n << BigInt(i * 3 + 1); // Take ith bit from `b` and put it at position 3*i+1
+    if ((bigC & 1n) > 0n) result |= 1n << BigInt(i * 3 + 2); // Take ith bit from `c` and put it at position 3*i+2
     // Move to the next bit
     bigA >>= 1n;
     bigB >>= 1n;
@@ -113,9 +113,9 @@ export function unweave3D(num: number): { a: number; b: number; c: number } {
   let c = 0;
   for (let i = 0; i < 16; i++) {
     const bit = 1 << i;
-    if (num & 1) a |= bit;
-    if (num & 2) b |= bit;
-    if (num & 4) c |= bit;
+    if ((num & 1) > 0) a |= bit;
+    if ((num & 2) > 0) b |= bit;
+    if ((num & 4) > 0) c |= bit;
     // num >>= 3 <-- we cant do this for numbers > 32 bits in javascript
     for (let j = 0; j < 3; j++) {
       num /= 2;

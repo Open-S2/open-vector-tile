@@ -10,7 +10,7 @@ import {
   weaveAndDeltaEncodeArray,
 } from '../util';
 
-import type { Pbf as Protobuf } from '../pbf';
+import type { Pbf as Protobuf } from 's2-tools';
 import type {
   BBox,
   BBox3D,

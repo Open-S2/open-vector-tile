@@ -4,7 +4,7 @@ import { fromMapboxVectorFeature, fromS2JSONFeature } from './vectorFeature';
 
 import type { BaseVectorFeature } from './vectorFeature';
 import type { Extents } from '../open';
-import type { Layer as S2JSONLayer } from 's2json-spec';
+import type { Layer as S2JSONLayer } from 's2-tools';
 import type { Shape } from '../open/shape';
 
 /**
@@ -106,7 +106,7 @@ export class BaseVectorLayer {
     };
     const vectorLayer = new BaseVectorLayer(undefined, name, extent, [], shape, mShape);
     for (const feature of features) {
-      const bFeature = fromS2JSONFeature(feature);
+      const bFeature = fromS2JSONFeature(feature, vectorLayer.extent);
       vectorLayer.addFeature(bFeature);
     }
 

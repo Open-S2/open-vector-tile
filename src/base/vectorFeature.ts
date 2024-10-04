@@ -12,6 +12,7 @@ import type {
   BBox3D,
   OProperties,
   Point,
+  Point3D,
   VectorLine,
   VectorLine3D,
   VectorLines,
@@ -415,37 +416,51 @@ export function fromMapboxVectorFeature(feature: MapboxVectorFeature): BaseVecto
 }
 
 /**
+ * Convert an S2JSON feature to a base feature
  * @param feature - An S2JSON feature
+ * @param extent - the extent of the vector layer
  * @returns - A base feature to help build a vector tile
  */
-export function fromS2JSONFeature(feature: S2JSONFeature): BaseVectorFeature {
+export function fromS2JSONFeature(feature: S2JSONFeature, extent: number): BaseVectorFeature {
   const { geometry, properties, id } = feature;
   const { type, is3D, coordinates, bbox, offset } = geometry;
 
   if (type === 'Point') {
     if (is3D)
       return new BaseVectorPoints3DFeature(
-        [{ ...coordinates, z: coordinates.z ?? 0 }],
+        [transformPoint3D(coordinates, extent)],
         properties,
         id,
         bbox as BBox3D,
       );
-    else return new BaseVectorPointsFeature([coordinates], properties, id, bbox as BBox);
+    else
+      return new BaseVectorPointsFeature(
+        [transformPoint(coordinates, extent)],
+        properties,
+        id,
+        bbox as BBox,
+      );
   } else if (type === 'MultiPoint') {
     if (is3D)
       return new BaseVectorPoints3DFeature(
-        coordinates.map((p) => ({ ...p, z: p.z ?? 0 })),
+        coordinates.map((p) => transformPoint3D(p, extent)),
         properties,
         id,
         bbox as BBox3D,
       );
-    else return new BaseVectorPointsFeature(coordinates, properties, id, bbox as BBox);
+    else
+      return new BaseVectorPointsFeature(
+        coordinates.map((p) => transformPoint(p, extent)),
+        properties,
+        id,
+        bbox as BBox,
+      );
   } else if (type === 'LineString') {
     if (is3D)
       return new BaseVectorLines3DFeature(
         [
           new BaseVectorLine(
-            coordinates.map((p) => ({ ...p, z: p.z ?? 0 })),
+            coordinates.map((p) => transformPoint3D(p, extent)),
             offset,
           ),
         ],
@@ -455,7 +470,12 @@ export function fromS2JSONFeature(feature: S2JSONFeature): BaseVectorFeature {
       );
     else
       return new BaseVectorLinesFeature(
-        [new BaseVectorLine(coordinates, offset)],
+        [
+          new BaseVectorLine(
+            coordinates.map((p) => transformPoint(p, extent)),
+            offset,
+          ),
+        ],
         properties,
         id,
         bbox as BBox,
@@ -465,7 +485,7 @@ export function fromS2JSONFeature(feature: S2JSONFeature): BaseVectorFeature {
       return new BaseVectorLines3DFeature(
         coordinates.map((line, i) => {
           return new BaseVectorLine(
-            line.map((p) => ({ ...p, z: p.z ?? 0 })),
+            line.map((p) => transformPoint3D(p, extent)),
             offset?.[i],
           );
         }),
@@ -476,7 +496,10 @@ export function fromS2JSONFeature(feature: S2JSONFeature): BaseVectorFeature {
     else
       return new BaseVectorLinesFeature(
         coordinates.map((line, i) => {
-          return new BaseVectorLine(line, offset?.[i]);
+          return new BaseVectorLine(
+            line.map((p) => transformPoint(p, extent)),
+            offset?.[i],
+          );
         }),
         properties,
         id,
@@ -489,7 +512,7 @@ export function fromS2JSONFeature(feature: S2JSONFeature): BaseVectorFeature {
         [
           coordinates.map((line, i) => {
             return new BaseVectorLine(
-              line.map((p) => ({ ...p, z: p.z ?? 0 })),
+              line.map((p) => transformPoint3D(p, extent)),
               offset?.[i],
             );
           }),
@@ -504,7 +527,10 @@ export function fromS2JSONFeature(feature: S2JSONFeature): BaseVectorFeature {
       return new BaseVectorPolysFeature(
         [
           coordinates.map((line, i) => {
-            return new BaseVectorLine(line, offset?.[i]);
+            return new BaseVectorLine(
+              line.map((p) => transformPoint(p, extent)),
+              offset?.[i],
+            );
           }),
         ],
         indices,
@@ -520,7 +546,7 @@ export function fromS2JSONFeature(feature: S2JSONFeature): BaseVectorFeature {
         coordinates.map((poly, i) => {
           return poly.map((line, j) => {
             return new BaseVectorLine(
-              line.map((p) => ({ ...p, z: p.z ?? 0 })),
+              line.map((p) => transformPoint3D(p, extent)),
               offset?.[i]?.[j],
             );
           });
@@ -535,7 +561,10 @@ export function fromS2JSONFeature(feature: S2JSONFeature): BaseVectorFeature {
       return new BaseVectorPolysFeature(
         coordinates.map((poly, i) => {
           return poly.map((line, j) => {
-            return new BaseVectorLine(line, offset?.[i]?.[j]);
+            return new BaseVectorLine(
+              line.map((p) => transformPoint(p, extent)),
+              offset?.[i]?.[j],
+            );
           });
         }),
         indices,
@@ -547,6 +576,32 @@ export function fromS2JSONFeature(feature: S2JSONFeature): BaseVectorFeature {
   } else {
     throw new Error(`Unknown geometry type: ${type}`);
   }
+}
+
+/**
+ * Transform a point in place to an extent
+ * @param p - the point
+ * @param extent - the extent
+ * @returns - the transformed point
+ */
+function transformPoint(p: Point, extent: number): Point {
+  const { round } = Math;
+  return { x: round(p.x * extent), y: round(p.y * extent) };
+}
+
+/**
+ * Transform a 3D point in place to an extent
+ * @param p - the 3D point
+ * @param extent - the extent
+ * @returns - the transformed 3D point
+ */
+function transformPoint3D(p: Point | Point3D, extent: number): Point3D {
+  const { round } = Math;
+  return {
+    x: round(p.x * extent),
+    y: round(p.y * extent),
+    z: round(('z' in p ? p.z : 0) * extent),
+  };
 }
 
 /**

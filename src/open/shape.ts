@@ -171,7 +171,7 @@ function _encodeValue(
     } else if (shape === 'f64') {
       valueStore.push(cache.addNumber((value as number) ?? 0, OColumnName.double));
     } else if (shape === 'bool') {
-      valueStore.push(cache.addNumber(value ? 1 : 0, OColumnName.unsigned));
+      valueStore.push(cache.addNumber((value as boolean) ? 1 : 0, OColumnName.unsigned));
     }
   }
 }

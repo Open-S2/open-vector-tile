@@ -1,5 +1,5 @@
 import { BaseVectorLayer } from '../../src/base';
-import { Pbf as Protobuf } from '../../src/pbf';
+import { Pbf as Protobuf } from 's2-tools';
 import { ColumnCacheReader, ColumnCacheWriter } from '../../src/open/columnCache';
 import { OVectorLayer, decodeExtent, encodeExtent, writeOVLayer } from '../../src/open/vectorLayer';
 import { describe, expect, it } from 'bun:test';
@@ -48,8 +48,8 @@ describe('force writeOVLayer to verbose print', () => {
     {
       layer,
       cache: writer,
+      verbose: true,
     },
     pbf,
-    true,
   );
 });

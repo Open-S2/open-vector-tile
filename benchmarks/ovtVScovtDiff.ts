@@ -19,10 +19,10 @@ interface SizeBenchmarks {
 }
 
 const RULES = [
-  { folder: 'amazon', fileType: 'pbf' },
+  // { folder: 'amazon', fileType: 'pbf' },
   // { folder: 'test', fileType: 'pbf' },
   // { folder: 'amazon_here', fileType: 'pbf' },
-  // { folder: 'bing', fileType: 'mvt' },
+  { folder: 'bing', fileType: 'mvt' },
   // { folder: 'omt', fileType: 'mvt' },
 ];
 

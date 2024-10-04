@@ -27,21 +27,21 @@ interface CompressionBenchmarks {
 
 /** Finding the averages for each format */
 interface AllSizeBenchmarks {
-  covt: CompressionBenchmarks;
+  mlt: CompressionBenchmarks;
   mvt: CompressionBenchmarks;
   ovt: CompressionBenchmarks;
 }
 
 const RULES = [
-  { folder: 'amazon', fileType: 'pbf' },
+  // { folder: 'amazon', fileType: 'pbf' },
   // { folder: 'test', fileType: 'pbf' },
   // { folder: 'amazon_here', fileType: 'pbf' },
-  // { folder: 'bing', fileType: 'mvt' },
+  { folder: 'bing', fileType: 'mvt' },
   // { folder: 'omt', fileType: 'mvt' },
 ];
 
 const sizeBenchmarks: AllSizeBenchmarks = {
-  covt: {
+  mlt: {
     raw: { all: { sum: 0, total: 0, average: 0 } },
     gzip: { all: { sum: 0, total: 0, average: 0 } },
     brotli: { all: { sum: 0, total: 0, average: 0 } },
@@ -121,12 +121,15 @@ function buildAverages(benchmarks: AllSizeBenchmarks) {
  * @returns list of file names
  */
 function getFileList(folder: string): { fileName: string; zoom: number }[] {
-  const files = fs.readdirSync(`./benchmarks/data/${folder}/covt`);
-  return files.map((file) => {
-    const fileName = file.split('.')[0];
-    const zoom = fileName.split('_')[0];
-    return { fileName, zoom: parseInt(zoom) };
-  });
+  const files = fs.readdirSync(`./benchmarks/data/${folder}/mlt`);
+  return files
+    .filter((file) => file.endsWith('.pbf'))
+    .map((file) => {
+      const fileName = file.split('.')[0];
+      const zoom = fileName.split('_')[0];
+      return { fileName, zoom: parseInt(zoom) };
+    })
+    .filter(({ zoom }) => !isNaN(zoom));
 }
 
 /**
@@ -142,7 +145,7 @@ interface FileSizes {
  * Get file sizes for every vector format
  */
 interface AllFileSizes {
-  covt: FileSizes;
+  mlt: FileSizes;
   mvt: FileSizes;
   ovt: FileSizes;
 }
@@ -150,7 +153,7 @@ interface AllFileSizes {
 /**
  * From each file build normal, gzip, and brotli for:
  * - MVT
- * - COVT
+ * - MLT (previously COVT)
  * - OVT
  * @param folder - head dir folder name
  * @param xyz - will be the file name like "z_x_y.pbf" without the pbf
@@ -161,18 +164,16 @@ function buildFilesizeBenchmarks(folder: string, xyz: string, fileType: string):
   const MVT = fs.readFileSync(
     path.join(__dirname, `../benchmarks/data/${folder}/mvt/${xyz}.${fileType}`),
   );
-  const COVT = fs.readFileSync(
-    path.join(__dirname, `../benchmarks/data/${folder}/covt/${xyz}.covt`),
-  );
+  const MLT = fs.readFileSync(path.join(__dirname, `../benchmarks/data/${folder}/mlt/${xyz}.mlt`));
   const tile = new VectorTile(new Uint8Array(MVT));
 
   const OVT = writeOVTile(tile);
 
   return {
-    covt: {
-      raw: COVT.length,
-      gzip: gzipSync(COVT).length,
-      brotli: brotliCompressSync(COVT).length,
+    mlt: {
+      raw: MLT.length,
+      gzip: gzipSync(MLT).length,
+      brotli: brotliCompressSync(MLT).length,
     },
     mvt: {
       raw: MVT.length,
@@ -193,14 +194,14 @@ function buildFilesizeBenchmarks(folder: string, xyz: string, fileType: string):
 // type BenchTable = Array<{
 //   zoom: string;
 //   average: number;
-//   format: 'mvt' | 'covt' | 'ovt';
+//   format: 'mvt' | 'mlt' | 'ovt';
 //   percentMVT: number;
 // }>;
 type BenchTable = Array<
   [
     string, // zoom
     number, // average
-    string, // format: 'mvt' | 'covt' | 'ovt';
+    string, // format: 'mvt' | 'mlt' | 'ovt';
     number, // percentMVT: number;
   ]
 >;
@@ -220,9 +221,9 @@ interface BenchTables {
  */
 function buildTables(benchmarks: AllSizeBenchmarks): BenchTables {
   const benchTables = {
-    raw: [['zoom', 'mvt', 'covt', 'ovt']],
-    gzip: [['zoom', 'mvt', 'covt', 'ovt']],
-    brotli: [['zoom', 'mvt', 'covt', 'ovt']],
+    raw: [['zoom', 'mvt', 'mlt', 'ovt']],
+    gzip: [['zoom', 'mvt', 'mlt', 'ovt']],
+    brotli: [['zoom', 'mvt', 'mlt', 'ovt']],
   };
   // match a zoom to the table index. I did the benchmark storage backwards -_-
   const zoomTable: { [zoom: number]: number } = {};
@@ -246,7 +247,7 @@ function buildTables(benchmarks: AllSizeBenchmarks): BenchTables {
         }
         if (tileFormat === 'mvt') {
           compressTable[tableIndex][1] = average;
-        } else if (tileFormat === 'covt') {
+        } else if (tileFormat === 'mlt') {
           compressTable[tableIndex][2] = average;
         } else if (tileFormat === 'ovt') {
           compressTable[tableIndex][3] = average;
@@ -321,7 +322,7 @@ function formatBytes(bytes: number): string {
 
 // ------------------------------------------------------
 
-// OMT WITH GZIP FOR STRINGS:
+// OVT WITH GZIP FOR STRINGS:
 // RAW:
 
 // | zoom |       mvt |      covt |       ovt |
@@ -360,7 +361,7 @@ function formatBytes(bytes: number): string {
 // | 14   | 289.42 kB | 217.45 kB | 271.89 kB |
 // | all  | 111.25 kB |  83.81 kB | 108.22 kB |
 
-// OMT WITHOUT GZIP FOR STRINGS:
+// OVT WITHOUT GZIP FOR STRINGS:
 
 // RAW:
 

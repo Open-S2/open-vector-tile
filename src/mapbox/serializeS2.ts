@@ -1,6 +1,6 @@
 import { BaseVectorPolysFeature } from '../base';
 import { OVectorLayer } from '../open/vectorLayer';
-import { Pbf as Protobuf } from '../pbf';
+import { Pbf as Protobuf } from 's2-tools';
 import { commandEncode, zigzag } from '../util';
 
 import type { VectorTile } from '../vectorTile';
@@ -14,8 +14,6 @@ import type {
   VectorPoints,
   VectorPoly,
 } from '../vectorTile.spec';
-
-// NOTE: Deprecated tool. Rely upon `writeOVTile` for future use.
 
 /**
  * A storage structure to manage deduplication of keys and values in each layer
@@ -99,9 +97,7 @@ function writeLayer(layer: BaseVectorLayer | MapboxVectorLayer, pbf: Protobuf): 
 function writeFeature(contextWF: ContextWithFeature, pbf: Protobuf): void {
   const { feature } = contextWF;
   // fix BaseVectorPolysFeature to work with S2
-  if (feature instanceof BaseVectorPolysFeature) {
-    feature.type = 4;
-  }
+  if (feature instanceof BaseVectorPolysFeature) feature.type = 4;
   // if id write it
   if (typeof feature.id === 'number') pbf.writeVarintField(1, feature.id);
   // properties
@@ -109,10 +105,10 @@ function writeFeature(contextWF: ContextWithFeature, pbf: Protobuf): void {
   pbf.writeVarintField(3, feature.type);
   // geoemtry, indices
   pbf.writeMessage(4, writeGeometry, feature);
-  if ('indices' in feature && feature.indices.length) {
+  if ('indices' in feature && feature.indices.length > 0) {
     pbf.writeMessage(5, writeIndices, feature.indices);
   }
-  if ('tesselation' in feature && feature.tesselation.length) {
+  if ('tesselation' in feature && feature.tesselation.length > 0) {
     pbf.writeMessage(6, writeTesselation, feature.tesselation);
   }
 }

@@ -1,4 +1,4 @@
-import type { Pbf as Protobuf } from '../pbf';
+import type { Pbf as Protobuf } from 's2-tools';
 import type {
   BBox,
   BBox3D,
@@ -55,6 +55,36 @@ export default class MapboxVectorFeature {
     this.#values = values;
 
     pbf.readFields(this.#readFeature, this, end);
+  }
+
+  /** @returns - true if the type of the feature is points */
+  isPoints(): boolean {
+    return this.type === 1;
+  }
+
+  /** @returns - true if the type of the feature is lines */
+  isLines(): boolean {
+    return this.type === 2;
+  }
+
+  /** @returns - true if the type of the feature is polygons */
+  isPolygons(): boolean {
+    return this.type === 3 || this.type === 4;
+  }
+
+  /** @returns - true if the type of the feature is points 3D */
+  isPoints3D(): boolean {
+    return false;
+  }
+
+  /** @returns - true if the type of the feature is lines 3D */
+  isLines3D(): boolean {
+    return false;
+  }
+
+  /** @returns - true if the type of the feature is polygons 3D */
+  isPolygons3D(): boolean {
+    return false;
   }
 
   /**

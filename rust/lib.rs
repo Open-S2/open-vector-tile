@@ -1,7 +1,7 @@
 #![no_std]
 #![deny(missing_docs)]
 //! The `open-vector-tile` Rust crate provides functionalities to read and write
-//! Open Vector Tile Spec messages. This crate uses `no_std` and is intended to be used in
+//! Open Vector Tile Spec messages. This crate uses `no_std` and is intended to be available for
 //! embedded systems and WASM applications.
 
 extern crate alloc;

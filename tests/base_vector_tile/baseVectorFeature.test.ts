@@ -1,4 +1,4 @@
-import { Pbf } from '../../src/pbf';
+import { Pbf } from 's2-tools';
 import {
   BaseVectorLine,
   BaseVectorLines3DFeature,
