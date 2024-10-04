@@ -1,5 +1,5 @@
 import { Pbf as Protobuf } from 's2-tools';
-import { deltaDecodeArray, deltaEncodeArray } from 'open-vector-tile/util';
+import { deltaDecodeArray, deltaEncodeArray } from '../util';
 
 import type { Extents } from '.';
 
