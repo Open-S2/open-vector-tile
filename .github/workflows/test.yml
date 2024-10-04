@@ -47,7 +47,7 @@ jobs:
       shell: bash
 
     - name: Check Formatting
-      run: cargo fmt -- --check
+      run: rustup run nightly cargo fmt -- --check
       shell: bash
 
     - name: Run Rust tests
