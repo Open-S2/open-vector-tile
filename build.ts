@@ -6,7 +6,7 @@ try {
     entrypoints: ['src/index.ts'],
     outdir: 'dist',
     format: 'esm',
-    minify: true,
+    minify: false,
     sourcemap: 'external',
     // target: 'esnext', // Adjust target based on your project needs
   });
