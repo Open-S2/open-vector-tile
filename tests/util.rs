@@ -123,12 +123,7 @@ mod tests {
                 Point::new(0, 1),
                 Point::new(0, 0)
             ])),
-            vec![
-                Point::new(0, 0),
-                Point::new(1, 0),
-                Point::new(0, 1),
-                Point::new(0, 0),
-            ]
+            vec![Point::new(0, 0), Point::new(1, 0), Point::new(0, 1), Point::new(0, 0),]
         )
     }
 
@@ -152,12 +147,7 @@ mod tests {
 
     #[test]
     fn test_quantize_dequantize_bbox() {
-        let bbox = BBox {
-            left: -0.5,
-            bottom: -162.2,
-            right: 122.8,
-            top: 77.4,
-        };
+        let bbox = BBox { left: -0.5, bottom: -162.2, right: 122.8, top: 77.4 };
         let bbox_2 = BBOX::BBox(bbox);
 
         let quantized = bbox.quantize();
@@ -187,14 +177,8 @@ mod tests {
 
     #[test]
     fn test_quantize_dequantize_bbox_3d() {
-        let bbox = BBox3D {
-            left: -0.5,
-            bottom: -162.2,
-            right: 122.8,
-            top: 77.4,
-            near: -1.3,
-            far: 100.2,
-        };
+        let bbox =
+            BBox3D { left: -0.5, bottom: -162.2, right: 122.8, top: 77.4, near: -1.3, far: 100.2 };
         let bbox_2 = BBOX::BBox3D(bbox);
 
         let quantized = bbox.quantize();

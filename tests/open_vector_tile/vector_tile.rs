@@ -34,18 +34,9 @@ mod tests {
         let example_value2 = serde_json::from_str::<Value>(example_value_str_2).unwrap();
 
         let empty_value = Value(BTreeMap::from([
-            (
-                "a".to_string(),
-                ValueType::Primitive(PrimitiveValue::I64(0)),
-            ),
-            (
-                "b".to_string(),
-                ValueType::Primitive(PrimitiveValue::U64(0)),
-            ),
-            (
-                "c".to_string(),
-                ValueType::Primitive(PrimitiveValue::F32(0.0)),
-            ),
+            ("a".to_string(), ValueType::Primitive(PrimitiveValue::I64(0))),
+            ("b".to_string(), ValueType::Primitive(PrimitiveValue::U64(0))),
+            ("c".to_string(), ValueType::Primitive(PrimitiveValue::F32(0.0))),
         ]));
 
         // POINTS //-//-//-//-//-//-//-//-//-//-//
@@ -61,10 +52,7 @@ mod tests {
         );
         let feature2 = BaseVectorPointsFeature::new(
             Some(1),
-            vec![
-                Point::new_with_m(0, 0, example_value.clone()),
-                Point::new(1, 1),
-            ],
+            vec![Point::new_with_m(0, 0, example_value.clone()), Point::new(1, 1)],
             example_value2.clone(),
             Some(BBox::new(-1.1, 0.0, 1.0, 1.0)),
         );
@@ -216,10 +204,7 @@ mod tests {
             assert_eq!(points, vec![Point::new(0, 0)]);
             // load_geometry
             let geometry = o_feature.load_geometry();
-            assert_eq!(
-                geometry,
-                VectorGeometry::VectorPoints(vec![Point::new(0, 0)])
-            );
+            assert_eq!(geometry, VectorGeometry::VectorPoints(vec![Point::new(0, 0)]));
             // load indices
             assert_eq!(o_feature.read_indices(), Vec::<u32>::new());
         }
@@ -316,10 +301,7 @@ mod tests {
             // load_points
             let points = o_feature.load_points();
             assert_eq!(points.len(), 1);
-            assert_eq!(
-                points,
-                vec![Point::new_with_m(0, 0, example_value2.clone())]
-            );
+            assert_eq!(points, vec![Point::new_with_m(0, 0, example_value2.clone())]);
             // load_geometry
             let geometry = o_feature.load_geometry();
             assert_eq!(
@@ -690,18 +672,9 @@ mod tests {
         let example_value2 = serde_json::from_str::<Value>(example_value_str_2).unwrap();
 
         let empty_value = Value(BTreeMap::from([
-            (
-                "a".to_string(),
-                ValueType::Primitive(PrimitiveValue::I64(0)),
-            ),
-            (
-                "b".to_string(),
-                ValueType::Primitive(PrimitiveValue::U64(0)),
-            ),
-            (
-                "c".to_string(),
-                ValueType::Primitive(PrimitiveValue::F32(0.0)),
-            ),
+            ("a".to_string(), ValueType::Primitive(PrimitiveValue::I64(0))),
+            ("b".to_string(), ValueType::Primitive(PrimitiveValue::U64(0))),
+            ("c".to_string(), ValueType::Primitive(PrimitiveValue::F32(0.0))),
         ]));
 
         // POINTS //-//-//-//-//-//-//-//-//-//-//
@@ -717,10 +690,7 @@ mod tests {
         );
         let feature2 = BaseVectorPoints3DFeature::new(
             Some(1),
-            vec![
-                Point3D::new_with_m(0, 0, 0, example_value.clone()),
-                Point3D::new(1, 1, 1),
-            ],
+            vec![Point3D::new_with_m(0, 0, 0, example_value.clone()), Point3D::new(1, 1, 1)],
             example_value2.clone(),
             Some(BBox3D::new(-1.1, 0.0, 1.0, 1.0, -20.0, 20.0)),
         );
@@ -828,11 +798,7 @@ mod tests {
             example_value2.clone(),
             None,
             vec![0, 1, 2, 1, 5],
-            vec![
-                Point3D::new(10, 4, 1),
-                Point3D::new(11, 5, 2),
-                Point3D::new(12, 6, 3),
-            ],
+            vec![Point3D::new(10, 4, 1), Point3D::new(11, 5, 2), Point3D::new(12, 6, 3)],
         );
 
         polys_layer.add_feature(BaseVectorFeature::BaseVectorPolys3DFeature(feature5));
@@ -879,10 +845,7 @@ mod tests {
             assert_eq!(points, vec![Point3D::new(0, 0, 0)]);
             // load_geometry
             let geometry = o_feature.load_geometry();
-            assert_eq!(
-                geometry,
-                VectorGeometry::VectorPoints3D(vec![Point3D::new(0, 0, 0)])
-            );
+            assert_eq!(geometry, VectorGeometry::VectorPoints3D(vec![Point3D::new(0, 0, 0)]));
             // load indices
             assert_eq!(o_feature.read_indices(), Vec::<u32>::new());
 
@@ -974,10 +937,7 @@ mod tests {
             // load_points
             let points = o_feature.load_points_3d();
             assert_eq!(points.len(), 1);
-            assert_eq!(
-                points,
-                vec![Point3D::new_with_m(0, 0, 0, example_value2.clone())]
-            );
+            assert_eq!(points, vec![Point3D::new_with_m(0, 0, 0, example_value2.clone())]);
             // load_geometry
             let geometry = o_feature.load_geometry();
             assert_eq!(
@@ -1338,31 +1298,13 @@ mod tests {
         let mut tile = BaseVectorTile::default();
 
         let example_value = Value(BTreeMap::from([
-            (
-                "a".to_string(),
-                ValueType::Primitive(PrimitiveValue::I64(-5)),
-            ),
-            (
-                "b".to_string(),
-                ValueType::Primitive(PrimitiveValue::U64(1_000)),
-            ),
-            (
-                "c".to_string(),
-                ValueType::Primitive(PrimitiveValue::F32(-2.2)),
-            ),
-            (
-                "d".to_string(),
-                ValueType::Primitive(PrimitiveValue::F64(9_999.999_9)),
-            ),
-            (
-                "e".to_string(),
-                ValueType::Primitive(PrimitiveValue::Bool(true)),
-            ),
+            ("a".to_string(), ValueType::Primitive(PrimitiveValue::I64(-5))),
+            ("b".to_string(), ValueType::Primitive(PrimitiveValue::U64(1_000))),
+            ("c".to_string(), ValueType::Primitive(PrimitiveValue::F32(-2.2))),
+            ("d".to_string(), ValueType::Primitive(PrimitiveValue::F64(9_999.999_9))),
+            ("e".to_string(), ValueType::Primitive(PrimitiveValue::Bool(true))),
             ("f".to_string(), ValueType::Primitive(PrimitiveValue::Null)),
-            (
-                "g".to_string(),
-                ValueType::Primitive(PrimitiveValue::String("hello".to_string())),
-            ),
+            ("g".to_string(), ValueType::Primitive(PrimitiveValue::String("hello".to_string()))),
             (
                 "h".to_string(),
                 ValueType::Array(vec![
@@ -1373,19 +1315,10 @@ mod tests {
             (
                 "i".to_string(),
                 ValueType::Nested(Value(BTreeMap::from([
-                    (
-                        "j".to_string(),
-                        ValueType::Primitive(PrimitiveValue::F64(2.200000047683716)),
-                    ),
-                    (
-                        "k".to_string(),
-                        ValueType::Primitive(PrimitiveValue::Bool(true)),
-                    ),
+                    ("j".to_string(), ValueType::Primitive(PrimitiveValue::F64(2.200000047683716))),
+                    ("k".to_string(), ValueType::Primitive(PrimitiveValue::Bool(true))),
                     ("l".to_string(), ValueType::Primitive(PrimitiveValue::Null)),
-                    (
-                        "m".to_string(),
-                        ValueType::Primitive(PrimitiveValue::F32(4.5)),
-                    ),
+                    ("m".to_string(), ValueType::Primitive(PrimitiveValue::F32(4.5))),
                 ]))),
             ),
         ]));
@@ -1407,9 +1340,7 @@ mod tests {
             BaseVectorLayer::new("points".to_string(), 4096.into(), vec![], None, None);
 
         points_layer.add_feature(BaseVectorFeature::BaseVectorPointsFeature(feature.clone()));
-        points_layer.add_feature(BaseVectorFeature::BaseVectorPoints3DFeature(
-            feature2.clone(),
-        ));
+        points_layer.add_feature(BaseVectorFeature::BaseVectorPoints3DFeature(feature2.clone()));
 
         tile.add_layer(points_layer);
 

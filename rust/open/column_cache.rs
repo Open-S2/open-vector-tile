@@ -118,9 +118,7 @@ pub struct ColumnCacheReader {
 impl ColumnCacheReader {
     /// create an instance
     pub fn new() -> Self {
-        ColumnCacheReader {
-            ..Default::default()
-        }
+        ColumnCacheReader { ..Default::default() }
     }
 
     /// get a string
@@ -181,15 +179,9 @@ impl ProtoRead for ColumnCacheReader {
             2 => self.signed.push(pb.read_s_varint::<i64>()),
             3 => self.float.push(pb.read_varint::<f32>()),
             4 => self.double.push(pb.read_varint::<f64>()),
-            5 => self
-                .points
-                .push(unweave_and_delta_decode_array(&pb.read_packed::<u64>())),
-            6 => self
-                .points_3d
-                .push(unweave_and_delta_decode_3d_array(&pb.read_packed::<u64>())),
-            7 => self
-                .indices
-                .push(delta_decode_array(&pb.read_packed::<u32>())),
+            5 => self.points.push(unweave_and_delta_decode_array(&pb.read_packed::<u64>())),
+            6 => self.points_3d.push(unweave_and_delta_decode_3d_array(&pb.read_packed::<u64>())),
+            7 => self.indices.push(delta_decode_array(&pb.read_packed::<u32>())),
             8 => self.shapes.push(pb.read_packed::<usize>()),
             9 => self.bbox.push((&pb.read_packed::<u8>()[..]).into()),
             _ => panic!("Unknown column type"),
@@ -371,10 +363,7 @@ impl ProtoWrite for ColumnCacheWriter {
         }
         // points
         for p in points {
-            pbf.write_packed_varint(
-                OColumnName::Points.into(),
-                &weave_and_delta_encode_array(p.0),
-            );
+            pbf.write_packed_varint(OColumnName::Points.into(), &weave_and_delta_encode_array(p.0));
         }
         // points 3D
         for p_3d in points_3d {

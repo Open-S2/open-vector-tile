@@ -46,10 +46,7 @@ mod tests {
         );
         let feature2 = BaseVectorPointsFeature::new(
             Some(1),
-            vec![
-                Point::new_with_m(0, 0, example_value.clone()),
-                Point::new(1, 1),
-            ],
+            vec![Point::new_with_m(0, 0, example_value.clone()), Point::new(1, 1)],
             example_value2.clone(),
             None,
         );
@@ -201,10 +198,7 @@ mod tests {
             assert_eq!(points, vec![Point::new(0, 0)]);
             // load_geometry
             let geometry = m_feature.load_geometry();
-            assert_eq!(
-                geometry,
-                VectorGeometry::VectorPoints(vec![Point::new(0, 0)])
-            );
+            assert_eq!(geometry, VectorGeometry::VectorPoints(vec![Point::new(0, 0)]));
             // load indices
             assert_eq!(m_feature.read_indices(), Vec::<u32>::new());
 
@@ -307,10 +301,7 @@ mod tests {
             // load lines
             let lines = m_feature.load_lines();
             assert_eq!(lines.len(), 1);
-            assert_eq!(
-                lines,
-                vec![VectorLineWithOffset::new(0.0, vec![Point::new(0, 0)])],
-            );
+            assert_eq!(lines, vec![VectorLineWithOffset::new(0.0, vec![Point::new(0, 0)])],);
             // load indices
             assert_eq!(m_feature.read_indices(), Vec::<u32>::new());
         }
@@ -333,10 +324,7 @@ mod tests {
             // load_points
             let points = m_feature.load_points();
             assert_eq!(points.len(), 3);
-            assert_eq!(
-                points,
-                vec![Point::new(0, 0), Point::new(2, 2), Point::new(3, 3)]
-            );
+            assert_eq!(points, vec![Point::new(0, 0), Point::new(2, 2), Point::new(3, 3)]);
             // load_geometry
             let geometry = m_feature.load_geometry();
             assert_eq!(
@@ -391,12 +379,7 @@ mod tests {
             assert_eq!(points.len(), 4);
             assert_eq!(
                 points,
-                vec![
-                    Point::new(0, 0),
-                    Point::new(1, 1),
-                    Point::new(2, 2),
-                    Point::new(3, 3),
-                ]
+                vec![Point::new(0, 0), Point::new(1, 1), Point::new(2, 2), Point::new(3, 3),]
             );
             // load_geometry
             let geometry = m_feature.load_geometry();

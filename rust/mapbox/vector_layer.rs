@@ -94,10 +94,10 @@ impl VectorLayerMethods for MapboxVectorLayer {
             e.insert(feature);
 
             // Now safely retrieve the inserted feature
-            return Some(self.features.get_mut(&i).unwrap() as &mut dyn VectorFeatureMethods);
+            Some(self.features.get_mut(&i).unwrap() as &mut dyn VectorFeatureMethods)
         } else {
             // Safe to unwrap since we just checked the key exists
-            return Some(self.features.get_mut(&i).unwrap() as &mut dyn VectorFeatureMethods);
+            Some(self.features.get_mut(&i).unwrap() as &mut dyn VectorFeatureMethods)
         }
     }
 }

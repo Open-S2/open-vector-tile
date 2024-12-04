@@ -177,10 +177,7 @@ impl ShapePrimitiveType {
             ShapeDefinition::Object => {
                 let mut nested = BTreeMap::new();
                 for _ in 0..shape_pair.count_or_col {
-                    nested.insert(
-                        cache.get_string(store.remove(0)),
-                        PrimitiveShape::decode(store),
-                    );
+                    nested.insert(cache.get_string(store.remove(0)), PrimitiveShape::decode(store));
                 }
                 Self::NestedPrimitive(nested)
             }
@@ -382,10 +379,7 @@ impl ShapePair {
 
     /// decode a shape pair
     pub fn decode(num: usize) -> ShapePair {
-        ShapePair {
-            p_type: (num & 0b11).into(),
-            count_or_col: num >> 2,
-        }
+        ShapePair { p_type: (num & 0b11).into(), count_or_col: num >> 2 }
     }
 }
 impl From<usize> for ShapePair {
@@ -703,11 +697,7 @@ impl Value {
         cache: &mut ColumnCacheWriter,
     ) {
         for (key, shape_type) in &shape.0 {
-            let val = self
-                .0
-                .get(key)
-                .unwrap_or(&ValueType::default_from_shape(shape_type))
-                .clone();
+            let val = self.0.get(key).unwrap_or(&ValueType::default_from_shape(shape_type)).clone();
             val.encode(shape_type, store, cache);
         }
     }

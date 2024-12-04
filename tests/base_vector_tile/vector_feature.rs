@@ -34,19 +34,11 @@ mod tests {
             id: Some(1),
             geometry: vec![Point::new(0, 0)],
             properties: Properties::default(),
-            bbox: Some(BBox {
-                left: 0.0,
-                bottom: 0.0,
-                right: 1.0,
-                top: 1.0,
-            }),
+            bbox: Some(BBox { left: 0.0, bottom: 0.0, right: 1.0, top: 1.0 }),
         };
         let feature2 = BaseVectorPointsFeature::new(
             None,
-            vec![
-                Point::new_with_m(0, 0, example_value.clone()),
-                Point::new(1, 1),
-            ],
+            vec![Point::new_with_m(0, 0, example_value.clone()), Point::new(1, 1)],
             example_value.clone(),
             None,
         );
@@ -72,10 +64,7 @@ mod tests {
         assert!(feature2.has_m_values());
 
         // load_geometry
-        assert_eq!(
-            feature.load_geometry(),
-            VectorGeometry::VectorPoints(vec![Point::new(0, 0)])
-        );
+        assert_eq!(feature.load_geometry(), VectorGeometry::VectorPoints(vec![Point::new(0, 0)]));
         assert_eq!(
             feature2.load_geometry(),
             VectorGeometry::VectorPoints(vec![
@@ -86,10 +75,7 @@ mod tests {
 
         // m_values
         assert!(feature.m_values().is_none());
-        assert_eq!(
-            feature2.m_values(),
-            Some(vec![example_value.clone(), Value(BTreeMap::new())])
-        );
+        assert_eq!(feature2.m_values(), Some(vec![example_value.clone(), Value(BTreeMap::new())]));
 
         let mut col = ColumnCacheWriter::default();
         feature.encode_to_cache(&mut col, None);
@@ -137,12 +123,7 @@ mod tests {
         // bbox
         assert_eq!(
             feature_base.bbox(),
-            Some(BBOX::BBox(BBox {
-                left: 0.0,
-                bottom: 0.0,
-                right: 1.0,
-                top: 1.0
-            }))
+            Some(BBOX::BBox(BBox { left: 0.0, bottom: 0.0, right: 1.0, top: 1.0 }))
         );
         assert_eq!(feature_base_2.bbox(), None);
 
@@ -152,10 +133,7 @@ mod tests {
 
         // encode_to_cache
         assert_eq!(feature_base.encode_to_cache(&mut col, None), 0);
-        assert_eq!(
-            feature_base_2.encode_to_cache(&mut col, Some(&example_shape)),
-            1
-        );
+        assert_eq!(feature_base_2.encode_to_cache(&mut col, Some(&example_shape)), 1);
     }
 
     #[test]
@@ -188,10 +166,7 @@ mod tests {
         };
         let feature2 = BaseVectorPoints3DFeature::new(
             None,
-            vec![
-                Point3D::new_with_m(0, 0, 0, example_value.clone()),
-                Point3D::new(1, 1, 1),
-            ],
+            vec![Point3D::new_with_m(0, 0, 0, example_value.clone()), Point3D::new(1, 1, 1)],
             example_value.clone(),
             None,
         );
@@ -231,10 +206,7 @@ mod tests {
 
         // m_values
         assert!(feature.m_values().is_none());
-        assert_eq!(
-            feature2.m_values(),
-            Some(vec![example_value.clone(), Value(BTreeMap::new())])
-        );
+        assert_eq!(feature2.m_values(), Some(vec![example_value.clone(), Value(BTreeMap::new())]));
 
         let mut col = ColumnCacheWriter::default();
         feature.encode_to_cache(&mut col, None);
@@ -299,10 +271,7 @@ mod tests {
 
         // encode_to_cache
         assert_eq!(feature_base.encode_to_cache(&mut col, None), 0);
-        assert_eq!(
-            feature_base_2.encode_to_cache(&mut col, Some(&example_shape)),
-            1
-        );
+        assert_eq!(feature_base_2.encode_to_cache(&mut col, Some(&example_shape)), 1);
     }
 
     #[test]
@@ -328,29 +297,18 @@ mod tests {
                 vec![Point::new(0, 0), Point::new(1, 1)],
             )],
             properties: Properties::default(),
-            bbox: Some(BBox {
-                left: 0.0,
-                bottom: 0.0,
-                right: 1.0,
-                top: 1.0,
-            }),
+            bbox: Some(BBox { left: 0.0, bottom: 0.0, right: 1.0, top: 1.0 }),
         };
         let feature2 = BaseVectorLinesFeature::new(
             None,
             vec![
                 VectorLineWithOffset::new(
                     0.0,
-                    vec![
-                        Point::new_with_m(0, 0, example_value.clone()),
-                        Point::new(1, 1),
-                    ],
+                    vec![Point::new_with_m(0, 0, example_value.clone()), Point::new(1, 1)],
                 ),
                 VectorLineWithOffset::new(
                     1.0,
-                    vec![
-                        Point::new(2, 2),
-                        Point::new_with_m(3, 3, example_value.clone()),
-                    ],
+                    vec![Point::new(2, 2), Point::new_with_m(3, 3, example_value.clone())],
                 ),
             ],
             example_value.clone(),
@@ -390,17 +348,11 @@ mod tests {
             VectorGeometry::VectorLines(vec![
                 VectorLineWithOffset::new(
                     0.0,
-                    vec![
-                        Point::new_with_m(0, 0, example_value.clone()),
-                        Point::new(1, 1)
-                    ]
+                    vec![Point::new_with_m(0, 0, example_value.clone()), Point::new(1, 1)]
                 ),
                 VectorLineWithOffset::new(
                     1.0,
-                    vec![
-                        Point::new(2, 2),
-                        Point::new_with_m(3, 3, example_value.clone())
-                    ]
+                    vec![Point::new(2, 2), Point::new_with_m(3, 3, example_value.clone())]
                 ),
             ])
         );
@@ -468,12 +420,7 @@ mod tests {
         // bbox
         assert_eq!(
             feature_base.bbox(),
-            Some(BBOX::BBox(BBox {
-                left: 0.0,
-                bottom: 0.0,
-                right: 1.0,
-                top: 1.0
-            }))
+            Some(BBOX::BBox(BBox { left: 0.0, bottom: 0.0, right: 1.0, top: 1.0 }))
         );
         assert_eq!(feature_base_2.bbox(), None);
 
@@ -483,10 +430,7 @@ mod tests {
 
         // encode_to_cache
         assert_eq!(feature_base.encode_to_cache(&mut col, None), 0);
-        assert_eq!(
-            feature_base_2.encode_to_cache(&mut col, Some(&example_shape)),
-            2
-        );
+        assert_eq!(feature_base_2.encode_to_cache(&mut col, Some(&example_shape)), 2);
     }
 
     #[test]
@@ -670,10 +614,7 @@ mod tests {
 
         // encode_to_cache
         assert_eq!(feature_base.encode_to_cache(&mut col, None), 0);
-        assert_eq!(
-            feature_base_2.encode_to_cache(&mut col, Some(&example_shape)),
-            2
-        );
+        assert_eq!(feature_base_2.encode_to_cache(&mut col, Some(&example_shape)), 2);
     }
 
     #[test]
@@ -698,12 +639,7 @@ mod tests {
                 VectorLineWithOffset::new(0.0, vec![Point::new(2, 2), Point::new(3, 3)]),
             ]],
             properties: Properties::default(),
-            bbox: Some(BBox {
-                left: 0.0,
-                bottom: 0.0,
-                right: 1.0,
-                top: 1.0,
-            }),
+            bbox: Some(BBox { left: 0.0, bottom: 0.0, right: 1.0, top: 1.0 }),
             tesselation: vec![
                 Point::new(0, 0),
                 Point::new(1, 1),
@@ -719,17 +655,11 @@ mod tests {
                 vec![
                     VectorLineWithOffset::new(
                         0.0,
-                        vec![
-                            Point::new_with_m(0, 0, example_value.clone()),
-                            Point::new(1, 1),
-                        ],
+                        vec![Point::new_with_m(0, 0, example_value.clone()), Point::new(1, 1)],
                     ),
                     VectorLineWithOffset::new(
                         1.0,
-                        vec![
-                            Point::new(2, 2),
-                            Point::new_with_m(3, 3, example_value.clone()),
-                        ],
+                        vec![Point::new(2, 2), Point::new_with_m(3, 3, example_value.clone())],
                     ),
                 ],
                 vec![
@@ -777,17 +707,11 @@ mod tests {
                 vec![
                     VectorLineWithOffset::new(
                         0.0,
-                        vec![
-                            Point::new_with_m(0, 0, example_value.clone()),
-                            Point::new(1, 1)
-                        ]
+                        vec![Point::new_with_m(0, 0, example_value.clone()), Point::new(1, 1)]
                     ),
                     VectorLineWithOffset::new(
                         1.0,
-                        vec![
-                            Point::new(2, 2),
-                            Point::new_with_m(3, 3, example_value.clone())
-                        ]
+                        vec![Point::new(2, 2), Point::new_with_m(3, 3, example_value.clone())]
                     ),
                 ],
                 vec![
@@ -875,12 +799,7 @@ mod tests {
         // bbox
         assert_eq!(
             feature_base.bbox(),
-            Some(BBOX::BBox(BBox {
-                left: 0.0,
-                bottom: 0.0,
-                right: 1.0,
-                top: 1.0
-            }))
+            Some(BBOX::BBox(BBox { left: 0.0, bottom: 0.0, right: 1.0, top: 1.0 }))
         );
         assert_eq!(feature_base_2.bbox(), None);
 
@@ -890,10 +809,7 @@ mod tests {
 
         // encode_to_cache
         assert_eq!(feature_base.encode_to_cache(&mut col, None), 0);
-        assert_eq!(
-            feature_base_2.encode_to_cache(&mut col, Some(&example_shape)),
-            2
-        );
+        assert_eq!(feature_base_2.encode_to_cache(&mut col, Some(&example_shape)), 2);
     }
 
     #[test]
@@ -1138,10 +1054,7 @@ mod tests {
 
         // encode_to_cache
         assert_eq!(feature_base.encode_to_cache(&mut col, None), 0);
-        assert_eq!(
-            feature_base_2.encode_to_cache(&mut col, Some(&example_shape)),
-            2
-        );
+        assert_eq!(feature_base_2.encode_to_cache(&mut col, Some(&example_shape)), 2);
     }
 
     #[test]

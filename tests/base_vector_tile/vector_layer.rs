@@ -39,19 +39,13 @@ mod tests {
 
         let feature = BaseVectorPointsFeature::new(
             None,
-            vec![
-                Point::new_with_m(0, 0, example_value.clone()),
-                Point::new(1, 1),
-            ],
+            vec![Point::new_with_m(0, 0, example_value.clone()), Point::new(1, 1)],
             example_value.clone(),
             None,
         );
         let feature2 = BaseVectorPointsFeature::new(
             None,
-            vec![
-                Point::new_with_m(0, 0, example_value2.clone()),
-                Point::new(1, 1),
-            ],
+            vec![Point::new_with_m(0, 0, example_value2.clone()), Point::new(1, 1)],
             example_value.clone(),
             None,
         );

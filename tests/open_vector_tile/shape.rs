@@ -52,10 +52,7 @@ mod tests {
                             "g".to_string(),
                             ShapeType::Nested(Shape(BTreeMap::from([
                                 ("h".to_string(), ShapeType::Primitive(PrimitiveShape::I64)),
-                                (
-                                    "i".to_string(),
-                                    ShapeType::Primitive(PrimitiveShape::String)
-                                ),
+                                ("i".to_string(), ShapeType::Primitive(PrimitiveShape::String)),
                             ])))
                         )
                     ])))
@@ -143,22 +140,10 @@ mod tests {
         assert_eq!(encode, 13);
 
         let decode = ShapePair::decode(encode);
-        assert_eq!(
-            decode,
-            ShapePair {
-                p_type: ShapeDefinition::Object,
-                count_or_col: 3
-            }
-        );
+        assert_eq!(decode, ShapePair { p_type: ShapeDefinition::Object, count_or_col: 3 });
 
         let decode_from: ShapePair = 13.into();
-        assert_eq!(
-            decode_from,
-            ShapePair {
-                p_type: ShapeDefinition::Object,
-                count_or_col: 3
-            }
-        );
+        assert_eq!(decode_from, ShapePair { p_type: ShapeDefinition::Object, count_or_col: 3 });
     }
 
     #[test]
@@ -245,18 +230,9 @@ mod tests {
         assert_eq!(
             decoded_value,
             Value(BTreeMap::from([
-                (
-                    "a".to_string(),
-                    ValueType::Primitive(PrimitiveValue::I64(3))
-                ),
-                (
-                    "b".to_string(),
-                    ValueType::Primitive(PrimitiveValue::U64(1))
-                ),
-                (
-                    "c".to_string(),
-                    ValueType::Primitive(PrimitiveValue::F64(2.200000047683716))
-                ),
+                ("a".to_string(), ValueType::Primitive(PrimitiveValue::I64(3))),
+                ("b".to_string(), ValueType::Primitive(PrimitiveValue::U64(1))),
+                ("c".to_string(), ValueType::Primitive(PrimitiveValue::F64(2.200000047683716))),
             ]))
         );
     }
@@ -322,10 +298,7 @@ mod tests {
         assert_eq!(
             decoded_value,
             Value(BTreeMap::from([
-                (
-                    "a".to_string(),
-                    ValueType::Primitive(PrimitiveValue::I64(3))
-                ),
+                ("a".to_string(), ValueType::Primitive(PrimitiveValue::I64(3))),
                 (
                     "b".to_string(),
                     ValueType::Array(vec![
@@ -340,15 +313,9 @@ mod tests {
                             "d".to_string(),
                             ValueType::Primitive(PrimitiveValue::F64(2.200000047683716))
                         ),
-                        (
-                            "e".to_string(),
-                            ValueType::Primitive(PrimitiveValue::Bool(true))
-                        ),
+                        ("e".to_string(), ValueType::Primitive(PrimitiveValue::Bool(true))),
                         ("f".to_string(), ValueType::Primitive(PrimitiveValue::Null)),
-                        (
-                            "g".to_string(),
-                            ValueType::Primitive(PrimitiveValue::F32(4.5))
-                        ),
+                        ("g".to_string(), ValueType::Primitive(PrimitiveValue::F32(4.5))),
                         (
                             "h".to_string(),
                             ValueType::Nested(Value(BTreeMap::from([(
@@ -365,10 +332,7 @@ mod tests {
         assert_eq!(
             decoded_value_2,
             Value(BTreeMap::from([
-                (
-                    "a".to_string(),
-                    ValueType::Primitive(PrimitiveValue::I64(-1))
-                ),
+                ("a".to_string(), ValueType::Primitive(PrimitiveValue::I64(-1))),
                 (
                     "b".to_string(),
                     ValueType::Array(vec![
@@ -380,19 +344,10 @@ mod tests {
                 (
                     "c".to_string(),
                     ValueType::Nested(Value(BTreeMap::from([
-                        (
-                            "d".to_string(),
-                            ValueType::Primitive(PrimitiveValue::F64(0.0))
-                        ),
-                        (
-                            "e".to_string(),
-                            ValueType::Primitive(PrimitiveValue::Bool(false))
-                        ),
+                        ("d".to_string(), ValueType::Primitive(PrimitiveValue::F64(0.0))),
+                        ("e".to_string(), ValueType::Primitive(PrimitiveValue::Bool(false))),
                         ("f".to_string(), ValueType::Primitive(PrimitiveValue::Null)),
-                        (
-                            "g".to_string(),
-                            ValueType::Primitive(PrimitiveValue::F32(0.0))
-                        ),
+                        ("g".to_string(), ValueType::Primitive(PrimitiveValue::F32(0.0))),
                         (
                             "h".to_string(),
                             ValueType::Nested(Value(BTreeMap::from([(

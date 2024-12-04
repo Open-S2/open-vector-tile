@@ -63,9 +63,7 @@ impl VectorLayerMethods for OpenVectorLayer {
         self.features.is_empty()
     }
     fn feature(&mut self, i: usize) -> Option<&mut dyn crate::VectorFeatureMethods> {
-        self.features
-            .get_mut(i)
-            .map(|f| f as &mut dyn crate::VectorFeatureMethods)
+        self.features.get_mut(i).map(|f| f as &mut dyn crate::VectorFeatureMethods)
     }
 }
 impl ProtoRead for OpenVectorLayer {

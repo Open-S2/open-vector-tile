@@ -19,12 +19,7 @@ pub struct BBox<T = f64> {
 impl<T> BBox<T> {
     /// Create a new BBox
     pub fn new(left: T, bottom: T, right: T, top: T) -> Self {
-        Self {
-            left,
-            bottom,
-            right,
-            top,
-        }
+        Self { left, bottom, right, top }
     }
 }
 
@@ -50,14 +45,7 @@ pub struct BBox3D<T = f64> {
 impl<T> BBox3D<T> {
     /// Create a new BBox3D
     pub fn new(left: T, bottom: T, right: T, top: T, near: T, far: T) -> Self {
-        Self {
-            left,
-            bottom,
-            right,
-            top,
-            near,
-            far,
-        }
+        Self { left, bottom, right, top, near, far }
     }
 }
 
@@ -143,12 +131,7 @@ impl Point3D {
 
     /// Create a new point with an MValue
     pub fn new_with_m(x: i32, y: i32, z: i32, m: MValue) -> Point3D {
-        Point3D {
-            x,
-            y,
-            z,
-            m: Some(m),
-        }
+        Point3D { x, y, z, m: Some(m) }
     }
 }
 impl PartialOrd for Point3D {
@@ -161,10 +144,7 @@ impl Eq for Point3D {}
 impl Ord for Point3D {
     fn cmp(&self, other: &Self) -> Ordering {
         // only compare x and y
-        self.x
-            .cmp(&other.x)
-            .then(self.y.cmp(&other.y))
-            .then(self.z.cmp(&other.z))
+        self.x.cmp(&other.x).then(self.y.cmp(&other.y)).then(self.z.cmp(&other.z))
     }
 }
 
@@ -178,10 +158,7 @@ pub struct VectorLineWithOffset {
 }
 impl From<&[Point]> for VectorLineWithOffset {
     fn from(p: &[Point]) -> Self {
-        Self {
-            offset: 0.0,
-            geometry: p.to_vec(),
-        }
+        Self { offset: 0.0, geometry: p.to_vec() }
     }
 }
 impl VectorLineWithOffset {
@@ -205,12 +182,7 @@ impl VectorLineWithOffset {
         if !self.has_m_values() {
             return None;
         }
-        Some(
-            self.geometry
-                .iter()
-                .map(|p| p.m.clone().unwrap_or_default())
-                .collect(),
-        )
+        Some(self.geometry.iter().map(|p| p.m.clone().unwrap_or_default()).collect())
     }
 }
 /// Built array line data with associated offset to help render dashed lines across tiles.
@@ -245,12 +217,7 @@ impl VectorLine3DWithOffset {
         if !self.has_m_values() {
             return None;
         }
-        Some(
-            self.geometry
-                .iter()
-                .map(|p| p.m.clone().unwrap_or_default())
-                .collect(),
-        )
+        Some(self.geometry.iter().map(|p| p.m.clone().unwrap_or_default()).collect())
     }
 }
 /// Built array line data with associated offset to help render dashed lines across tiles.

@@ -181,8 +181,7 @@ impl VectorTile {
             tmp_pbf.set_pos(pos);
             let mut layer = OpenVectorLayer::new(cache.clone());
             tmp_pbf.read_message(&mut layer);
-            self.layers
-                .insert(layer.name.clone(), VectorLayer::Open(layer));
+            self.layers.insert(layer.name.clone(), VectorLayer::Open(layer));
         }
 
         Some(())
@@ -199,8 +198,7 @@ impl ProtoRead for VectorTile {
             1 | 3 => {
                 let mut layer = MapboxVectorLayer::new(self.pbf.clone(), tag == 1);
                 pb.read_message(&mut layer);
-                self.layers
-                    .insert(layer.name.clone(), VectorLayer::Mapbox(layer));
+                self.layers.insert(layer.name.clone(), VectorLayer::Mapbox(layer));
             }
             4 => {
                 // store the position of each layer for later retrieval.

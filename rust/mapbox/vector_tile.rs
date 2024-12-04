@@ -24,10 +24,7 @@ impl MapboxVectorTile {
     /// Create a new vector tile
     pub fn new(data: Vec<u8>, end: Option<usize>) -> Self {
         let pbf = Rc::new(RefCell::new(data.into()));
-        let mut vt = MapboxVectorTile {
-            pbf: pbf.clone(),
-            layers: BTreeMap::new(),
-        };
+        let mut vt = MapboxVectorTile { pbf: pbf.clone(), layers: BTreeMap::new() };
 
         let mut tmp_pbf = pbf.borrow_mut();
         tmp_pbf.read_fields(&mut vt, end);

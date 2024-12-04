@@ -81,10 +81,7 @@ pub struct Command {
 
 /// Decode a command with the given length of the data that follows.
 pub fn command_decode(cmd: u64) -> Command {
-    Command {
-        cmd: (cmd & 0x7) as u8,
-        len: (cmd >> 3) as u32,
-    }
+    Command { cmd: (cmd & 0x7) as u8, len: (cmd >> 3) as u32 }
 }
 
 /// Applies zigzag encoding to transform a signed integer into an unsigned integer.

@@ -35,11 +35,8 @@ impl ProtoWrite for ElevationData {
     fn write(&self, pb: &mut Protobuf) {
         let max = self.data.iter().fold(0.0, |a, b| f64::max(a, *b));
         let min = self.data.iter().fold(0.0, |a, b| f64::min(a, *b));
-        let re_mapped: Vec<u32> = self
-            .data
-            .iter()
-            .map(|v| remap_value(*v, min, max, self.extent.into()))
-            .collect();
+        let re_mapped: Vec<u32> =
+            self.data.iter().map(|v| remap_value(*v, min, max, self.extent.into())).collect();
         let d_coded = delta_encode_array(&re_mapped);
 
         pb.write_varint_field(0, self.extent);

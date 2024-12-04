@@ -172,13 +172,13 @@ export type VectorFeature =
 #### Feature Properties
 
 ```ts
-type Extents = 512 | 1024 | 2048 | 4096 | 8192
+type Extents = 512 | 1_024 | 2_048 | 4_096 | 8_192 | 16_384
 interface Feature {
     // properties of the feature
     properties: any;
     // id of the feature
     id: number;
-    // extent of the vector tile. MUST be one of `512`, `1024`, `2048`, `4096`, `8192`
+    // extent of the vector tile. MUST be one of `512`, `1_024`, `2_048`, `4_096`, `8_192`, or `16_384`
     extent: Extents;
 }
 ```
@@ -312,6 +312,8 @@ To generate the coverage report, use the following command:
 
 ```bash
 cargo tarpaulin
+# faster
+cargo tarpaulin --color always --skip-clean
 # bacon
 bacon coverage # or type `l` inside the tool
 ```

@@ -163,11 +163,7 @@ impl OpenVectorFeature {
                 let length = geometry.len();
                 geometry.iter_mut().take(length).for_each(|p| {
                     let value_index = self.geometry_indices[index_pos];
-                    p.m = Some(decode_value(
-                        value_index as usize,
-                        &self.m_shape,
-                        &mut cache,
-                    ));
+                    p.m = Some(decode_value(value_index as usize, &self.m_shape, &mut cache));
                     index_pos += 1;
                 });
             }
@@ -192,11 +188,7 @@ impl OpenVectorFeature {
                 let length = geometry.len();
                 geometry.iter_mut().take(length).for_each(|p| {
                     let value_index = self.geometry_indices[index_pos];
-                    p.m = Some(decode_value(
-                        value_index as usize,
-                        &self.m_shape,
-                        &mut cache,
-                    ));
+                    p.m = Some(decode_value(value_index as usize, &self.m_shape, &mut cache));
                     index_pos += 1;
                 });
             }
@@ -231,11 +223,7 @@ impl OpenVectorFeature {
                 let length = geometry.len();
                 geometry.iter_mut().take(length).for_each(|p| {
                     let value_index = self.geometry_indices[index_pos];
-                    p.m = Some(decode_value(
-                        value_index as usize,
-                        &self.m_shape,
-                        &mut cache,
-                    ));
+                    p.m = Some(decode_value(value_index as usize, &self.m_shape, &mut cache));
                     index_pos += 1;
                 });
             }
@@ -271,11 +259,7 @@ impl OpenVectorFeature {
                 let length = geometry.len();
                 geometry.iter_mut().take(length).for_each(|p| {
                     let value_index = self.geometry_indices[index_pos];
-                    p.m = Some(decode_value(
-                        value_index as usize,
-                        &self.m_shape,
-                        &mut cache,
-                    ));
+                    p.m = Some(decode_value(value_index as usize, &self.m_shape, &mut cache));
                     index_pos += 1;
                 });
             }
@@ -315,11 +299,7 @@ impl OpenVectorFeature {
                     let length = geometry.len();
                     geometry.iter_mut().take(length).for_each(|p| {
                         let value_index = self.geometry_indices[index_pos];
-                        p.m = Some(decode_value(
-                            value_index as usize,
-                            &self.m_shape,
-                            &mut cache,
-                        ));
+                        p.m = Some(decode_value(value_index as usize, &self.m_shape, &mut cache));
                         index_pos += 1;
                     });
                 }
@@ -361,11 +341,7 @@ impl OpenVectorFeature {
                     let length = geometry.len();
                     geometry.iter_mut().take(length).for_each(|p| {
                         let value_index = self.geometry_indices[index_pos];
-                        p.m = Some(decode_value(
-                            value_index as usize,
-                            &self.m_shape,
-                            &mut cache,
-                        ));
+                        p.m = Some(decode_value(value_index as usize, &self.m_shape, &mut cache));
                         index_pos += 1;
                     });
                 }
@@ -456,10 +432,7 @@ impl VectorFeatureMethods for OpenVectorFeature {
             }
             VectorGeometry::VectorPolys(polys) => polys
                 .iter()
-                .flat_map(|p| {
-                    p.iter()
-                        .flat_map(|p| p.geometry[..p.geometry.len() - 1].to_vec())
-                })
+                .flat_map(|p| p.iter().flat_map(|p| p.geometry[..p.geometry.len() - 1].to_vec()))
                 .collect(),
             _ => {
                 panic!("unexpected geometry type")
@@ -476,10 +449,7 @@ impl VectorFeatureMethods for OpenVectorFeature {
             }
             VectorGeometry::VectorPolys3D(polys) => polys
                 .iter()
-                .flat_map(|p| {
-                    p.iter()
-                        .flat_map(|p| p.geometry[..p.geometry.len() - 1].to_vec())
-                })
+                .flat_map(|p| p.iter().flat_map(|p| p.geometry[..p.geometry.len() - 1].to_vec()))
                 .collect(),
             _ => {
                 panic!("unexpected geometry type")
@@ -626,11 +596,7 @@ pub fn read_feature(
     // next the flags
     let flags: u8 = pbf.read_varint();
     // read the id if it exists
-    let id: Option<u64> = if flags & 1 > 0 {
-        Some(pbf.read_varint())
-    } else {
-        None
-    };
+    let id: Option<u64> = if flags & 1 > 0 { Some(pbf.read_varint()) } else { None };
     let has_bbox = flags & (1 << 1) > 0;
     let has_offsets = (flags & (1 << 2)) > 0;
     let has_indices = flags & (1 << 3) > 0;
@@ -662,11 +628,7 @@ pub fn read_feature(
             tesselation_index = Some(pbf.read_varint());
         }
     }
-    let bbox_index = if has_bbox {
-        Some(pbf.read_varint())
-    } else {
-        None
-    };
+    let bbox_index = if has_bbox { Some(pbf.read_varint()) } else { None };
 
     OpenVectorFeature {
         id,

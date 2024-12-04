@@ -22,9 +22,7 @@ impl BaseVectorTile {
 impl From<&mut VectorTile> for BaseVectorTile {
     /// Convert from Mapbox vector tile
     fn from(vector_tile: &mut VectorTile) -> Self {
-        let mut tile = BaseVectorTile {
-            layers: BTreeMap::new(),
-        };
+        let mut tile = BaseVectorTile { layers: BTreeMap::new() };
         for (name, layer) in vector_tile.layers.iter_mut() {
             if let VectorLayer::Mapbox(layer) = layer {
                 tile.layers.insert(name.clone(), layer.into());
@@ -36,9 +34,7 @@ impl From<&mut VectorTile> for BaseVectorTile {
 impl From<&mut MapboxVectorTile> for BaseVectorTile {
     /// Convert from Mapbox vector layer
     fn from(vector_tile: &mut MapboxVectorTile) -> Self {
-        let mut tile = BaseVectorTile {
-            layers: BTreeMap::new(),
-        };
+        let mut tile = BaseVectorTile { layers: BTreeMap::new() };
         for (name, layer) in vector_tile.layers.iter_mut() {
             tile.layers.insert(name.clone(), layer.into());
         }

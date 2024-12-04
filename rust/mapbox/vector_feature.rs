@@ -145,10 +145,7 @@ impl VectorFeatureMethods for MapboxVectorFeature {
             }
             VectorGeometry::VectorPolys(polys) => polys
                 .iter()
-                .flat_map(|p| {
-                    p.iter()
-                        .flat_map(|p| p.geometry[..p.geometry.len() - 1].to_vec())
-                })
+                .flat_map(|p| p.iter().flat_map(|p| p.geometry[..p.geometry.len() - 1].to_vec()))
                 .collect(),
             _ => {
                 panic!("unexpected geometry type")
