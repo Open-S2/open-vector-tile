@@ -184,6 +184,7 @@ impl ProtoRead for ColumnCacheReader {
             7 => self.indices.push(delta_decode_array(&pb.read_packed::<u32>())),
             8 => self.shapes.push(pb.read_packed::<usize>()),
             9 => self.bbox.push((&pb.read_packed::<u8>()[..]).into()),
+            #[tarpaulin::skip]
             _ => panic!("Unknown column type"),
         }
     }

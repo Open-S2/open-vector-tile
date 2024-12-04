@@ -6,13 +6,24 @@ use libm::round;
 use pbf::{ProtoRead, ProtoWrite, Protobuf};
 
 /// Elevation object to read from
-#[derive(Default, Debug)]
+#[derive(Default, Debug, PartialEq)]
 pub struct ElevationData {
-    data: Vec<f64>,
-    extent: Extent,
-    size: f64,
-    min: f64,
-    max: f64,
+    /// The elevation data
+    pub data: Vec<f64>,
+    /// The extent for remapping the data with a value between 0 and extent
+    pub extent: Extent,
+    /// The size of the tile (width and height)
+    pub size: f64,
+    /// The minimum elevation value
+    pub min: f64,
+    /// The maximum elevation value
+    pub max: f64,
+}
+impl ElevationData {
+    /// create a new ElevationData object
+    pub fn new(extent: Extent, size: f64, min: f64, max: f64, data: Vec<f64>) -> Self {
+        ElevationData { data, extent, size, min, max }
+    }
 }
 impl ProtoRead for ElevationData {
     fn read(&mut self, tag: u64, pb: &mut Protobuf) {
@@ -27,14 +38,15 @@ impl ProtoRead for ElevationData {
                     .map(|v| unmap_value(v as f64, self.min, self.max, self.extent.into()))
                     .collect()
             }
+            #[tarpaulin::skip]
             _ => panic!("unknown tag: {}", tag),
         }
     }
 }
 impl ProtoWrite for ElevationData {
     fn write(&self, pb: &mut Protobuf) {
-        let max = self.data.iter().fold(0.0, |a, b| f64::max(a, *b));
-        let min = self.data.iter().fold(0.0, |a, b| f64::min(a, *b));
+        let max = self.data.iter().fold(f64::MIN, |a, b| f64::max(a, *b));
+        let min = self.data.iter().fold(f64::MAX, |a, b| f64::min(a, *b));
         let re_mapped: Vec<u32> =
             self.data.iter().map(|v| remap_value(*v, min, max, self.extent.into())).collect();
         let d_coded = delta_encode_array(&re_mapped);

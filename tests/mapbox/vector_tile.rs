@@ -192,6 +192,18 @@ mod tests {
             assert_eq!(m_feature.bbox(), None);
             // has_m_values
             assert!(!m_feature.has_m_values());
+            // is points
+            assert!(m_feature.is_points());
+            // is lines
+            assert!(!m_feature.is_lines());
+            // is polys
+            assert!(!m_feature.is_polygons());
+            // is points3d
+            assert!(!m_feature.is_points_3d());
+            // is lines3d
+            assert!(!m_feature.is_lines_3d());
+            // is polys3d
+            assert!(!m_feature.is_polygons_3d());
             // load_points
             let points = m_feature.load_points();
             assert_eq!(points.len(), 1);
@@ -245,6 +257,18 @@ mod tests {
             assert_eq!(m_feature.bbox(), None);
             // has_m_values
             assert!(!m_feature.has_m_values());
+            // is points
+            assert!(m_feature.is_points());
+            // is lines
+            assert!(!m_feature.is_lines());
+            // is polys
+            assert!(!m_feature.is_polygons());
+            // is points3d
+            assert!(!m_feature.is_points_3d());
+            // is lines3d
+            assert!(!m_feature.is_lines_3d());
+            // is polys3d
+            assert!(!m_feature.is_polygons_3d());
             // load_points
             let points = m_feature.load_points();
             assert_eq!(points.len(), 2);
@@ -285,6 +309,18 @@ mod tests {
             assert_eq!(m_feature.bbox(), None);
             // has_m_values
             assert!(!m_feature.has_m_values());
+            // is points
+            assert!(!m_feature.is_points());
+            // is lines
+            assert!(m_feature.is_lines());
+            // is polys
+            assert!(!m_feature.is_polygons());
+            // is points3d
+            assert!(!m_feature.is_points_3d());
+            // is lines3d
+            assert!(!m_feature.is_lines_3d());
+            // is polys3d
+            assert!(!m_feature.is_polygons_3d());
             // load_points
             let points = m_feature.load_points();
             assert_eq!(points.len(), 1);
@@ -321,6 +357,18 @@ mod tests {
             assert_eq!(m_feature.bbox(), None);
             // has_m_values
             assert!(!m_feature.has_m_values());
+            // is points
+            assert!(!m_feature.is_points());
+            // is lines
+            assert!(m_feature.is_lines());
+            // is polys
+            assert!(!m_feature.is_polygons());
+            // is points3d
+            assert!(!m_feature.is_points_3d());
+            // is lines3d
+            assert!(!m_feature.is_lines_3d());
+            // is polys3d
+            assert!(!m_feature.is_polygons_3d());
             // load_points
             let points = m_feature.load_points();
             assert_eq!(points.len(), 3);
@@ -374,6 +422,18 @@ mod tests {
             assert_eq!(m_feature.bbox(), None);
             // has_m_values
             assert!(!m_feature.has_m_values());
+            // is points
+            assert!(!m_feature.is_points());
+            // is lines
+            assert!(!m_feature.is_lines());
+            // is polys
+            assert!(m_feature.is_polygons());
+            // is points3d
+            assert!(!m_feature.is_points_3d());
+            // is lines3d
+            assert!(!m_feature.is_lines_3d());
+            // is polys3d
+            assert!(!m_feature.is_polygons_3d());
             // load_points
             let points = m_feature.load_points();
             assert_eq!(points.len(), 4);
@@ -454,6 +514,18 @@ mod tests {
             assert_eq!(m_feature.bbox(), None);
             // has_m_values
             assert!(!m_feature.has_m_values());
+            // is points
+            assert!(!m_feature.is_points());
+            // is lines
+            assert!(!m_feature.is_lines());
+            // is polys
+            assert!(m_feature.is_polygons());
+            // is points3d
+            assert!(!m_feature.is_points_3d());
+            // is lines3d
+            assert!(!m_feature.is_lines_3d());
+            // is polys3d
+            assert!(!m_feature.is_polygons_3d());
             // load_points
             let points = m_feature.load_points();
             assert_eq!(points.len(), 12);

@@ -370,7 +370,7 @@ A layer MUST contain an `extent` that describes the width and height of the tile
 
 For example, if a tile has an `extent` of 4096, coordinate units within the tile refer to 1/4096th of its square dimensions. A coordinate of 0 is on the top or left edge of the tile, and a coordinate of 4096 is on the bottom or right edge. Coordinates from 1 through 4095 inclusive are fully within the extent of the tile, and coordinates less than 0 or greater than 4096 are fully outside the extent of the tile.  A point at `(1,10)` or `(4095,10)` is within the extent of the tile. A point at `(0,10)` or `(4096,10)` is on the edge of the extent. A point at `(-1,10)` or `(4097,10)` is outside the extent of the tile.
 
-An `extent` value MUST be one of the following: `8_192`, `4_096`, `2_048`, `1_024`, or `512`.
+An `extent` value MUST be one of the following: `16_384`, `8_192`, `4_096`, `2_048`, `1_024`, or `512`.
 
 When storing the `extent` in the layer, the protobuf "field id" MUST be `3`.
 
@@ -379,15 +379,16 @@ When storing the `extent` in the layer, the protobuf "field id" MUST be `3`.
 To reduce the size of the layer's `extent` value, since each `extent` is protobuf varint encoded, we use the following encoding:
 
 ```pscript
-Extents = { 8192, 4096, 2048, 1024, 512 }
+Extents = { 16384, 8192, 4096, 2048, 1024, 512 }
 
 function encodeExtent(extent):
-    if extent is 8192: return 4
+    if extent is 16384: return 5
+    else if extent is 8192: return 4
     else if extent is 4096: return 3
     else if extent is 2048: return 2
     else if extent is 1024: return 1
     else if extent is 512: return 0
-    else: Error('invalid extent, must be 512, 1024, 2048, 4096, or 8192')
+    else: Error('invalid extent, must be 512, 1024, 2048, 4096, 8192, or 16384')
 ```
 
 #### 4.3.5. Layer Shape

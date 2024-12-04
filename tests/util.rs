@@ -2,15 +2,90 @@
 mod tests {
     extern crate alloc;
 
+    use core::cmp::Ordering;
+
     use ovtile::util::{
         command_decode, command_encode, delta_decode_array, delta_decode_sorted_array,
         delta_encode_array, delta_encode_sorted_array, dequantize_lat, dequantize_lon,
         pack24_bit_uint, pack_float, quantize_lat, quantize_lon, unpack24_bit_uint, unpack_float,
         unweave_2d, unweave_3d, unweave_and_delta_decode_3d_array, unweave_and_delta_decode_array,
         weave_2d, weave_3d, weave_and_delta_encode_3d_array, weave_and_delta_encode_array, zagzig,
-        zigzag, Command,
+        zigzag, Command, CustomOrd, CustomOrdWrapper,
     };
     use ovtile::{BBox, BBox3D, Point, Point3D, BBOX};
+
+    /// Utility function to wrap and compare values.
+    fn compare<T: CustomOrd + Copy>(a: T, b: T) -> Ordering {
+        CustomOrdWrapper(a).cmp(&CustomOrdWrapper(b))
+    }
+
+    #[test]
+    fn test_custom_ord_u64() {
+        assert_eq!(compare(10_u64, 20_u64), Ordering::Less);
+        assert_eq!(compare(20_u64, 10_u64), Ordering::Greater);
+        assert_eq!(compare(10_u64, 10_u64), Ordering::Equal);
+    }
+
+    #[test]
+    fn test_custom_ord_i64() {
+        assert_eq!(compare(-10_i64, 20_i64), Ordering::Less);
+        assert_eq!(compare(20_i64, -10_i64), Ordering::Greater);
+        assert_eq!(compare(-10_i64, -10_i64), Ordering::Equal);
+    }
+
+    #[test]
+    fn test_custom_ord_f32() {
+        assert_eq!(compare(10.5_f32, 20.5_f32), Ordering::Less);
+        assert_eq!(compare(20.5_f32, 10.5_f32), Ordering::Greater);
+        assert_eq!(compare(10.5_f32, 10.5_f32), Ordering::Equal);
+
+        // NaN handling
+        assert_eq!(compare(f32::NAN, 10.0_f32), Ordering::Equal);
+        assert_eq!(compare(10.0_f32, f32::NAN), Ordering::Equal);
+        assert_eq!(compare(f32::NAN, f32::NAN), Ordering::Equal);
+    }
+
+    #[test]
+    fn test_custom_ord_f64() {
+        assert_eq!(compare(10.5_f64, 20.5_f64), Ordering::Less);
+        assert_eq!(compare(20.5_f64, 10.5_f64), Ordering::Greater);
+        assert_eq!(compare(10.5_f64, 10.5_f64), Ordering::Equal);
+
+        // NaN handling
+        assert_eq!(compare(f64::NAN, 10.0_f64), Ordering::Equal);
+        assert_eq!(compare(10.0_f64, f64::NAN), Ordering::Equal);
+        assert_eq!(compare(f64::NAN, f64::NAN), Ordering::Equal);
+    }
+
+    #[test]
+    fn test_wrapper_partial_eq() {
+        let a = CustomOrdWrapper(10_u64);
+        let b = CustomOrdWrapper(10_u64);
+        let c = CustomOrdWrapper(20_u64);
+
+        assert_eq!(a, b);
+        assert_ne!(a, c);
+    }
+
+    #[test]
+    fn test_wrapper_partial_cmp() {
+        let a = CustomOrdWrapper(10_u64);
+        let b = CustomOrdWrapper(20_u64);
+
+        assert_eq!(a.partial_cmp(&b), Some(Ordering::Less));
+        assert_eq!(b.partial_cmp(&a), Some(Ordering::Greater));
+        assert_eq!(a.partial_cmp(&a), Some(Ordering::Equal));
+    }
+
+    #[test]
+    fn test_wrapper_ord() {
+        let a = CustomOrdWrapper(10_u64);
+        let b = CustomOrdWrapper(20_u64);
+
+        assert!(a < b);
+        assert!(b > a);
+        assert_eq!(a, CustomOrdWrapper(10_u64));
+    }
 
     #[test]
     fn test_command_encode() {

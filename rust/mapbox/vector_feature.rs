@@ -147,12 +147,12 @@ impl VectorFeatureMethods for MapboxVectorFeature {
                 .iter()
                 .flat_map(|p| p.iter().flat_map(|p| p.geometry[..p.geometry.len() - 1].to_vec()))
                 .collect(),
-            _ => {
-                panic!("unexpected geometry type")
-            }
+            #[tarpaulin::skip]
+            _ => panic!("unexpected geometry type"),
         }
     }
 
+    #[tarpaulin::skip]
     fn load_points_3d(&mut self) -> VectorPoints3D {
         panic!("unexpected geometry type")
     }
@@ -162,13 +162,13 @@ impl VectorFeatureMethods for MapboxVectorFeature {
         match self.load_geometry() {
             VectorGeometry::VectorLines(lines) => lines,
             VectorGeometry::VectorPolys(polys) => polys.iter().flat_map(|p| p.clone()).collect(),
-            _ => {
-                panic!("unexpected geometry type")
-            }
+            #[tarpaulin::skip]
+            _ => panic!("unexpected geometry type"),
         }
     }
 
     /// an array of 3D lines. The offsets will be set to 0
+    #[tarpaulin::skip]
     fn load_lines_3d(&mut self) -> VectorLines3DWithOffset {
         panic!("unexpected geometry type")
     }
@@ -190,9 +190,8 @@ impl VectorFeatureMethods for MapboxVectorFeature {
                     })
                 })
                 .collect(),
-            _ => {
-                panic!("unexpected geometry type")
-            }
+            #[tarpaulin::skip]
+            _ => panic!("unexpected geometry type"),
         };
         // if a poly, check if we should load indices
         let indices = self.read_indices();
@@ -258,6 +257,7 @@ impl VectorFeatureMethods for MapboxVectorFeature {
                     points = vec![];
                 }
             } else {
+                #[tarpaulin::skip]
                 panic!("unknown cmd: {}", cmd);
             }
         }
@@ -329,6 +329,7 @@ impl VectorFeatureMethods for MapboxVectorFeature {
     }
 
     /// Add 3D tesselation data to the geometry
+    #[tarpaulin::skip]
     fn add_tesselation_3d(&mut self, _geometry: &mut Vec<f64>, _multiplier: f64) {
         panic!("unexpected geometry type")
     }
@@ -352,6 +353,7 @@ impl ProtoRead for MapboxVectorFeature {
                 3 => self.geometry_index = pb.get_pos(),
                 4 => self.indices_index = Some(pb.get_pos()),
                 5 => self.tesselation_index = Some(pb.get_pos()),
+                #[tarpaulin::skip]
                 _ => panic!("unknown tag: {}", tag),
             }
         } else {
@@ -371,6 +373,7 @@ impl ProtoRead for MapboxVectorFeature {
                 4 => self.geometry_index = pb.get_pos(),
                 5 => self.indices_index = Some(pb.get_pos()),
                 6 => self.tesselation_index = Some(pb.get_pos()),
+                #[tarpaulin::skip]
                 _ => panic!("unknown tag: {}", tag),
             }
         }
@@ -447,6 +450,7 @@ impl From<OpenFeatureType> for FeatureType {
             OpenFeatureType::Points => FeatureType::Point,
             OpenFeatureType::Lines => FeatureType::Line,
             OpenFeatureType::Polygons => FeatureType::MultiPolygon,
+            #[tarpaulin::skip]
             _ => panic!("unknown value: {:?}", value),
         }
     }
@@ -461,6 +465,7 @@ impl BitCast for FeatureType {
             2 => FeatureType::Line,
             3 => FeatureType::Polygon,
             4 => FeatureType::MultiPolygon,
+            #[tarpaulin::skip]
             _ => panic!("unknown value: {}", value),
         }
     }
@@ -495,6 +500,7 @@ impl ProtoRead for Value {
             5 => *self = Value::UInt(pb.read_varint::<u64>()),
             4 | 6 => *self = Value::SInt(pb.read_s_varint::<i64>()),
             7 => *self = Value::Bool(pb.read_varint::<bool>()),
+            #[tarpaulin::skip]
             _ => *self = Value::Null,
         }
     }
@@ -606,6 +612,7 @@ fn write_geometry(feature: &BaseVectorFeature) -> Vec<u8> {
         BaseVectorPointsFeature(points) => write_geometry_points(&points.geometry, &mut pbf),
         BaseVectorLinesFeature(lines) => write_geometry_lines(&lines.geometry, &mut pbf),
         BaseVectorPolysFeature(polys) => write_geometry_polys(&polys.geometry, &mut pbf),
+        #[tarpaulin::skip]
         _ => panic!("unknown feature type: {:?}", feature.get_type()),
     };
     pbf.take()

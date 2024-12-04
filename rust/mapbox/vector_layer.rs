@@ -116,7 +116,8 @@ impl ProtoRead for MapboxVectorLayer {
                 self.values.borrow_mut().push(value);
             }
             5 => self.extent = pb.read_varint::<usize>(),
-            _ => {} // do nothing
+            #[tarpaulin::skip]
+            _ => panic!("Unknown layer type"),
         }
     }
 }

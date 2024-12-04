@@ -125,13 +125,13 @@ const layer = tile.layers[layerName]
 #### Layer Properties
 
 ```ts
-type Extents = 512 | 1024 | 2048 | 4096 | 8192
+type Extents = 512 | 1_024 | 2_048 | 4_096 | 8_192 | 16_384
 interface Layer {
     // version control helps know what features are available
     version: number;
     // name of the layer
     name: string;
-    // extent of the vector tile. MUST be one of `512`, `1024`, `2048`, `4096`, `8192`
+    // extent of the vector tile. MUST be one of `512`, `1024`, `2048`, `4096`, `8192`, or `16384`
     extent: Extents;
     // number of features in the layer
     length: number;

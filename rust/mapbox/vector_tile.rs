@@ -45,6 +45,7 @@ impl ProtoRead for MapboxVectorTile {
                 pb.read_message(&mut layer);
                 self.layers.insert(layer.name.clone(), layer);
             }
+            #[tarpaulin::skip]
             _ => panic!("unknown tag: {}", tag),
         }
     }

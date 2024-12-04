@@ -11,7 +11,7 @@ use crate::{
     base::BaseVectorTile,
     mapbox::MapboxVectorLayer,
     open::{
-        write_layer, ColumnCacheReader, ColumnCacheWriter, ElevationData, FeatureType,
+        write_layer, ColumnCacheReader, ColumnCacheWriter, ElevationData, FeatureType, ImageData,
         OpenVectorLayer, Properties,
     },
     VectorGeometry, VectorLines3DWithOffset, VectorLinesWithOffset, VectorPoints, VectorPoints3D,
@@ -149,6 +149,8 @@ pub struct VectorTile {
     columns: Option<Rc<RefCell<ColumnCacheReader>>>,
     /// Elevation data
     pub elevation: Option<ElevationData>,
+    /// Image data
+    pub image: Option<ImageData>,
 }
 impl VectorTile {
     /// Create a new vector tile
@@ -160,6 +162,7 @@ impl VectorTile {
             layer_indexes: Vec::new(),
             layers: BTreeMap::new(),
             elevation: None,
+            image: None,
         };
 
         pbf.borrow_mut().read_fields(&mut vt, end);
@@ -215,13 +218,19 @@ impl ProtoRead for VectorTile {
                 pb.read_message(&mut elevation);
                 self.elevation = Some(elevation);
             }
+            7 => {
+                let mut image = ImageData::default();
+                pb.read_message(&mut image);
+                self.image = Some(image);
+            }
+            #[tarpaulin::skip]
             _ => panic!("unknown tag: {}", tag),
         }
     }
 }
 
 /// writer for converting a BaseVectorTile to encoded bytes of the Open Vector Tile format
-pub fn write_tile(tile: &mut BaseVectorTile) -> Vec<u8> {
+pub fn write_tile(tile: &mut BaseVectorTile, image: Option<&ImageData>) -> Vec<u8> {
     let mut pbf = Protobuf::new();
     let mut cache = ColumnCacheWriter::default();
 
@@ -231,6 +240,10 @@ pub fn write_tile(tile: &mut BaseVectorTile) -> Vec<u8> {
     }
     // now we can write columns
     pbf.write_message(5, &cache);
+    // if an image exists, let's write it
+    if let Some(image) = image {
+        pbf.write_message(7, image);
+    }
 
     pbf.take()
 }

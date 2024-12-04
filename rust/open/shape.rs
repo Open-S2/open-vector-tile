@@ -85,6 +85,7 @@ impl PrimitiveShape {
         if self.is_number() && other.is_number() {
             *self = Self::get_highest_order_number(self, other);
         } else if !self.matching_shape(other) {
+            #[tarpaulin::skip]
             panic!("shape mismatch: {:?} vs {:?}", self, other);
         }
         // othewrise, do nothing
@@ -126,6 +127,7 @@ impl From<usize> for PrimitiveShape {
             4 => PrimitiveShape::F64,
             5 => PrimitiveShape::Bool,
             6 => PrimitiveShape::Null,
+            #[tarpaulin::skip]
             _ => panic!("unknown value: {}", num),
         }
     }
@@ -181,6 +183,7 @@ impl ShapePrimitiveType {
                 }
                 Self::NestedPrimitive(nested)
             }
+            #[tarpaulin::skip]
             _ => panic!("Unknown shape definition: {:?}", shape_pair),
         }
     }
@@ -205,6 +208,7 @@ impl ShapePrimitiveType {
                     }
                 }
             }
+            #[tarpaulin::skip]
             _ => panic!("shape mismatch"),
         }
     }
@@ -278,6 +282,7 @@ impl ShapeType {
                 a.first_mut().unwrap().merge(b.first().unwrap());
             }
             (Self::Nested(a), Self::Nested(b)) => a.merge(b),
+            #[tarpaulin::skip]
             _ => panic!("Can't merge"),
         };
     }
@@ -474,6 +479,7 @@ impl PrimitiveValue {
             }
             // null
             (PrimitiveValue::Null, PrimitiveShape::Null) => {}
+            #[tarpaulin::skip]
             _ => panic!("shape mismatch"),
         }
     }
@@ -509,6 +515,19 @@ impl PrimitiveValue {
             PrimitiveShape::Bool => PrimitiveValue::Bool(false),
             PrimitiveShape::Null => PrimitiveValue::Null,
         }
+    }
+
+    fn matching_shape(&self, other: &PrimitiveValue) -> bool {
+        matches!(
+            (self, other),
+            (PrimitiveValue::String(_), PrimitiveValue::String(_))
+                | (PrimitiveValue::U64(_), PrimitiveValue::U64(_))
+                | (PrimitiveValue::I64(_), PrimitiveValue::I64(_))
+                | (PrimitiveValue::F32(_), PrimitiveValue::F32(_))
+                | (PrimitiveValue::F64(_), PrimitiveValue::F64(_))
+                | (PrimitiveValue::Bool(_), PrimitiveValue::Bool(_))
+                | (PrimitiveValue::Null, PrimitiveValue::Null)
+        )
     }
 }
 impl From<&MapboxValue> for PrimitiveValue {
@@ -570,9 +589,8 @@ impl ValuePrimitiveType {
                     val.encode(prim_shape, store, cache);
                 }
             }
-            _ => {
-                panic!("shape and value do not match")
-            }
+            #[tarpaulin::skip]
+            _ => panic!("shape and value do not match"),
         }
     }
 
@@ -595,9 +613,17 @@ impl ValuePrimitiveType {
     }
 
     fn same_nested(&self, nested: &BTreeMap<String, PrimitiveValue>) -> bool {
+        println!("self: {self:?}, nested: {nested:?}");
         match self {
             ValuePrimitiveType::Primitive(_) => false,
-            ValuePrimitiveType::NestedPrimitive(val) => val == nested,
+            ValuePrimitiveType::NestedPrimitive(val) => {
+                for (key, val) in val {
+                    if !val.matching_shape(nested.get(key).unwrap()) {
+                        return false;
+                    }
+                }
+                true
+            }
         }
     }
 }
@@ -637,9 +663,8 @@ impl ValueType {
             (ValueType::Nested(val), ShapeType::Nested(shape)) => {
                 val.encode(shape, store, cache);
             }
-            _ => {
-                panic!("shape and value do not match")
-            }
+            #[tarpaulin::skip]
+            _ => panic!("shape and value do not match"),
         }
     }
 
@@ -679,8 +704,8 @@ impl From<ValueType> for MapboxValue {
     fn from(val: ValueType) -> Self {
         match val {
             ValueType::Primitive(val) => val.into(),
-            ValueType::Array(_) => MapboxValue::Null,
-            ValueType::Nested(_) => MapboxValue::Null,
+            #[tarpaulin::skip] // this isn't relevant
+            _ => MapboxValue::Null,
         }
     }
 }
@@ -805,9 +830,8 @@ pub fn validate_types(types: &[ValuePrimitiveType]) -> ShapePrimitiveType {
                         }
                         // otherwise do nothing
                     }
-                    _ => {
-                        panic!("All types must be the same");
-                    }
+                    #[tarpaulin::skip]
+                    _ => panic!("All types must be the same"),
                 }
             }
 
@@ -816,7 +840,7 @@ pub fn validate_types(types: &[ValuePrimitiveType]) -> ShapePrimitiveType {
         Some(ValuePrimitiveType::NestedPrimitive(nested)) => {
             // iterate and check if each following types match
             for t in types[1..].iter() {
-                if t.same_nested(nested) {
+                if !t.same_nested(nested) {
                     panic!("All types must be the same");
                 }
             }

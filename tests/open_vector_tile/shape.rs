@@ -5,13 +5,17 @@ mod tests {
     use alloc::collections::BTreeMap;
     use alloc::rc::Rc;
     use core::cell::RefCell;
+    use ovtile::CustomOrdWrapper;
 
+    use ovtile::mapbox::Value as MapboxValue;
     use ovtile::open::{
-        ColumnCacheReader, ColumnCacheWriter, ColumnValue, PrimitiveShape, PrimitiveValue, Shape,
-        ShapeDefinition, ShapePair, ShapePrimitiveType, ShapeType, Value, ValuePrimitiveType,
-        ValueType,
+        validate_types, ColumnCacheReader, ColumnCacheWriter, ColumnValue, PrimitiveShape,
+        PrimitiveValue, Shape, ShapeDefinition, ShapePair, ShapePrimitiveType, ShapeType, Value,
+        ValuePrimitiveType, ValueType,
     };
     use pbf::Protobuf;
+
+    use std::panic::{self, AssertUnwindSafe};
 
     #[test]
     fn encode_decode_shape() {
@@ -192,6 +196,10 @@ mod tests {
             PrimitiveShape::get_highest_order_number(&PrimitiveShape::F64, &PrimitiveShape::U64),
             PrimitiveShape::F64
         );
+
+        // error if number doesn't exist
+        let result = panic::catch_unwind(AssertUnwindSafe(|| PrimitiveShape::from(100)));
+        assert!(result.is_err());
     }
 
     #[test]
@@ -235,6 +243,85 @@ mod tests {
                 ("c".to_string(), ValueType::Primitive(PrimitiveValue::F64(2.200000047683716))),
             ]))
         );
+    }
+
+    #[test]
+    fn validate_types_none() {
+        assert_eq!(validate_types(&[]), ShapePrimitiveType::Primitive(PrimitiveShape::Null));
+
+        assert_eq!(
+            validate_types(&[
+                ValuePrimitiveType::Primitive(PrimitiveValue::I64(3)),
+                ValuePrimitiveType::Primitive(PrimitiveValue::I64(22)),
+            ]),
+            ShapePrimitiveType::Primitive(PrimitiveShape::I64)
+        );
+
+        assert_eq!(
+            validate_types(&[
+                ValuePrimitiveType::Primitive(PrimitiveValue::I64(3)),
+                ValuePrimitiveType::Primitive(PrimitiveValue::U64(22)),
+            ]),
+            ShapePrimitiveType::Primitive(PrimitiveShape::I64)
+        );
+
+        assert_eq!(
+            validate_types(&[
+                ValuePrimitiveType::Primitive(PrimitiveValue::I64(3)),
+                ValuePrimitiveType::Primitive(PrimitiveValue::F64(-22.2)),
+            ]),
+            ShapePrimitiveType::Primitive(PrimitiveShape::F64)
+        );
+
+        assert_eq!(
+            validate_types(&[
+                ValuePrimitiveType::NestedPrimitive(BTreeMap::from([
+                    ("a".to_string(), PrimitiveValue::I64(3)),
+                    ("b".to_string(), PrimitiveValue::String("hello".to_string())),
+                ])),
+                ValuePrimitiveType::NestedPrimitive(BTreeMap::from([
+                    ("a".to_string(), PrimitiveValue::I64(22)),
+                    ("b".to_string(), PrimitiveValue::String("world".to_string())),
+                ])),
+            ]),
+            ShapePrimitiveType::NestedPrimitive(BTreeMap::from([
+                ("a".to_string(), PrimitiveShape::I64),
+                ("b".to_string(), PrimitiveShape::String),
+            ]))
+        );
+
+        let error_case_one = panic::catch_unwind(AssertUnwindSafe(|| {
+            validate_types(&[
+                ValuePrimitiveType::NestedPrimitive(BTreeMap::from([
+                    ("a".to_string(), PrimitiveValue::I64(3)),
+                    ("b".to_string(), PrimitiveValue::String("hello".to_string())),
+                ])),
+                ValuePrimitiveType::NestedPrimitive(BTreeMap::from([
+                    ("a".to_string(), PrimitiveValue::U64(5)),
+                    ("b".to_string(), PrimitiveValue::F32(2.2)),
+                ])),
+            ])
+        }));
+        assert!(error_case_one.is_err());
+
+        let error_case_two = panic::catch_unwind(AssertUnwindSafe(|| {
+            validate_types(&[
+                ValuePrimitiveType::NestedPrimitive(BTreeMap::from([
+                    ("a".to_string(), PrimitiveValue::I64(3)),
+                    ("b".to_string(), PrimitiveValue::String("hello".to_string())),
+                ])),
+                ValuePrimitiveType::Primitive(PrimitiveValue::I64(3)),
+            ])
+        }));
+        assert!(error_case_two.is_err());
+
+        let error_case_three = panic::catch_unwind(AssertUnwindSafe(|| {
+            validate_types(&[
+                ValuePrimitiveType::Primitive(PrimitiveValue::I64(3)),
+                ValuePrimitiveType::Primitive(PrimitiveValue::String("test".to_string())),
+            ])
+        }));
+        assert!(error_case_three.is_err());
     }
 
     #[test]
@@ -380,5 +467,59 @@ mod tests {
         ]));
         let res = ShapePrimitiveType::from(vpt);
         assert_eq!(res, spt);
+    }
+
+    #[test]
+    fn primitive_value_to_mapbox_value() {
+        // string
+        assert_eq!(
+            MapboxValue::from(PrimitiveValue::String("hello".to_string())),
+            MapboxValue::String("hello".to_string())
+        );
+        // U64
+        assert_eq!(MapboxValue::from(PrimitiveValue::U64(1)), MapboxValue::UInt(1));
+        // I64
+        assert_eq!(MapboxValue::from(PrimitiveValue::I64(1)), MapboxValue::SInt(1));
+        // F32
+        assert_eq!(
+            MapboxValue::from(PrimitiveValue::F32(1.1)),
+            MapboxValue::Float(CustomOrdWrapper(1.1))
+        );
+        // F64
+        assert_eq!(
+            MapboxValue::from(PrimitiveValue::F64(1.1)),
+            MapboxValue::Double(CustomOrdWrapper(1.1))
+        );
+        // bool
+        assert_eq!(MapboxValue::from(PrimitiveValue::Bool(true)), MapboxValue::Bool(true));
+        // null
+        assert_eq!(MapboxValue::from(PrimitiveValue::Null), MapboxValue::Null);
+    }
+
+    #[test]
+    fn mapbox_value_to_primitive_value() {
+        // string
+        assert_eq!(
+            PrimitiveValue::from(&MapboxValue::String("hello".to_string())),
+            PrimitiveValue::String("hello".to_string())
+        );
+        // U64
+        assert_eq!(PrimitiveValue::from(&MapboxValue::UInt(1)), PrimitiveValue::U64(1));
+        // I64
+        assert_eq!(PrimitiveValue::from(&MapboxValue::SInt(1)), PrimitiveValue::I64(1));
+        // F32
+        assert_eq!(
+            PrimitiveValue::from(&MapboxValue::Float(CustomOrdWrapper(1.1))),
+            PrimitiveValue::F32(1.1)
+        );
+        // F64
+        assert_eq!(
+            PrimitiveValue::from(&MapboxValue::Double(CustomOrdWrapper(1.1))),
+            PrimitiveValue::F64(1.1)
+        );
+        // bool
+        assert_eq!(PrimitiveValue::from(&MapboxValue::Bool(true)), PrimitiveValue::Bool(true));
+        // null
+        assert_eq!(PrimitiveValue::from(&MapboxValue::Null), PrimitiveValue::Null);
     }
 }

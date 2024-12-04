@@ -9,9 +9,12 @@ mod tests {
             BaseVectorPoints3DFeature, BaseVectorPointsFeature, BaseVectorPolys3DFeature,
             BaseVectorPolysFeature, BaseVectorTile,
         },
-        open::{FeatureType, PrimitiveValue, Value, ValuePrimitiveType, ValueType},
-        write_tile, BBox, BBox3D, Point, Point3D, VectorGeometry, VectorLayerMethods,
-        VectorLine3DWithOffset, VectorLineWithOffset, VectorTile, BBOX,
+        open::{
+            ElevationData, Extent, FeatureType, ImageData, ImageType, PrimitiveValue, Value,
+            ValuePrimitiveType, ValueType,
+        },
+        write_elevation_tile, write_tile, BBox, BBox3D, Point, Point3D, VectorGeometry,
+        VectorLayerMethods, VectorLine3DWithOffset, VectorLineWithOffset, VectorTile, BBOX,
     };
 
     use std::panic::{self, AssertUnwindSafe};
@@ -166,7 +169,7 @@ mod tests {
         tile.add_layer(polys_layer);
 
         // convert BaseVectorLayer into OpenVectorTile
-        let open_tile_bytes = write_tile(&mut tile);
+        let open_tile_bytes = write_tile(&mut tile, None);
 
         let mut open_tile = VectorTile::new(open_tile_bytes, None);
 
@@ -198,6 +201,18 @@ mod tests {
             assert_eq!(o_feature.bbox(), None);
             // has_m_values
             assert!(o_feature.has_m_values());
+            // is points
+            assert!(o_feature.is_points());
+            // is lines
+            assert!(!o_feature.is_lines());
+            // is polys
+            assert!(!o_feature.is_polygons());
+            // is points3d
+            assert!(!o_feature.is_points_3d());
+            // is lines3d
+            assert!(!o_feature.is_lines_3d());
+            // is polys3d
+            assert!(!o_feature.is_polygons_3d());
             // load_points
             let points = o_feature.load_points();
             assert_eq!(points.len(), 1);
@@ -233,6 +248,18 @@ mod tests {
             );
             // has_m_values
             assert!(o_feature.has_m_values());
+            // is points
+            assert!(o_feature.is_points());
+            // is lines
+            assert!(!o_feature.is_lines());
+            // is polys
+            assert!(!o_feature.is_polygons());
+            // is points3d
+            assert!(!o_feature.is_points_3d());
+            // is lines3d
+            assert!(!o_feature.is_lines_3d());
+            // is polys3d
+            assert!(!o_feature.is_polygons_3d());
             // load_points
             let points = o_feature.load_points();
             assert_eq!(points.len(), 2);
@@ -298,6 +325,18 @@ mod tests {
             assert_eq!(o_feature.bbox(), None);
             // has_m_values
             assert!(o_feature.has_m_values());
+            // is points
+            assert!(!o_feature.is_points());
+            // is lines
+            assert!(o_feature.is_lines());
+            // is polys
+            assert!(!o_feature.is_polygons());
+            // is points3d
+            assert!(!o_feature.is_points_3d());
+            // is lines3d
+            assert!(!o_feature.is_lines_3d());
+            // is polys3d
+            assert!(!o_feature.is_polygons_3d());
             // load_points
             let points = o_feature.load_points();
             assert_eq!(points.len(), 1);
@@ -340,6 +379,18 @@ mod tests {
             assert_eq!(o_feature.bbox(), None);
             // has_m_values
             assert!(o_feature.has_m_values());
+            // is points
+            assert!(!o_feature.is_points());
+            // is lines
+            assert!(o_feature.is_lines());
+            // is polys
+            assert!(!o_feature.is_polygons());
+            // is points3d
+            assert!(!o_feature.is_points_3d());
+            // is lines3d
+            assert!(!o_feature.is_lines_3d());
+            // is polys3d
+            assert!(!o_feature.is_polygons_3d());
             // load_points
             let points = o_feature.load_points();
             assert_eq!(points.len(), 3);
@@ -418,6 +469,18 @@ mod tests {
             assert_eq!(o_feature.bbox(), None);
             // has_m_values
             assert!(o_feature.has_m_values());
+            // is points
+            assert!(!o_feature.is_points());
+            // is lines
+            assert!(!o_feature.is_lines());
+            // is polys
+            assert!(o_feature.is_polygons());
+            // is points3d
+            assert!(!o_feature.is_points_3d());
+            // is lines3d
+            assert!(!o_feature.is_lines_3d());
+            // is polys3d
+            assert!(!o_feature.is_polygons_3d());
             // load_points
             let points = o_feature.load_points();
             assert_eq!(points.len(), 4);
@@ -503,6 +566,18 @@ mod tests {
             assert_eq!(o_feature.bbox(), None);
             // has_m_values
             assert!(o_feature.has_m_values());
+            // is points
+            assert!(!o_feature.is_points());
+            // is lines
+            assert!(!o_feature.is_lines());
+            // is polys
+            assert!(o_feature.is_polygons());
+            // is points3d
+            assert!(!o_feature.is_points_3d());
+            // is lines3d
+            assert!(!o_feature.is_lines_3d());
+            // is polys3d
+            assert!(!o_feature.is_polygons_3d());
             // load_points
             let points = o_feature.load_points();
             assert_eq!(points.len(), 12);
@@ -807,7 +882,7 @@ mod tests {
         tile.add_layer(polys_layer);
 
         // convert BaseVectorLayer into OpenVectorTile
-        let open_tile_bytes = write_tile(&mut tile);
+        let open_tile_bytes = write_tile(&mut tile, None);
 
         let mut open_tile = VectorTile::new(open_tile_bytes, None);
 
@@ -839,6 +914,18 @@ mod tests {
             assert_eq!(o_feature.bbox(), None);
             // has_m_values
             assert!(o_feature.has_m_values());
+            // is points
+            assert!(!o_feature.is_points());
+            // is lines
+            assert!(!o_feature.is_lines());
+            // is polys
+            assert!(!o_feature.is_polygons());
+            // is points3d
+            assert!(o_feature.is_points_3d());
+            // is lines3d
+            assert!(!o_feature.is_lines_3d());
+            // is polys3d
+            assert!(!o_feature.is_polygons_3d());
             // load_points
             let points = o_feature.load_points_3d();
             assert_eq!(points.len(), 1);
@@ -885,6 +972,18 @@ mod tests {
             );
             // has_m_values
             assert!(o_feature.has_m_values());
+            // is points
+            assert!(!o_feature.is_points());
+            // is lines
+            assert!(!o_feature.is_lines());
+            // is polys
+            assert!(!o_feature.is_polygons());
+            // is points3d
+            assert!(o_feature.is_points_3d());
+            // is lines3d
+            assert!(!o_feature.is_lines_3d());
+            // is polys3d
+            assert!(!o_feature.is_polygons_3d());
             // load_points
             let points = o_feature.load_points_3d();
             assert_eq!(points.len(), 2);
@@ -934,6 +1033,18 @@ mod tests {
             assert_eq!(o_feature.bbox(), None);
             // has_m_values
             assert!(o_feature.has_m_values());
+            // is points
+            assert!(!o_feature.is_points());
+            // is lines
+            assert!(!o_feature.is_lines());
+            // is polys
+            assert!(!o_feature.is_polygons());
+            // is points3d
+            assert!(!o_feature.is_points_3d());
+            // is lines3d
+            assert!(o_feature.is_lines_3d());
+            // is polys3d
+            assert!(!o_feature.is_polygons_3d());
             // load_points
             let points = o_feature.load_points_3d();
             assert_eq!(points.len(), 1);
@@ -976,6 +1087,18 @@ mod tests {
             assert_eq!(o_feature.bbox(), None);
             // has_m_values
             assert!(o_feature.has_m_values());
+            // is points
+            assert!(!o_feature.is_points());
+            // is lines
+            assert!(!o_feature.is_lines());
+            // is polys
+            assert!(!o_feature.is_polygons());
+            // is points3d
+            assert!(!o_feature.is_points_3d());
+            // is lines3d
+            assert!(o_feature.is_lines_3d());
+            // is polys3d
+            assert!(!o_feature.is_polygons_3d());
             // load_points
             let points = o_feature.load_points_3d();
             assert_eq!(points.len(), 3);
@@ -1054,6 +1177,18 @@ mod tests {
             assert_eq!(o_feature.bbox(), None);
             // has_m_values
             assert!(o_feature.has_m_values());
+            // is points
+            assert!(!o_feature.is_points());
+            // is lines
+            assert!(!o_feature.is_lines());
+            // is polys
+            assert!(!o_feature.is_polygons());
+            // is points3d
+            assert!(!o_feature.is_points_3d());
+            // is lines3d
+            assert!(!o_feature.is_lines_3d());
+            // is polys3d
+            assert!(o_feature.is_polygons_3d());
             // load_points
             let points = o_feature.load_points_3d();
             assert_eq!(points.len(), 4);
@@ -1139,6 +1274,18 @@ mod tests {
             assert_eq!(o_feature.bbox(), None);
             // has_m_values
             assert!(o_feature.has_m_values());
+            // is points
+            assert!(!o_feature.is_points());
+            // is lines
+            assert!(!o_feature.is_lines());
+            // is polys
+            assert!(!o_feature.is_polygons());
+            // is points3d
+            assert!(!o_feature.is_points_3d());
+            // is lines3d
+            assert!(!o_feature.is_lines_3d());
+            // is polys3d
+            assert!(o_feature.is_polygons_3d());
             // load_points
             let points = o_feature.load_points_3d();
             assert_eq!(points.len(), 12);
@@ -1344,7 +1491,7 @@ mod tests {
 
         tile.add_layer(points_layer);
 
-        let open_tile_bytes = write_tile(&mut tile);
+        let open_tile_bytes = write_tile(&mut tile, None);
         let mut _open_tile = VectorTile::new(open_tile_bytes, None);
 
         // let base_tile = BaseVectorTile::from(&mut open_tile);
@@ -1360,5 +1507,37 @@ mod tests {
         //     points_layer.features[1],
         //     BaseVectorFeature::BaseVectorPoints3DFeature(feature2.clone())
         // );
+    }
+
+    #[test]
+    fn test_vector_tile_empty_with_image() {
+        let mut tile = BaseVectorTile::default();
+
+        let image = ImageData::new(ImageType::AVIF, 2, 3, Vec::from([1, 2, 3, 10]));
+
+        let open_tile_bytes = write_tile(&mut tile, Some(&image));
+        let open_tile = VectorTile::new(open_tile_bytes, None);
+
+        assert_eq!(open_tile.image.unwrap(), image);
+    }
+
+    #[test]
+    fn test_elevation_data() {
+        let mut elevation_data =
+            ElevationData::new(8_192.into(), 512.0, 0.0, 0.0, vec![-1.0, 2.0, 3.0, 4.0]);
+        let bytes = write_elevation_tile(&mut elevation_data);
+
+        let open_tile = VectorTile::new(bytes, None);
+
+        assert_eq!(
+            open_tile.elevation.unwrap(),
+            ElevationData {
+                extent: Extent::Extent8192,
+                size: 512.0,
+                min: -1.0,
+                max: 4.0,
+                data: vec![-1.0, 1.9998779296875, 3.000244140625, 4.0],
+            }
+        );
     }
 }
