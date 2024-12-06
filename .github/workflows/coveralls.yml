@@ -26,19 +26,14 @@ jobs:
     - name: Run JavaScript/TypeScript tests
       run: bun run test
 
+    # setup rust
+
     - name: Set up Rust
       uses: actions-rs/toolchain@v1
       with:
-        toolchain: stable
+        toolchain: nightly
         override: true
-
-    # setup rust
-
-    - name: Install Clippy
-      run: rustup component add clippy
-
-    - name: Install llvm-tools-preview
-      run: rustup component add llvm-tools-preview
+        components: rustfmt, clippy, llvm-tools-preview
 
     - name: Install grcov
       run: |
