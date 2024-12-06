@@ -1,6 +1,0 @@
-- [ ] Update spec to include elevation and image data
-
-// PLAIN: 466_594 bytes
-// WITHOUT PROPERTY DATA: 176_751 bytes (~62%)
-// WITHOUT GEOMETRY: 315_858 bytes (~32%)
-// WITHOUT BOTH: 35_193 bytes (~92.45746838)

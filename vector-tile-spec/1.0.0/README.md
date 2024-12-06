@@ -4,6 +4,26 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
 "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in
 this document are to be interpreted as described in [RFC 2119](https://www.ietf.org/rfc/rfc2119.txt).
 
+## Table of contents
+
+1. [Purpose](#1-purpose)
+1. [File format](#2-file-format)
+1. [Projection and Bounds](#3-projection-and-bounds)
+1. [Internal Structure](#4-internal-structure)
+    1. [Tile](#41-tile)
+    1. [Column Cache](#42-column-cache)
+    1. [Vector Layer](#43-vector-layer)
+    1. [Shapes](#44-shapes)
+    1. [Feature](#45-feature)
+    1. [Elevation Layer](#46-elevation-layer)
+    1. [Image Layer](#47-image-layer)
+1. [Utility Functions](#5-utility-functions)
+    1. [ZigZag](#51-zigzag)
+    1. [Weave Functions](#52-weave-functions)
+    1. [Weave Functions 3D](#53-weave-functions-3d)
+    1. [Encode Offset](#54-encode-offset)
+1. [Security Considerations](#6-security-considerations)
+
 ## 1. Purpose
 
 This document specifies a space-efficient encoding format for tiled geographic vector data. It is designed to be used in browsers or server-side applications for fast rendering or lookups of feature data.
@@ -22,7 +42,7 @@ When serving Vector Tiles the MIME type SHOULD be `application/ovt`.
 
 ## 3. Projection and Bounds
 
-A Vector Tile represents data based on a square extent within a 0-1 coordinate space. A Vector Tile SHOULD NOT contain information about its bounds and projection. The file format assumes that the decoder knows the bounds and projection of a Vector Tile before decoding it.
+A Vector Tile represents data based on a square extent representing a 0-1 coordinate space. A Vector Tile SHOULD NOT contain information about its bounds and projection. The file format assumes that the decoder knows the bounds and projection of a Vector Tile before decoding it.
 
 [Web Mercator](https://en.wikipedia.org/wiki/Web_Mercator) is the projection of reference, and [the Google tile scheme](http://www.maptiler.org/google-maps-coordinates-tile-bounds-projection/) is the tile extent convention of reference. Together, they provide a 1-to-1 relationship between a specific geographical area, at a specific level of detail, and a path such as `https://example.com/17/65535/43602.ovt`. Another common projection to be used is the [S2 Geometry](https://github.com/google/s2-geometry) spherical projection.
 
@@ -48,7 +68,19 @@ The tile, layer, and feature encodings follow the specification for the [Mapbox 
 
 ### 4.1.2. Open Vector Tile (OVT) Layer
 
-This is the new format for the Open Vector Tile spec. Similar to MVT, the tile consists of layers, but also contains a column cache to optimize data storage and access. You can learn more about the `Layer` structure in section 4.3.
+This is the new format for the Open Vector Tile spec. Similar to MVT, the tile consists of layers, but also contains a column cache to optimize data storage and access.
+
+#### 4.1.2.1. Vector Data
+
+The most common data stored in Vector Tiles are vector features. A feature is a collection of geometry and properties. The geometry is stored in the `geometry` field and the properties are stored in the `properties` field. You can learn more about the `Vector Layer` structure in section `4.3.`.
+
+#### 4.1.2.2. Elevation Data
+
+The elevation data is a collection of points in a grid format much like an image with an elevation variable attached to each point. You can learn more about the `Elevation Layer` structure in section `4.6.`.
+
+#### 4.1.2.3. Image Data
+
+The image data is stored in the `image` field. This is a round-about way to group an image like WebP together with vector data. You can learn more about the `Image Layer` structure in section `4.7.`.
 
 ### 4.2. Column Cache
 
@@ -319,7 +351,7 @@ function quantizeBBox(bbox):
     return buffer
 ```
 
-### 4.3. Layers
+### 4.3. Vector Layer
 
 In the context of vector tiles, a layer is a collection of vector features of a particular type, such as points, lines, or polygons. Each vector tile can contain multiple layers, each with its own set of features and associated attributes. This section outlines the structure and properties of layers within the vector tile specification.
 
@@ -883,6 +915,112 @@ If the feature is a `Polygon` or `Polygon3D`, the indices MUST be stored in the 
 Tessellation Data is OPTIONAL.
 
 If the feature is a `Polygon` or `Polygon3D`, the tessellation data MUST be stored in the column cache's `points` or `points3D` columns respectively. No additional encoding is required.
+
+### 4.6. Elevation Layer
+
+This is a new and unique solution to the problem of storing elevation information. While old methods have stored elevation in RGBA images, note that the method is both lossy and often times memory expensive. The new method takes advantage of the delta encoding we have.
+
+An elevation layer consists of several key components:
+
+- **extent**: An `enum` that defines the grid size used to specify feature geometry.
+- **size**: A size defines the square length and width of the grid in "pixels".
+- **min**: The minimum elevation value of the grid.
+- **max**: The maximum elevation value of the grid.
+- **data**: The actual elevation data.
+
+A Layer MUST contain an `extent` field.
+
+A Layer MUST contain a `size` field.
+
+A Layer MUST contain a `min` field.
+
+A Layer MUST contain a `max` field.
+
+A Layer MUST contain a `data` field.
+
+#### 4.6.1. Extent
+
+The extent of the layer is described in section 4.3.4.
+
+#### 4.6.2. Size
+
+The size of the layer represents the square length and width of the grid in pixels.
+
+#### 4.6.3. Min * Max
+
+The `min` is the lowest elevation value in the grid and the `max` is the highest elevation value in the grid.
+
+#### 4.6.4. Data
+
+To store the elevation we first map the elevation data to a range of 0 to `extent`:
+
+```pscript
+function mapElevation(array, extent, min, max):
+    result = []
+    for each value in array:
+        result.append(round(((value - min) * extent) / (max - min)))
+    return result
+```
+
+This ensures the data is in an unsigned 32-bit range. At this point we varint pack the data and run a `deltaEncodeArray` to further compress.
+
+### 4.7. Image Layer
+
+This is a new and unique solution to the problem of storing elevation information. While old methods have stored elevation in RGBA images, note that the method is both lossy and often times memory expensive. The new method takes advantage of the delta encoding we have.
+
+An elevation layer consists of several key components:
+
+- **type**: The type of image data. E.G. `image/png` or `image/jpeg`.
+- **width**: The width of the image.
+- **height**: The height of the image.
+- **data**: The actual image data.
+
+A Layer MUST contain an `type` field.
+
+A Layer MUST contain a `width` field.
+
+A Layer MUST contain a `height` field.
+
+A Layer MUST contain a `data` field.
+
+#### 4.7.1. Type
+
+An `enum` describing the type of image. Limited to `png`, `jpg`, `webp`, `gif`, `avif`, `svg`, and `bmp`.
+
+```pscript
+enum ImageType {
+  PNG = 0,
+  JPG = 1,
+  WEBP = 2,
+  GIF = 3,
+  AVIF = 4,
+  SVG = 5,
+  BMP = 6,
+}
+```
+
+#### 4.7.2. Width & Height
+
+The width and height of the image. Both MUST be a power of 2 and ideally square if possible.
+
+#### 4.7.3. Data
+
+The raw image data. This means if using the browser, the data must be parsed via an `Image` object. For example:
+
+```typescript
+const parsePNG = (arrayBuffer: ArrayBuffer): HTMLImageElement => {
+    const blob = new Blob([arrayBuffer], { type: "image/png" });
+    const url = URL.createObjectURL(blob);
+
+    const img = new Image();
+    img.src = url;
+
+    // Clean up after the image is loaded
+    img.onload = () => URL.revokeObjectURL(url);
+
+    return img;
+};
+```
 
 ## 5. Utility Functions
 
