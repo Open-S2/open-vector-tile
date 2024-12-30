@@ -31,7 +31,7 @@ export type Value = string | number | boolean | null;
 export type Properties = Record<string, Value>;
 
 /** Primitive types supported by Properties */
-export type Primitive = string | number | boolean | null;
+export type Primitive = string | number | boolean | null | undefined;
 
 /**
  * When an array is used, it must be an array of the same type.

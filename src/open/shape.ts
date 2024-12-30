@@ -336,7 +336,7 @@ function getShapesValueType(value: OValue): ShapeType {
  * @param value - the primtive value to get the type from
  * @returns - the primitive type from the value
  */
-function getPrimitiveType(value: string | number | boolean | null): PrimitiveShapes {
+function getPrimitiveType(value: Primitive): PrimitiveShapes {
   const type = typeof value;
   if (type === 'string') {
     return 'string';

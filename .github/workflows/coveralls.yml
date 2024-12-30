@@ -43,7 +43,7 @@ jobs:
     - name: Build Rust project
       run: cargo build
       shell: bash
-    
+
     # Rust tests
 
     - name: Run Rust tests with coverage
