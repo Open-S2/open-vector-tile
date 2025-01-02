@@ -285,9 +285,7 @@ export default class MapboxVectorFeature {
     }
 
     // if type is polygon but we are using version 1, we might have a multipolygon
-    if (this.type === 3 && !this.isS2) {
-      polys = classifyRings(lines);
-    }
+    if (this.type === 3 && !this.isS2) polys = classifyRings(lines);
 
     if (this.type === 1) return points;
     else if (polys.length > 0) return polys;

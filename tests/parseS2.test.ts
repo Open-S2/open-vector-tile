@@ -8,8 +8,11 @@ import {
   BaseVectorPolysFeature,
   BaseVectorTile,
 } from '../src/base';
-import { MapboxVectorFeature, MapboxVectorLayer, serializeS2 } from '../src/mapbox';
+import { MapboxVectorFeature, MapboxVectorLayer, writeMVTile } from '../src/mapbox';
 import { describe, expect, it, test } from 'bun:test';
+
+import MapboxProtobuf from 'pbf';
+import { VectorTile as MapboxVectorTile } from '@mapbox/vector-tile';
 
 describe('serialize and parse vector tile points', () => {
   // Step 1: Create
@@ -20,7 +23,7 @@ describe('serialize and parse vector tile points', () => {
   const tile = new BaseVectorTile({ points: layer });
 
   // Step 2: Serialize
-  const data = serializeS2(tile);
+  const data = writeMVTile(tile);
 
   // Step 3: Parse
   it('should have proper metadata', () => {
@@ -60,6 +63,24 @@ describe('serialize and parse vector tile points', () => {
     expect(point1.loadGeometry()).toEqual([{ x: 3805, y: 5645 }]);
     expect(point2.loadGeometry()).toEqual([{ x: 5136, y: 4700 }]);
   });
+
+  it('can be read by mapbox', () => {
+    const tile = new MapboxVectorTile(new MapboxProtobuf(data));
+    const layer = tile.layers.points;
+    const point1 = layer.feature(0);
+    const point2 = layer.feature(1);
+
+    expect(point1.id).toBe(1);
+    expect(point2.id).toBe(2);
+
+    expect(point1.properties).toEqual({ name: 'a' });
+    expect(point2.properties).toEqual({ name: '[0,1,2,3]' });
+
+    // @ts-expect-error - we don't care about mapbox types
+    expect(point1.loadGeometry()).toEqual([[{ x: 3805, y: 5645 }]]);
+    // @ts-expect-error - we don't care about mapbox types
+    expect(point2.loadGeometry()).toEqual([[{ x: 5136, y: 4700 }]]);
+  });
 });
 
 describe('serialize and parse vector tile lines', () => {
@@ -97,7 +118,7 @@ describe('serialize and parse vector tile lines', () => {
   const tile = new BaseVectorTile({ lines: layer });
 
   // Step 2: Serialize
-  const data = serializeS2(tile);
+  const data = writeMVTile(tile);
 
   // Step 3: Parse
   it('should have proper metadata', () => {
@@ -177,6 +198,53 @@ describe('serialize and parse vector tile lines', () => {
       [
         { x: 3613, y: 3613 },
         { x: 3882, y: 3882 },
+        { x: 3469, y: 3469 },
+      ],
+    ]);
+  });
+
+  it('can be read by mapbox', () => {
+    const tile = new MapboxVectorTile(new MapboxProtobuf(data));
+    const lines = tile.layers.lines;
+    const line1 = lines.feature(0);
+    const line2 = lines.feature(1);
+
+    expect(line1.id).toBe(100);
+    expect(line2.id).toBe(200);
+
+    expect(line1.properties).toEqual({ name: 2.2 });
+    expect(line2.properties).toEqual({ name: true });
+
+    expect(line1.loadGeometry()).toEqual([
+      [
+        // @ts-expect-error - we don't care about mapbox types
+        { x: 3664, y: 3664 },
+        // @ts-expect-error - we don't care about mapbox types
+        { x: 4053, y: 4053 },
+        // @ts-expect-error - we don't care about mapbox types
+        { x: 2135, y: 2135 },
+        // @ts-expect-error - we don't care about mapbox types
+        { x: 1879, y: 1879 },
+      ],
+    ]);
+
+    expect(line2.loadGeometry()).toEqual([
+      [
+        // @ts-expect-error - we don't care about mapbox types
+        { x: 2679, y: 2679 },
+        // @ts-expect-error - we don't care about mapbox types
+        { x: 3283, y: 3283 },
+        // @ts-expect-error - we don't care about mapbox types
+        { x: 2819, y: 2819 },
+        // @ts-expect-error - we don't care about mapbox types
+        { x: 3383, y: 3383 },
+      ],
+      [
+        // @ts-expect-error - we don't care about mapbox types
+        { x: 3613, y: 3613 },
+        // @ts-expect-error - we don't care about mapbox types
+        { x: 3882, y: 3882 },
+        // @ts-expect-error - we don't care about mapbox types
         { x: 3469, y: 3469 },
       ],
     ]);
@@ -262,7 +330,7 @@ describe('serialize and parse vector tile polygons', () => {
   const tile = new BaseVectorTile({ polys: layer });
 
   // Step 2: Serialize
-  const data = serializeS2(tile);
+  const data = writeMVTile(tile);
 
   // Step 3: Parse
   it('should have proper metadata', () => {
@@ -476,6 +544,39 @@ describe('serialize and parse vector tile polygons', () => {
     poly2.addTesselation(tess, 1);
     expect(tess).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
     expect(poly2.readIndices()).toEqual([0, 1, 2]);
+  });
+
+  it('can be read by mapbox', () => {
+    const tile = new MapboxVectorTile(new MapboxProtobuf(data));
+    const polys = tile.layers.polys;
+    const poly1 = polys.feature(0);
+    const poly2 = polys.feature(1);
+
+    const poly1Props = poly1.properties;
+    const poly2Props = poly2.properties;
+
+    expect(poly1Props).toEqual({ a: -100, b: 500 });
+    expect(poly2Props).toEqual({ name: 'c' });
+
+    // TODO: throw new Error(`unknown command ${cmd}`); (4 tells it to close poly)
+    // expect(poly1.loadGeometry()).toEqual([
+    //   [
+    //     [
+    //       { x: 2565, y: 2565 },
+    //       { x: 2565, y: 2565 },
+    //       { x: 3889, y: 3889 },
+    //       { x: 3889, y: 3889 },
+    //       { x: 2565, y: 2565 },
+    //     ],
+    //     [
+    //       { x: 3025, y: 3025 },
+    //       { x: 3025, y: 3025 },
+    //       { x: 2766, y: 2766 },
+    //       { x: 2766, y: 2766 },
+    //       { x: 3025, y: 3025 },
+    //     ],
+    //   ],
+    // ]);
   });
 });
 

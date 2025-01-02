@@ -34,11 +34,11 @@ interface ContextWithFeature {
 }
 
 /**
- * @deprecated - use `writeOVTile` instead
+ * Write old schema Mapbox vector tiles with extra features (backwards compatible)
  * @param tile - the tile to serialize. Either a BaseVectorTile or a MapboxVectorTile
  * @returns - a Uint8Array of the tile
  */
-export default function serialize(tile: BaseVectorTile | VectorTile): Uint8Array {
+export default function writeMVTile(tile: BaseVectorTile | VectorTile): Uint8Array {
   const out = new Protobuf();
   writeTile(tile, out);
   return out.commit();
@@ -111,6 +111,7 @@ function writeFeature(contextWF: ContextWithFeature, pbf: Protobuf): void {
   if ('tesselation' in feature && feature.tesselation.length > 0) {
     pbf.writeMessage(6, writeTesselation, feature.tesselation);
   }
+  pbf.writeBooleanField(7, true);
 }
 
 /**
@@ -160,8 +161,8 @@ function writeIndices(indices: number[], pbf: Protobuf): void {
   }
 }
 
-// just an array of points that are used inside an extent x extent tile block
 /**
+ * just an array of points that are used inside an extent x extent tile block
  * @param geometry - the geometry to write
  * @param pbf - the Protobuf object to write to
  */

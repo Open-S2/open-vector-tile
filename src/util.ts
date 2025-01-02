@@ -10,12 +10,20 @@ export function commandEncode(cmd: number, len: number): number {
   return (len << 3) + (cmd & 0x7);
 }
 
+/** Object shape for a command and its length */
+export interface Command {
+  /** The command */
+  cmd: number;
+  /** The length */
+  len: number;
+}
+
 /**
  * Decode a command with the given length of the data that follows.
  * @param cmd - the encoded command
  * @returns - the command and length
  */
-export function commandDecode(cmd: number): { cmd: number; len: number } {
+export function commandDecode(cmd: number): Command {
   return { cmd: cmd & 0x7, len: cmd >> 3 };
 }
 
@@ -56,12 +64,18 @@ export function weave2D(a: number, b: number): number {
   return result;
 }
 
+/** Object shape for two 16-bit numbers */
+export interface Weave2D {
+  a: number;
+  b: number;
+}
+
 /**
  * Deweave a 32-bit number into two 16-bit numbers.
  * @param num - the input
  * @returns - the two numbers
  */
-export function unweave2D(num: number): { a: number; b: number } {
+export function unweave2D(num: number): Weave2D {
   let a = 0;
   let b = 0;
   for (let i = 0; i < 16; i++) {
@@ -101,12 +115,19 @@ export function weave3D(a: number, b: number, c: number): number {
   return Number(result);
 }
 
+/** Object shape for three 16-bit numbers */
+export interface Weave3D {
+  a: number;
+  b: number;
+  c: number;
+}
+
 /**
  * Deweave a 48-bit number into three 16-bit numbers.
  * @param num - the input
  * @returns - the three numbers
  */
-export function unweave3D(num: number): { a: number; b: number; c: number } {
+export function unweave3D(num: number): Weave3D {
   // let bNum = BigInt(num)
   let a = 0;
   let b = 0;

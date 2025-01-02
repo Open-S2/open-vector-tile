@@ -2,12 +2,19 @@ import { Pbf as Protobuf } from 's2-tools';
 
 /** Image type */
 export enum ImageType {
+  /** PNG Image */
   PNG = 0,
+  /** JPEG Image */
   JPG = 1,
+  /** WEBP Image */
   WEBP = 2,
+  /** GIF Image */
   GIF = 3,
+  /** AVIF Image */
   AVIF = 4,
+  /** SVG Image */
   SVG = 5,
+  /** BMP Image */
   BMP = 6,
 }
 /** String version of ImageType */
