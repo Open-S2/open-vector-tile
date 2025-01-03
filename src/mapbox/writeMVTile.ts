@@ -15,9 +15,7 @@ import type {
   VectorPoly,
 } from '../vectorTile.spec';
 
-/**
- * A storage structure to manage deduplication of keys and values in each layer
- */
+/** A storage structure to manage deduplication of keys and values in each layer */
 interface Context {
   keys: string[];
   values: Value[];
@@ -25,43 +23,54 @@ interface Context {
   valuecache: Record<string, number>;
 }
 
-/**
- * A method of passing both the context and feature to a writer callback
- */
+/** A method of passing both the context and feature to a writer callback */
 interface ContextWithFeature {
   context: Context;
   feature: BaseVectorFeature | MapboxVectorFeature;
+  mapbox: boolean;
+}
+
+/** A method of passing both the layer and mapbox support to a writer callback */
+interface ContextWithLayer {
+  layer: BaseVectorLayer | MapboxVectorLayer;
+  mapbox: boolean;
 }
 
 /**
  * Write old schema Mapbox vector tiles with extra features (backwards compatible)
  * @param tile - the tile to serialize. Either a BaseVectorTile or a MapboxVectorTile
+ * @param mapboxSupport - support old school mapbox tooling
  * @returns - a Uint8Array of the tile
  */
-export default function writeMVTile(tile: BaseVectorTile | VectorTile): Uint8Array {
+export default function writeMVTile(
+  tile: BaseVectorTile | VectorTile,
+  mapboxSupport = false,
+): Uint8Array {
   const out = new Protobuf();
-  writeTile(tile, out);
+  writeTile(tile, out, mapboxSupport);
   return out.commit();
 }
 
 /**
  * @param tile - the tile to serialize. Either a BaseVectorTile or a MapboxVectorTile
  * @param pbf - the Protobuf object to write to
+ * @param mapbox - support old school mapbox tooling
  */
-function writeTile(tile: BaseVectorTile | VectorTile, pbf: Protobuf): void {
+function writeTile(tile: BaseVectorTile | VectorTile, pbf: Protobuf, mapbox: boolean): void {
   for (const key in tile.layers) {
     const layer = tile.layers[key];
     if (layer instanceof OVectorLayer) continue;
-    pbf.writeMessage(3, writeLayer, layer);
+    pbf.writeMessage(mapbox ? 3 : 1, writeLayer, { layer, mapbox });
   }
 }
 
 /**
- * @param layer - the layer to serialize. Either a BaseVectorLayer or a MapboxVectorLayer
+ * @param layerContext - the layer to serialize. Either a BaseVectorLayer or a MapboxVectorLayer
  * @param pbf - the Protobuf object to write to
  */
-function writeLayer(layer: BaseVectorLayer | MapboxVectorLayer, pbf: Protobuf): void {
-  pbf.writeVarintField(15, layer.version ?? 1);
+function writeLayer(layerContext: ContextWithLayer, pbf: Protobuf): void {
+  const { layer, mapbox } = layerContext;
+  pbf.writeVarintField(15, mapbox ? 1 : 5);
   pbf.writeStringField(1, layer.name ?? '');
   pbf.writeVarintField(5, layer.extent ?? 4096);
 
@@ -76,7 +85,7 @@ function writeLayer(layer: BaseVectorLayer | MapboxVectorLayer, pbf: Protobuf): 
   const ll = layer.length;
   for (i = 0; i < ll; i++) {
     const feature = layer.feature(i);
-    pbf.writeMessage(2, writeFeature, { context, feature });
+    pbf.writeMessage(2, writeFeature, { context, feature, mapbox });
   }
 
   const keys = context.keys;
@@ -95,23 +104,24 @@ function writeLayer(layer: BaseVectorLayer | MapboxVectorLayer, pbf: Protobuf): 
  * @param pbf - the Protobuf object to write to
  */
 function writeFeature(contextWF: ContextWithFeature, pbf: Protobuf): void {
-  const { feature } = contextWF;
+  const { feature, mapbox } = contextWF;
   // fix BaseVectorPolysFeature to work with S2
   if (feature instanceof BaseVectorPolysFeature) feature.type = 4;
   // if id write it
-  if (typeof feature.id === 'number') pbf.writeVarintField(1, feature.id);
+  if (typeof feature.id === 'number') pbf.writeVarintField(mapbox ? 1 : 15, feature.id);
   // properties
-  pbf.writeMessage(2, writeProperties, contextWF);
-  pbf.writeVarintField(3, feature.type);
+  pbf.writeMessage(mapbox ? 2 : 1, writeProperties, contextWF);
+  let featureType = feature.type;
+  if (mapbox && featureType === 4) featureType = 3;
+  pbf.writeVarintField(mapbox ? 3 : 2, featureType);
   // geoemtry, indices
-  pbf.writeMessage(4, writeGeometry, feature);
+  pbf.writeMessage(mapbox ? 4 : 3, writeGeometry, contextWF);
   if ('indices' in feature && feature.indices.length > 0) {
-    pbf.writeMessage(5, writeIndices, feature.indices);
+    pbf.writeMessage(mapbox ? 5 : 4, writeIndices, feature.indices);
   }
   if ('tesselation' in feature && feature.tesselation.length > 0) {
-    pbf.writeMessage(6, writeTesselation, feature.tesselation);
+    pbf.writeMessage(mapbox ? 6 : 5, writeTesselation, feature.tesselation);
   }
-  pbf.writeBooleanField(7, true);
 }
 
 /**
@@ -180,15 +190,16 @@ function writeTesselation(geometry: Point[], pbf: Protobuf): void {
 }
 
 /**
- * @param feature - the feature to use for the geometry to write
+ * @param featureContext - the feature to use for the geometry to write
  * @param pbf - the Protobuf object to write to
  */
-function writeGeometry(feature: BaseVectorFeature | MapboxVectorFeature, pbf: Protobuf): void {
+function writeGeometry(featureContext: ContextWithFeature, pbf: Protobuf): void {
+  const { feature, mapbox } = featureContext;
   const { type } = feature;
   const geometry = feature.loadGeometry();
 
   if (type === 1) writePointGeometry(geometry as VectorPoints, pbf);
-  else if (type === 4) writeMultiPolyGeometry(geometry as VectorMultiPoly, pbf);
+  else if (type === 4) writeMultiPolyGeometry(geometry as VectorMultiPoly, pbf, mapbox);
   else writeLinesGeometry(geometry as VectorLines | VectorPoly, type === 3, pbf);
 }
 
@@ -249,8 +260,9 @@ function writeLinesGeometry(
 /**
  * @param geometry - the geometry to encode
  * @param pbf - the Protobuf object to write to
+ * @param mapbox - support old school mapbox tooling
  */
-function writeMultiPolyGeometry(geometry: VectorMultiPoly, pbf: Protobuf): void {
+function writeMultiPolyGeometry(geometry: VectorMultiPoly, pbf: Protobuf, mapbox: boolean): void {
   let x = 0;
   let y = 0;
 
@@ -270,7 +282,7 @@ function writeMultiPolyGeometry(geometry: VectorMultiPoly, pbf: Protobuf): void 
       }
       pbf.writeVarint(commandEncode(7, 1)); // ClosePath
     }
-    pbf.writeVarint(commandEncode(4, 1)); // ClosePolygon
+    pbf.writeVarint(commandEncode(mapbox ? 7 : 4, 1)); // ClosePolygon (Mapbox does not support so close path if not supported)
   }
 }
 

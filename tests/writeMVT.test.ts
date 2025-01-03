@@ -23,7 +23,7 @@ describe('serialize and parse vector tile points', () => {
   const tile = new BaseVectorTile({ points: layer });
 
   // Step 2: Serialize
-  const data = writeMVTile(tile);
+  const data = writeMVTile(tile, true);
 
   // Step 3: Parse
   it('should have proper metadata', () => {
@@ -33,7 +33,7 @@ describe('serialize and parse vector tile points', () => {
 
     const layer = tile.layers.points;
 
-    expect(layer.version).toBe(5);
+    expect(layer.version).toBe(1);
     expect(layer.name).toBe('points');
     expect(layer.extent).toBe(8_192);
     expect(layer.length).toBe(2);
@@ -118,7 +118,7 @@ describe('serialize and parse vector tile lines', () => {
   const tile = new BaseVectorTile({ lines: layer });
 
   // Step 2: Serialize
-  const data = writeMVTile(tile);
+  const data = writeMVTile(tile, true);
 
   // Step 3: Parse
   it('should have proper metadata', () => {
@@ -128,7 +128,7 @@ describe('serialize and parse vector tile lines', () => {
 
     const layer = tile.layers.lines;
 
-    expect(layer.version).toBe(2);
+    expect(layer.version).toBe(1);
     expect(layer.name).toBe('lines');
     expect(layer.extent).toBe(8_192);
     expect(layer.length).toBe(2);
@@ -330,7 +330,7 @@ describe('serialize and parse vector tile polygons', () => {
   const tile = new BaseVectorTile({ polys: layer });
 
   // Step 2: Serialize
-  const data = writeMVTile(tile);
+  const data = writeMVTile(tile, true);
 
   // Step 3: Parse
   it('should have proper metadata', () => {
@@ -340,7 +340,7 @@ describe('serialize and parse vector tile polygons', () => {
 
     const layer = tile.layers.polys;
 
-    expect(layer.version).toBe(5);
+    expect(layer.version).toBe(1);
     expect(layer.name).toBe('polys');
     expect(layer.extent).toBe(8_192);
     expect(layer.length).toBe(2);
@@ -364,178 +364,66 @@ describe('serialize and parse vector tile polygons', () => {
     // Geometry
     expect(poly1.loadGeometry()).toEqual([
       [
-        [
-          { x: 2565, y: 2565 },
-          { x: 2565, y: 2565 },
-          { x: 3889, y: 3889 },
-          { x: 3889, y: 3889 },
-          { x: 2565, y: 2565 },
-        ],
-        [
-          { x: 3025, y: 3025 },
-          { x: 3025, y: 3025 },
-          { x: 2766, y: 2766 },
-          { x: 2766, y: 2766 },
-          { x: 3025, y: 3025 },
-        ],
+        { x: 2565, y: 2565 },
+        { x: 2565, y: 2565 },
+        { x: 3889, y: 3889 },
+        { x: 3889, y: 3889 },
+        { x: 2565, y: 2565 },
+      ],
+      [
+        { x: 3025, y: 3025 },
+        { x: 3025, y: 3025 },
+        { x: 2766, y: 2766 },
+        { x: 2766, y: 2766 },
+        { x: 3025, y: 3025 },
       ],
     ]);
     expect(poly1.loadGeometryFlat()).toEqual([
       [
-        [
-          [
-            {
-              x: 2565,
-              y: 2565,
-            },
-            {
-              x: 2565,
-              y: 2565,
-            },
-            {
-              x: 3889,
-              y: 3889,
-            },
-            {
-              x: 3889,
-              y: 3889,
-            },
-            {
-              x: 2565,
-              y: 2565,
-            },
-          ],
-          [
-            {
-              x: 3025,
-              y: 3025,
-            },
-            {
-              x: 3025,
-              y: 3025,
-            },
-            {
-              x: 2766,
-              y: 2766,
-            },
-            {
-              x: 2766,
-              y: 2766,
-            },
-            {
-              x: 3025,
-              y: 3025,
-            },
-          ],
-        ],
+        0.3131103515625, 0.3131103515625, 0.3131103515625, 0.3131103515625, 0.4747314453125,
+        0.4747314453125, 0.4747314453125, 0.4747314453125, 0.3131103515625, 0.3131103515625,
+        0.3692626953125, 0.3692626953125, 0.3692626953125, 0.3692626953125, 0.337646484375,
+        0.337646484375, 0.337646484375, 0.337646484375, 0.3692626953125, 0.3692626953125, 0, 0,
       ],
       [],
     ]);
     expect(poly2.loadGeometry()).toEqual([
       [
-        [
-          { x: 2614, y: 2614 },
-          { x: 2614, y: 2614 },
-          { x: 3110, y: 3110 },
-          { x: 5299, y: 5299 },
-          { x: 5299, y: 5299 },
-          { x: 2614, y: 2614 },
-        ],
-        [
-          { x: 3497, y: 3497 },
-          { x: 4603, y: 4603 },
-          { x: 4603, y: 4603 },
-          { x: 3497, y: 3497 },
-          { x: 3497, y: 3497 },
-        ],
-        [
-          { x: 2978, y: 2978 },
-          { x: 3329, y: 3329 },
-          { x: 3329, y: 3329 },
-          { x: 2978, y: 2978 },
-          { x: 2978, y: 2978 },
-        ],
+        { x: 2614, y: 2614 },
+        { x: 2614, y: 2614 },
+        { x: 3110, y: 3110 },
+        { x: 5299, y: 5299 },
+        { x: 5299, y: 5299 },
+        { x: 2614, y: 2614 },
       ],
       [
-        [
-          { x: 4591, y: 4591 },
-          { x: 4591, y: 4591 },
-          { x: 5704, y: 5704 },
-          { x: 5967, y: 5967 },
-          { x: 5967, y: 5967 },
-          { x: 4591, y: 4591 },
-        ],
-        [
-          { x: 5730, y: 5730 },
-          { x: 5730, y: 5730 },
-          { x: 5556, y: 5556 },
-          { x: 5556, y: 5556 },
-          { x: 5730, y: 5730 },
-        ],
-      ],
-    ]);
-
-    // Geomtery v1
-    layer.version = 1;
-    expect(poly1.loadGeometry()).toEqual([
-      [
-        [
-          { x: 2565, y: 2565 },
-          { x: 2565, y: 2565 },
-          { x: 3889, y: 3889 },
-          { x: 3889, y: 3889 },
-          { x: 2565, y: 2565 },
-        ],
-        [
-          { x: 3025, y: 3025 },
-          { x: 3025, y: 3025 },
-          { x: 2766, y: 2766 },
-          { x: 2766, y: 2766 },
-          { x: 3025, y: 3025 },
-        ],
-      ],
-    ]);
-    expect(poly2.loadGeometry()).toEqual([
-      [
-        [
-          { x: 2614, y: 2614 },
-          { x: 2614, y: 2614 },
-          { x: 3110, y: 3110 },
-          { x: 5299, y: 5299 },
-          { x: 5299, y: 5299 },
-          { x: 2614, y: 2614 },
-        ],
-        [
-          { x: 3497, y: 3497 },
-          { x: 4603, y: 4603 },
-          { x: 4603, y: 4603 },
-          { x: 3497, y: 3497 },
-          { x: 3497, y: 3497 },
-        ],
-        [
-          { x: 2978, y: 2978 },
-          { x: 3329, y: 3329 },
-          { x: 3329, y: 3329 },
-          { x: 2978, y: 2978 },
-          { x: 2978, y: 2978 },
-        ],
+        { x: 3497, y: 3497 },
+        { x: 4603, y: 4603 },
+        { x: 4603, y: 4603 },
+        { x: 3497, y: 3497 },
+        { x: 3497, y: 3497 },
       ],
       [
-        [
-          { x: 4591, y: 4591 },
-          { x: 4591, y: 4591 },
-          { x: 5704, y: 5704 },
-          { x: 5967, y: 5967 },
-          { x: 5967, y: 5967 },
-          { x: 4591, y: 4591 },
-        ],
-        [
-          { x: 5730, y: 5730 },
-          { x: 5730, y: 5730 },
-          { x: 5556, y: 5556 },
-          { x: 5556, y: 5556 },
-          { x: 5730, y: 5730 },
-        ],
+        { x: 2978, y: 2978 },
+        { x: 3329, y: 3329 },
+        { x: 3329, y: 3329 },
+        { x: 2978, y: 2978 },
+        { x: 2978, y: 2978 },
+      ],
+      [
+        { x: 4591, y: 4591 },
+        { x: 4591, y: 4591 },
+        { x: 5704, y: 5704 },
+        { x: 5967, y: 5967 },
+        { x: 5967, y: 5967 },
+        { x: 4591, y: 4591 },
+      ],
+      [
+        { x: 5730, y: 5730 },
+        { x: 5730, y: 5730 },
+        { x: 5556, y: 5556 },
+        { x: 5556, y: 5556 },
+        { x: 5730, y: 5730 },
       ],
     ]);
 
@@ -559,24 +447,34 @@ describe('serialize and parse vector tile polygons', () => {
     expect(poly2Props).toEqual({ name: 'c' });
 
     // TODO: throw new Error(`unknown command ${cmd}`); (4 tells it to close poly)
-    // expect(poly1.loadGeometry()).toEqual([
-    //   [
-    //     [
-    //       { x: 2565, y: 2565 },
-    //       { x: 2565, y: 2565 },
-    //       { x: 3889, y: 3889 },
-    //       { x: 3889, y: 3889 },
-    //       { x: 2565, y: 2565 },
-    //     ],
-    //     [
-    //       { x: 3025, y: 3025 },
-    //       { x: 3025, y: 3025 },
-    //       { x: 2766, y: 2766 },
-    //       { x: 2766, y: 2766 },
-    //       { x: 3025, y: 3025 },
-    //     ],
-    //   ],
-    // ]);
+    expect(poly1.loadGeometry()).toEqual([
+      [
+        // @ts-expect-error - we don't care about mapbox types
+        { x: 2565, y: 2565 },
+        // @ts-expect-error - we don't care about mapbox types
+        { x: 2565, y: 2565 },
+        // @ts-expect-error - we don't care about mapbox types
+        { x: 3889, y: 3889 },
+        // @ts-expect-error - we don't care about mapbox types
+        { x: 3889, y: 3889 },
+        // @ts-expect-error - we don't care about mapbox types
+        { x: 2565, y: 2565 },
+      ],
+      [
+        // @ts-expect-error - we don't care about mapbox types
+        { x: 3025, y: 3025 },
+        // @ts-expect-error - we don't care about mapbox types
+        { x: 3025, y: 3025 },
+        // @ts-expect-error - we don't care about mapbox types
+        { x: 2766, y: 2766 },
+        // @ts-expect-error - we don't care about mapbox types
+        { x: 2766, y: 2766 },
+        // @ts-expect-error - we don't care about mapbox types
+        { x: 3025, y: 3025 },
+        // @ts-expect-error - we don't care about mapbox types
+        { x: 3025, y: 3025 },
+      ],
+    ]);
   });
 });
 

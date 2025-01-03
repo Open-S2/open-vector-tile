@@ -55,8 +55,8 @@ export function writeElevationData(input: ElevationInput): Uint8Array {
   const { data, size, extent } = input;
   const max = data.reduce((a, b) => Math.max(a, b), 0);
   const min = data.reduce((a, b) => Math.min(a, b), 0);
-  const re_mapped = data.map((v) => remapValue(v, min, max, extent));
-  const d_coded = deltaEncodeArray(re_mapped);
+  const reMapped = data.map((v) => remapValue(v, min, max, extent));
+  const d_coded = deltaEncodeArray(reMapped);
 
   pbf.writeVarintField(0, extent);
   pbf.writeVarintField(1, size);

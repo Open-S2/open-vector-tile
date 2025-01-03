@@ -178,8 +178,7 @@ export default class MapboxVectorFeature {
   /**
    * @returns - [flattened geometry & tesslation if applicable, indices]
    */
-  loadGeometryFlat(): [geometry: number[] | VectorGeometry, indices: number[]] {
-    if (!this.isS2) return [this.loadGeometry(), [] as number[]];
+  loadGeometryFlat(): [geometry: number[], indices: number[]] {
     this.#pbf.pos = this.#geometry;
     const multiplier = 1 / this.extent;
 
@@ -284,7 +283,7 @@ export default class MapboxVectorFeature {
       else lines.push(input);
     }
 
-    // if type is polygon but we are using version 1, we might have a multipolygon
+    // if type is polygon but we are using old mapbox spec, we might have a multipolygon
     if (this.type === 3 && !this.isS2) polys = classifyRings(lines);
 
     if (this.type === 1) return points;
