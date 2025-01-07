@@ -1,7 +1,7 @@
 import { Pbf as Protobuf } from 's2-tools';
 
 /** Image type */
-export enum ImageType {
+export const enum ImageType {
   /** PNG Image */
   PNG = 0,
   /** JPEG Image */

@@ -52,33 +52,33 @@
   ],
   "homepage": "https://github.com/Open-S2/open-vector-tile#readme",
   "devDependencies": {
-    "@mapbox/point-geometry": "^0.1.0",
+    "@mapbox/point-geometry": "^1.1.0",
     "@mapbox/vector-tile": "^2.0.3",
     "@maplibre/maplibre-tile-spec": "^0.0.1-alpha.3",
     "@skypack/package-check": "^0.2.2",
-    "@types/bun": "^1.1.10",
-    "@types/node": "^22.5.3",
+    "@types/bun": "^1.1.15",
+    "@types/node": "^22.10.5",
     "@types/pbf": "^3.0.5",
     "ajv": "^8.17.1",
     "coveralls": "^3.1.1",
-    "dependency-cruiser": "^16.4.2",
-    "eslint": "^9.11.1",
+    "dependency-cruiser": "^16.9.0",
+    "eslint": "^9.17.0",
     "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-jsdoc": "^50.3.1",
+    "eslint-plugin-jsdoc": "^50.6.1",
     "eslint-plugin-prettier": "^5.2.1",
-    "eslint-plugin-tsdoc": "^0.3.0",
+    "eslint-plugin-tsdoc": "^0.4.0",
     "fflate": "^0.8.2",
-    "markdown-table": "^3.0.3",
+    "markdown-table": "^3.0.4",
     "pbf": "^4.0.1",
-    "prettier": "^3.3.3",
-    "s2json-spec": "^1.6.0",
+    "prettier": "^3.4.2",
+    "s2json-spec": "^1.6.2",
     "sharp": "^0.33.5",
-    "typedoc": "^0.26.7",
-    "typedoc-plugin-coverage": "^3.3.0",
-    "typescript": "^5.6.2",
-    "typescript-eslint": "^8.8.0"
+    "typedoc": "^0.27.6",
+    "typedoc-plugin-coverage": "^3.4.1",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.19.1"
   },
   "dependencies": {
-    "s2-tools": "^0.1.6"
+    "s2-tools": "^0.1.8"
   }
 }

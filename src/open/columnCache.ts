@@ -24,7 +24,7 @@ import type {
  * Column Types take up 3 bits.
  * ColumnNames define various common data structures to be stored in a column fashion
  */
-export enum OColumnName {
+export const enum OColumnName {
   /** stores string values */
   string,
   /**
