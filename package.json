@@ -1,6 +1,6 @@
 {
   "name": "open-vector-tile",
-  "version": "1.6.3",
+  "version": "1.6.5",
   "description": "This library reads/writes Open Vector Tiles",
   "keywords": [
     "vector",
@@ -79,6 +79,6 @@
     "typescript-eslint": "^8.19.1"
   },
   "dependencies": {
-    "pbf-ts": "^1.0.1"
+    "pbf-ts": "^1.0.2"
   }
 }
