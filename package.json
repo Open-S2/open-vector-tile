@@ -1,6 +1,6 @@
 {
   "name": "open-vector-tile",
-  "version": "1.6.5",
+  "version": "1.6.6",
   "description": "This library reads/writes Open Vector Tiles",
   "keywords": [
     "vector",
