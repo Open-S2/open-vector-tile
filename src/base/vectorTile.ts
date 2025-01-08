@@ -3,7 +3,7 @@ import MapboxVectorLayer from '../mapbox/vectorLayer';
 import { VectorTile } from '../vectorTile';
 
 import type { S2JSONLayerMap } from './vectorLayer';
-import type { Tile as S2JSONTile } from 's2-tools';
+import type { S2JSONTile } from '../vectorTile.spec';
 
 /**
  * Base Vector Tile

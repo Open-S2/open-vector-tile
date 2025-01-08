@@ -3,7 +3,7 @@ import {
   VectorTile,
   convertMapboxElevationData,
   convertTerrariumElevationData,
-  writeElevationTile,
+  writeOVTile,
 } from '../../src';
 import { expect, test } from 'bun:test';
 
@@ -12,7 +12,7 @@ import type { ElevationInput } from '../../src/open/elevationData';
 test('Elevation Tile', async () => {
   const data = await convertImageToHeightMap(__dirname + '/terrarium_ex.webp');
   const inputData: ElevationInput = { size: 512, data, extent: 8_192 };
-  const tileData = writeElevationTile(inputData);
+  const tileData = writeOVTile(undefined, undefined, inputData);
   // encode - decode
   const vectorTile = new VectorTile(tileData);
   const decodedData = vectorTile.readElevationData();

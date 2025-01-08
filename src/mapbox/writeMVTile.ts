@@ -1,6 +1,6 @@
 import { BaseVectorPolysFeature } from '../base';
 import { OVectorLayer } from '../open/vectorLayer';
-import { Pbf as Protobuf } from 's2-tools';
+import { Pbf as Protobuf } from 'pbf-ts';
 import { commandEncode, zigzag } from '../util';
 
 import type { VectorTile } from '../vectorTile';

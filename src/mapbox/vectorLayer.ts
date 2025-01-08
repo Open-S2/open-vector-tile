@@ -1,7 +1,7 @@
 import VectorFeature from './vectorFeature';
 
 import type { Extents } from '../open';
-import type { Pbf as Protobuf } from 's2-tools';
+import type { Pbf as Protobuf } from 'pbf-ts';
 import type { Value } from '../vectorTile.spec';
 
 /**

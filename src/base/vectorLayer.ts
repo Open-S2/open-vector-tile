@@ -4,7 +4,7 @@ import { fromMapboxVectorFeature, fromS2JSONFeature } from './vectorFeature';
 
 import type { BaseVectorFeature } from './vectorFeature';
 import type { Extents } from '../open';
-import type { Layer as S2JSONLayer } from 's2-tools';
+import type { S2JSONLayer } from '../vectorTile.spec';
 import type { Shape } from '../open/shape';
 
 /**

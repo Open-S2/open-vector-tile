@@ -1,4 +1,4 @@
-import type { Pbf as Protobuf } from 's2-tools';
+import type { Pbf as Protobuf } from 'pbf-ts';
 import type {
   BBox,
   BBox3D,

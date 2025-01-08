@@ -1,3 +1,5 @@
+import type { Face, VectorFeatures } from 's2json-spec';
+
 /**
  * A BBOX is defined in lon-lat space and helps with zooming motion to
  * see the entire line or polygon
@@ -182,3 +184,21 @@ export type BaseVectorGeometry =
   | Points3DGeometry
   | Lines3DGeometry
   | Polys3DGeometry;
+
+/** An external tile should implement this shape to be useable by the tile writers */
+export interface S2JSONTile {
+  extent: number;
+  face: Face;
+  zoom: number;
+  i: number;
+  j: number;
+  transformed: boolean;
+  layers: Record<string, S2JSONLayer>;
+}
+
+/** An external layer should implement this shape to be used by the tile writers */
+export interface S2JSONLayer {
+  extent: number;
+  name: string;
+  features: VectorFeatures[];
+}

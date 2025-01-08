@@ -1,4 +1,4 @@
-import { Pbf as Protobuf } from 's2-tools';
+import { Pbf as Protobuf } from 'pbf-ts';
 
 /** Image type */
 export const enum ImageType {

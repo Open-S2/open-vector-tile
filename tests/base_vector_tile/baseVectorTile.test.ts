@@ -3,7 +3,7 @@ import { VectorTile } from '../../src';
 import { describe, expect, it } from 'bun:test';
 
 import type { BaseVectorFeature } from '../../src/base';
-import type { Tile as S2JSONTile } from 's2-tools';
+import type { S2JSONTile } from '../../src';
 
 describe('BaseVectorTile', () => {
   const layer = new BaseVectorTile();

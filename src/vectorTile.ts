@@ -1,5 +1,5 @@
 import { MapboxVectorLayer } from './mapbox';
-import { Pbf as Protobuf } from 's2-tools';
+import { Pbf as Protobuf } from 'pbf-ts';
 import { BaseVectorLayer, BaseVectorTile } from './base';
 import {
   ColumnCacheReader,
@@ -103,28 +103,32 @@ export class VectorTile {
  * Write a tile to a Protobuf. and return a buffer
  * @param tile - the tile may be a base vector tile or a S2/Mapbox vector tile
  * @param image - if provided, the tile will include an image
+ * @param elevationData - if provodied, the elevation data to encode with specs on how to encode
  * @param verbose - whether to print debug messages
  * @returns - a protobuffer encoded buffer using the Open Vector Tile Spec
  */
 export function writeOVTile(
-  tile: BaseVectorTile | VectorTile = new BaseVectorTile(),
+  tile?: BaseVectorTile | VectorTile,
   image?: ImageDataInput,
+  elevationData?: ElevationInput,
   verbose = false,
 ): Uint8Array {
   const pbf = new Protobuf();
   const cache = new ColumnCacheWriter();
 
   // first write layers
-  for (const key in tile.layers) {
-    const layer = tile.layers[key];
-    if (layer instanceof OVectorLayer) continue;
-    const baseLayer =
-      layer instanceof MapboxVectorLayer ? BaseVectorLayer.fromMapboxVectorLayer(layer) : layer;
-    if (verbose === true) console.info('writing layer', baseLayer.name);
-    pbf.writeMessage(4, writeOVLayer, { layer: baseLayer, cache, verbose });
+  if (tile !== undefined) {
+    for (const key in tile.layers) {
+      const layer = tile.layers[key];
+      if (layer instanceof OVectorLayer) continue;
+      const baseLayer =
+        layer instanceof MapboxVectorLayer ? BaseVectorLayer.fromMapboxVectorLayer(layer) : layer;
+      if (verbose === true) console.info('writing layer', baseLayer.name);
+      pbf.writeMessage(4, writeOVLayer, { layer: baseLayer, cache, verbose });
+    }
+    // now we can write columns
+    pbf.writeMessage(5, ColumnCacheWriter.write, cache);
   }
-  // now we can write columns
-  pbf.writeMessage(5, ColumnCacheWriter.write, cache);
   // write the image if applicable
   if (image !== undefined) {
     const imageTile = writeImageData(image);
@@ -133,18 +137,12 @@ export function writeOVTile(
       Buffer.from(imageTile.buffer, imageTile.byteOffset, imageTile.byteLength),
     );
   }
+  // write the elevation data if provided
+  if (elevationData !== undefined) {
+    const data = writeElevationData(elevationData);
+    pbf.writeBytesField(6, Buffer.from(data.buffer, data.byteOffset, data.byteLength));
+    return pbf.commit();
+  }
 
-  return pbf.commit();
-}
-
-/**
- * @param elevationData - the elevation data to encode with specs on how to encode
- * @returns - the encoded data
- */
-export function writeElevationTile(elevationData: ElevationInput): Uint8Array {
-  const pbf = new Protobuf();
-
-  const data = writeElevationData(elevationData);
-  pbf.writeBytesField(6, Buffer.from(data.buffer, data.byteOffset, data.byteLength));
   return pbf.commit();
 }

@@ -79,6 +79,6 @@
     "typescript-eslint": "^8.19.1"
   },
   "dependencies": {
-    "s2-tools": "^0.1.8"
+    "pbf-ts": "^1.0.1"
   }
 }

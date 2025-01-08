@@ -1,4 +1,4 @@
-import { Pbf as Protobuf } from 's2-tools';
+import { Pbf as Protobuf } from 'pbf-ts';
 import { VectorTile } from '../src';
 import { MapboxVectorFeature, MapboxVectorLayer } from '../src/mapbox';
 import { describe, expect, it, test } from 'bun:test';

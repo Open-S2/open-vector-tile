@@ -1,5 +1,5 @@
 import { OColumnName } from './columnCache';
-import { Pbf as Protobuf } from 's2-tools';
+import { Pbf as Protobuf } from 'pbf-ts';
 import { OVectorFeature, readFeature, writeOVFeature } from './vectorFeature';
 import { decodeShape, encodeShape } from './shape';
 

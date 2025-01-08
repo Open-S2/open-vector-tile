@@ -1,5 +1,5 @@
 import { BaseVectorLayer } from '../../src/base';
-import { Pbf as Protobuf } from 's2-tools';
+import { Pbf as Protobuf } from 'pbf-ts';
 import { ColumnCacheReader, ColumnCacheWriter } from '../../src/open/columnCache';
 import { OVectorLayer, decodeExtent, encodeExtent, writeOVLayer } from '../../src/open/vectorLayer';
 import { describe, expect, it } from 'bun:test';
