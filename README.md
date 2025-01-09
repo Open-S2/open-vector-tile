@@ -52,7 +52,7 @@ This also serves as a modified TypeScript implementation of the [Mapbox Vector T
 * 📷 Supports storing multiple images in the tile.
 * 🧇 Supports multiple of any gridded data such as `elevation`, `temperature`, `precipitation`, etc.
 
-## Inspiration
+## Inspirations
 
 A very talented [Markus Tremmel](https://github.com/mactrem) came up with the idea of migrating away from a row based approach to a column based approach with his [COVTiles](https://github.com/mactrem/cov-tiles). I wanted to test the idea of simplifying his project and see if it was worth the effort. Once I saw brotli compression had comperable results, I decided to finish the project.
 
