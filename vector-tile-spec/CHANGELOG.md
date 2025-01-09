@@ -17,3 +17,5 @@ Features added from Mapbox Vector Tile Spec:
 * 🪺 Support nested objects in properties and m-values.
 * 📦 All features support first class citizen `BBOX` data like IDs.
 * 🫥 Lines and Polygons support `offsets` to know the distance it's traveled (useful for correctly rendering dashed lines across tiles).
+* 📷 Supports storing multiple images in the tile.
+* 🧇 Supports multiple of any gridded data such as `elevation`, `temperature`, `precipitation`, etc.

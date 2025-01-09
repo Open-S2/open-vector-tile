@@ -34,7 +34,9 @@
 
 ## About
 
-A Modified TypeScript implementation of the [Mapbox Vector Tile](https://github.com/mapbox/vector-tile-js) library. It is backwards compatible but offers a lot of new features and improvements including (but not limited to):
+The Open Vector Tile specification is a Tile format for storing GIS data. The `Vector` in the name has become something of a misnomer. This spec and its code are no longer limited to vector data but also supports gridded data and image data inside the same tile.
+
+This also serves as a modified TypeScript implementation of the [Mapbox Vector Tile](https://github.com/mapbox/vector-tile-js) library. So it is backwards compatible but offers a lot of new features and improvements including (but not limited to):
 
 * 🔗 lightweight zero dependency builds.
 * 🌴 Proper module treeshake.
@@ -47,6 +49,8 @@ A Modified TypeScript implementation of the [Mapbox Vector Tile](https://github.
 * 🪺 Support nested objects in properties and m-values.
 * 📦 All features support first class citizen `BBOX` data like IDs.
 * 🫥 Lines and Polygons support `offsets` to know the distance it's traveled (useful for correctly rendering dashed lines across tiles).
+* 📷 Supports storing multiple images in the tile.
+* 🧇 Supports multiple of any gridded data such as `elevation`, `temperature`, `precipitation`, etc.
 
 ## Inspiration
 
@@ -57,6 +61,8 @@ A very talented [Markus Tremmel](https://github.com/mactrem) came up with the id
 Since another spec is being built at the same time, you may think this is a waste of time or creating an unnecessary conflict of interest. [So I wrote my thoughts on this topic and why this spec is being created](/motivation.md).
 
 ## Read The Spec
+
+The first iteration is up. It needs to be revised for more clarity, but includes all the concepts:
 
 [open-vector-tile-spec](/vector-tile-spec/1.0.0/README.md)
 
@@ -84,45 +90,75 @@ cargo install open-vector-tile
 
 ## Example use
 
+### Reading
+
 ```ts
-const fs = from 'fs'
-import { VectorTile } from 'open-vector-tile'
+const fs = from 'fs';
+import { VectorTile } from 'open-vector-tile';
 
 // assume you can read (.pbf | .mvt | .ovt)
-const fixture = fs.readFileSync('./x-y-z.vector.pbf')
-// Bun const fixture = new Uint8Array(await Bun.file('./x-y-z.vector.pbf').arrayBuffer())
+const fixture = fs.readFileSync('./x-y-z.vector.pbf');
+// Or load with bun:
+const fixture = await Bun.file('./x-y-z.vector.pbf').arrayBuffer();
 // load the protobuf parsing it directly
-const tile = new VectorTile(fixture)
+const tile = new VectorTile(fixture);
 
-console.log(tile)
+// VECTOR API:
 
 // example layer
-const { landuse } = tile.layers
+const { landuse } = tile.layers;
 
 // grab the first feature
-console.log(landuse.feature(0))
-console.log(landuse.feature(0).loadGeometry())
+const firstFeature = landuse.feature(0);
+// grab the geometry
+const geometry = firstFeature.loadGeometry();
+
+// OR specifically ask for a geometry type
+const points = firstFeature.loadPoints();
+const lines = firstFeature.loadLines();
+const polys = firstFeature.loadPolys();
+
+// If you want to take advantage of the pre-tessellated and indexed geometries
+// and you're loading the data for a renderer, you can grab the pre-tessellated geometry
+const [flatGeometry, indices] = firstFeature.loadGeometryFlat();
+
+// IMAGE API
+
+// example layer
+const { satellite } = tile.images;
+// grab the image data
+const data = satellite.image(); // Uint8Array
+
+// GRIDDED API
+
+// example layer
+const { elevation } = tile.grids;
+// grab the grid data
+const data = elevation.grid(); // number[]
 ```
 
-## General Purpose API
-
-### Tile
-
-#### Read in a Tile
+### Writing
 
 ```ts
-const tile = new VectorTile(uint8Array)
+import { writeOVTile, writeMVTile } from 'open-vector-tile'
+
+// Full support for 3D geometries, m-values, complex properties with nested objects, images, grids, etc.
+const encodedData = writeOVTile(
+  vectorTileData, // vector data
+  images, // compressed images in specs like PNG, JPEG, etc.
+  grids, // floating point grids like elevation, temperature, wind, precipitation, etc.
+); // Uint8Array
+
+// Write the older schema that's fast, light, with fewer feature sets
+writeMVTile(
+  vectorData,
+  supportMabox // boolean decides if you want to support the old mapbox spec or have improved polygon support
+); // Uint8Array
 ```
 
-#### Read in a layer
+## General Purpose Information
 
-```ts
-const layer = tile.layers[layerName]
-```
-
-### Layers
-
-#### Layer Properties
+### Layer Properties
 
 ```ts
 type Extents = 512 | 1_024 | 2_048 | 4_096 | 8_192 | 16_384
@@ -136,13 +172,6 @@ interface Layer {
     // number of features in the layer
     length: number;
 }
-```
-
-#### Read in a Feature
-
-```ts
-// returns a VectorFeature
-const feature = layer.feature(index)
 ```
 
 ### Features

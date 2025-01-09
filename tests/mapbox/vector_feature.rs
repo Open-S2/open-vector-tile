@@ -42,7 +42,8 @@ mod tests {
         let mut keys: BTreeMap<String, usize> = BTreeMap::new();
         let mut values: BTreeMap<MapboxValue, usize> = BTreeMap::new();
         let mut pbf_write = Protobuf::new();
-        pbf_write.write_bytes_field(3, &write_feature(&base_feature, &mut keys, &mut values));
+        pbf_write
+            .write_bytes_field(3, &write_feature(&base_feature, &mut keys, &mut values, false));
         let data = pbf_write.take();
         let pbf = Rc::new(RefCell::new(data.into()));
 

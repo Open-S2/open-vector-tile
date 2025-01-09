@@ -51,13 +51,16 @@ impl ProtoRead for MapboxVectorTile {
     }
 }
 
-/// writer for converting a BaseVectorTile to encoded bytes of the Open Vector Tile format
-pub fn write_tile(tile: &mut BaseVectorTile) -> Vec<u8> {
+/// writer for converting a BaseVectorTile to encoded bytes of the Open Vector Flat Tile format or Mapbox Vector Tile
+pub fn write_tile(tile: &mut BaseVectorTile, mapbox_support: bool) -> Vec<u8> {
     let mut pbf = Protobuf::new();
 
     // first write layers
     for layer in tile.layers.values() {
-        pbf.write_bytes_field(1, &write_layer(layer));
+        pbf.write_bytes_field(
+            if mapbox_support { 3 } else { 1 },
+            &write_layer(layer, mapbox_support),
+        );
     }
 
     pbf.take()

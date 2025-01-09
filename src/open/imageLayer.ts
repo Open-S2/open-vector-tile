@@ -16,33 +16,56 @@ export const enum ImageType {
   SVG = 5,
   /** BMP Image */
   BMP = 6,
+  /** Unknown image type */
+  UNKNOWN = 7,
 }
 /** String version of ImageType */
-export type ImageTypeString = 'png' | 'jpg' | 'webp' | 'gif' | 'avif' | 'svg' | 'bmp';
+export type ImageTypeString = 'png' | 'jpg' | 'webp' | 'gif' | 'avif' | 'svg' | 'bmp' | 'unknown';
 
 /** Elevation object to read from */
 export class ImageData {
+  #pbf: Protobuf;
+  name: string = 'default';
+  private imagePos: number = 0;
   type: ImageTypeString = 'png';
   width: number = 512;
   height: number = 512;
-  image: Uint8Array = new Uint8Array();
+  /**
+   * @param pbf - the pbf protocol we are reading from
+   * @param end - the position to stop at
+   */
+  constructor(pbf: Protobuf, end: number) {
+    this.#pbf = pbf;
+    pbf.readFields(this.#readImage, this, end);
+  }
+
+  /**
+   * Reads the image data
+   * @returns - the image data
+   */
+  image(): Uint8Array {
+    this.#pbf.pos = this.imagePos;
+    return this.#pbf.readBytes();
+  }
 
   /**
    * @param tag - the tag to read
-   * @param elevationData - the elevation data to mutate
+   * @param imageData - the image data to mutate
    * @param pbf - the Protobuf to pull the appropriate data from
-   * @internal
    */
-  _read(tag: number, elevationData: ImageData, pbf: Protobuf): void {
-    if (tag === 0) elevationData.type = fromImageType(pbf.readVarint() as ImageType);
-    else if (tag === 1) elevationData.width = pbf.readVarint();
-    else if (tag === 2) elevationData.height = pbf.readVarint();
-    else if (tag === 3) elevationData.image = pbf.readBytes();
+  #readImage(tag: number, imageData: ImageData, pbf: Protobuf): void {
+    if (tag === 0) imageData.type = fromImageType(pbf.readVarint() as ImageType);
+    else if (tag === 1) imageData.width = pbf.readVarint();
+    else if (tag === 2) imageData.height = pbf.readVarint();
+    else if (tag === 3) imageData.imagePos = pbf.pos;
+    else if (tag === 4) imageData.name = pbf.readString();
   }
 }
 
 /** Necessary data to encode an image */
 export interface ImageDataInput {
+  /** The name of the image */
+  name: string;
   /** The image type */
   type: ImageTypeString;
   /** The width of the image */
@@ -64,6 +87,7 @@ export function writeImageData(input: ImageDataInput): Uint8Array {
   pbf.writeVarintField(1, width);
   pbf.writeVarintField(2, height);
   pbf.writeBytesField(3, image);
+  pbf.writeStringField(4, input.name);
 
   return pbf.commit();
 }
@@ -80,6 +104,7 @@ export function fromImageType(imageType: ImageType): ImageTypeString {
   else if (imageType === ImageType.AVIF) return 'avif';
   else if (imageType === ImageType.SVG) return 'svg';
   else if (imageType === ImageType.BMP) return 'bmp';
+  else if (imageType === ImageType.UNKNOWN) return 'unknown';
   throw new Error('Invalid image type');
 }
 
@@ -95,5 +120,6 @@ export function toImageType(imageType: ImageTypeString): ImageType {
   else if (imageType === 'avif') return ImageType.AVIF;
   else if (imageType === 'svg') return ImageType.SVG;
   else if (imageType === 'bmp') return ImageType.BMP;
+  else if (imageType === 'unknown') return ImageType.UNKNOWN;
   throw new Error('Invalid image type');
 }

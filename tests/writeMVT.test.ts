@@ -446,7 +446,6 @@ describe('serialize and parse vector tile polygons', () => {
     expect(poly1Props).toEqual({ a: -100, b: 500 });
     expect(poly2Props).toEqual({ name: 'c' });
 
-    // TODO: throw new Error(`unknown command ${cmd}`); (4 tells it to close poly)
     expect(poly1.loadGeometry()).toEqual([
       [
         // @ts-expect-error - we don't care about mapbox types

@@ -2,7 +2,7 @@
 mod tests {
     extern crate alloc;
     use ovtile::open::{
-        convert_mapbox_elevation_data, convert_terrarium_elevation_data, ElevationData, Extent,
+        convert_mapbox_elevation_data, convert_terrarium_elevation_data, Extent, GridData,
     };
     use pbf::Protobuf;
 
@@ -26,8 +26,14 @@ mod tests {
 
     #[test]
     fn test_protobuf() {
-        let elevation =
-            ElevationData::new(8_192.into(), 512.0, 0.0, 0.0, vec![-1.0, 2.0, 3.0, 4.0]);
+        let elevation = GridData::new(
+            "elevation".to_owned(),
+            8_192.into(),
+            512.0,
+            0.0,
+            0.0,
+            vec![-1.0, 2.0, 3.0, 4.0],
+        );
         let mut pb = Protobuf::new();
         pb.write_message(1, &elevation);
 
@@ -35,9 +41,10 @@ mod tests {
 
         let mut pb = Protobuf::from(bytes);
         let _message_id = pb.read_field();
-        let mut elevation_res = ElevationData::default();
+        let mut elevation_res = GridData::default();
         pb.read_message(&mut elevation_res);
 
+        assert_eq!(elevation_res.name, "elevation");
         assert_eq!(elevation_res.extent, Extent::Extent8192);
         assert_eq!(elevation_res.size, 512.0);
         assert_eq!(elevation_res.min, -1.0);

@@ -123,15 +123,15 @@ impl ProtoRead for MapboxVectorLayer {
 }
 
 /// Write a layer to a protobuffer using the S2 Specification
-pub fn write_layer(layer: &BaseVectorLayer) -> Vec<u8> {
+pub fn write_layer(layer: &BaseVectorLayer, mapbox_support: bool) -> Vec<u8> {
     let mut pbf = Protobuf::new();
     let mut keys: BTreeMap<String, usize> = BTreeMap::new();
     let mut values: BTreeMap<Value, usize> = BTreeMap::new();
 
-    pbf.write_varint_field(15, layer.version as u64);
+    pbf.write_varint_field(15, if mapbox_support { 1 } else { 5 });
     pbf.write_string_field(1, &layer.name);
     for feature in layer.features.iter() {
-        pbf.write_bytes_field(2, &write_feature(feature, &mut keys, &mut values));
+        pbf.write_bytes_field(2, &write_feature(feature, &mut keys, &mut values, mapbox_support));
     }
     let mut keys: Vec<(String, usize)> = keys.into_iter().collect();
     keys.sort_by(|a, b| a.1.cmp(&b.1));

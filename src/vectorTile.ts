@@ -4,15 +4,15 @@ import { BaseVectorLayer, BaseVectorTile } from './base';
 import {
   ColumnCacheReader,
   ColumnCacheWriter,
-  ElevationData,
+  GridData,
   ImageData,
   OVectorLayer,
-  writeElevationData,
+  writeGridData,
   writeImageData,
   writeOVLayer,
 } from './open';
 
-import type { ElevationInput, ImageDataInput } from './open';
+import type { GridInput, ImageDataInput } from './open';
 
 /**
  * Layers are a storage structure for the vector tile.
@@ -21,43 +21,79 @@ import type { ElevationInput, ImageDataInput } from './open';
 type Layers = Record<string, MapboxVectorLayer | OVectorLayer>;
 
 /**
+ * # Open Vector Tile
+ *
+ * ## Description
  * A Vector Tile may parse either Mapbox or OpenVector Tile Layers
  * The input is a Uint8Array that has encoded protobuffer messages.
  * @see {@link Protobuf}.
  *
- * Example:
+ * Types of layers include:
+ * - Vector data - vector points, lines, and polygons with 3D coordinates, properties, and/or m-values
+ * - Image data - raster data that is RGB(A) encoded
+ * - Grid data: data that has a max-min range, works much like an image but has floating/double
+ * precision point values for each point on the grid
+ *
+ * ## Usage
  *
  * ```ts
+ * const fs = from 'fs';
  * import { VectorTile } from 'open-vector-tile';
  *
- * const vectorTile = new VectorTile(data);
- * const { landuse } = vectorTile.layers;
- * const firstFeature = landuse.features(0);
+ * // assume you can read (.pbf | .mvt | .ovt)
+ * const fixture = fs.readFileSync('./x-y-z.vector.pbf');
+ * // Or load with bun:
+ * const fixture = await Bun.file('./x-y-z.vector.pbf').arrayBuffer();
+ * // load the protobuf parsing it directly
+ * const tile = new VectorTile(fixture);
+ *
+ * // VECTOR API:
+ *
+ * // example layer
+ * const { landuse } = tile.layers;
+ *
+ * // grab the first feature
+ * const firstFeature = landuse.feature(0);
+ * // grab the geometry
+ * const geometry = firstFeature.loadGeometry();
+ * // OR specifically ask for a geometry type
+ * const points = firstFeature.loadPoints();
+ * const lines = firstFeature.loadLines();
+ * const polys = firstFeature.loadPolys();
+ *
+ * // If you want to take advantage of the pre-tessellated and indexed geometries
+ * // and you're loading the data for a renderer, you can grab the pre-tessellated geometry
+ * const [flatGeometry, indices] = firstFeature.loadGeometryFlat();
+ *
+ * // IMAGE API
+ *
+ * // example layer
+ * const { satellite } = tile.images;
+ * // grab the image data
+ * const data = satellite.image(); // Uint8Array
+ *
+ * // GRIDDED API
+ *
+ * // example layer
+ * const { elevation } = tile.grids;
+ * // grab the grid data
+ * const data = elevation.grid(); // number[]
  * ```
  */
 export class VectorTile {
   #columns!: ColumnCacheReader;
   readonly layers: Layers = {};
   #layerIndexes: number[] = [];
-  imageData?: ImageData;
-  elevationData?: ElevationData;
+  images: Record<string, ImageData> = {};
+  grids: Record<string, GridData> = {};
   /**
    * @param data - the input data to parse
    * @param end - the size of the data, leave blank to parse the entire data
    */
-  constructor(data: Uint8Array, end = 0) {
+  constructor(data: ArrayBuffer | Uint8Array, end = 0) {
     const pbf = new Protobuf(data);
     pbf.readFields(this.#readTile, this, end);
     this.#readLayers(pbf);
-  }
-
-  /**
-   * Read the elevation data if it exists
-   * @returns - the elevation data
-   */
-  readElevationData(): number[] | undefined {
-    if (this.elevationData === undefined || this.elevationData.data.length === 0) return;
-    return this.elevationData.data;
   }
 
   /**
@@ -77,13 +113,11 @@ export class VectorTile {
     } else if (tag === 5) {
       vectorTile.#columns = new ColumnCacheReader(pbf, pbf.readVarint() + pbf.pos);
     } else if (tag === 6) {
-      const elevationData = new ElevationData();
-      pbf.readMessage(elevationData._read, elevationData);
-      vectorTile.elevationData = elevationData;
+      const gridData = new GridData(pbf, pbf.readVarint() + pbf.pos);
+      vectorTile.grids[gridData.name] = gridData;
     } else if (tag === 7) {
-      const imageData = new ImageData();
-      pbf.readMessage(imageData._read, imageData);
-      vectorTile.imageData = imageData;
+      const imageData = new ImageData(pbf, pbf.readVarint() + pbf.pos);
+      vectorTile.images[imageData.name] = imageData;
     }
   }
 
@@ -101,16 +135,21 @@ export class VectorTile {
 
 /**
  * Write a tile to a Protobuf. and return a buffer
+ * You have the option to store:
+ * - Vector data - vector points, lines, and polygons with 3D coordinates, properties, and/or m-values
+ * - Image data - raster data that is RGB(A) encoded
+ * - Grid data: data that has a max-min range, works much like an image but has floating/double
+ * precision point values for each point on the grid
  * @param tile - the tile may be a base vector tile or a S2/Mapbox vector tile
- * @param image - if provided, the tile will include an image
- * @param elevationData - if provodied, the elevation data to encode with specs on how to encode
+ * @param images - if provided, the tile will include image(s)
+ * @param griddedData - if provodied, the grid based data to encode with specs on how to encode
  * @param verbose - whether to print debug messages
  * @returns - a protobuffer encoded buffer using the Open Vector Tile Spec
  */
 export function writeOVTile(
   tile?: BaseVectorTile | VectorTile,
-  image?: ImageDataInput,
-  elevationData?: ElevationInput,
+  images?: ImageDataInput[],
+  griddedData?: GridInput[],
   verbose = false,
 ): Uint8Array {
   const pbf = new Protobuf();
@@ -130,17 +169,21 @@ export function writeOVTile(
     pbf.writeMessage(5, ColumnCacheWriter.write, cache);
   }
   // write the image if applicable
-  if (image !== undefined) {
-    const imageTile = writeImageData(image);
-    pbf.writeBytesField(
-      7,
-      Buffer.from(imageTile.buffer, imageTile.byteOffset, imageTile.byteLength),
-    );
+  if (images !== undefined) {
+    for (const image of images) {
+      const imageTile = writeImageData(image);
+      pbf.writeBytesField(
+        7,
+        Buffer.from(imageTile.buffer, imageTile.byteOffset, imageTile.byteLength),
+      );
+    }
   }
-  // write the elevation data if provided
-  if (elevationData !== undefined) {
-    const data = writeElevationData(elevationData);
-    pbf.writeBytesField(6, Buffer.from(data.buffer, data.byteOffset, data.byteLength));
+  // write the grid data if provided
+  if (griddedData !== undefined) {
+    for (const gridData of griddedData) {
+      const data = writeGridData(gridData);
+      pbf.writeBytesField(6, Buffer.from(data.buffer, data.byteOffset, data.byteLength));
+    }
     return pbf.commit();
   }
 

@@ -5,27 +5,38 @@ use crate::{delta_decode_array, delta_encode_array, open::Extent};
 use libm::round;
 use pbf::{ProtoRead, ProtoWrite, Protobuf};
 
-/// Elevation object to read from
+// TODO: This could be faster if we don't read in the grid data on parsing but only if the user needs it
+
+/// Gridded data object to read from
 #[derive(Default, Debug, PartialEq)]
-pub struct ElevationData {
-    /// The elevation data
+pub struct GridData {
+    /// The name of the gridded data
+    pub name: String,
+    /// The grid data
     pub data: Vec<f64>,
     /// The extent for remapping the data with a value between 0 and extent
     pub extent: Extent,
     /// The size of the tile (width and height)
     pub size: f64,
-    /// The minimum elevation value
+    /// The minimum grid value
     pub min: f64,
-    /// The maximum elevation value
+    /// The maximum grid value
     pub max: f64,
 }
-impl ElevationData {
-    /// create a new ElevationData object
-    pub fn new(extent: Extent, size: f64, min: f64, max: f64, data: Vec<f64>) -> Self {
-        ElevationData { data, extent, size, min, max }
+impl GridData {
+    /// create a new GridData object
+    pub fn new(
+        name: String,
+        extent: Extent,
+        size: f64,
+        min: f64,
+        max: f64,
+        data: Vec<f64>,
+    ) -> Self {
+        GridData { name, data, extent, size, min, max }
     }
 }
-impl ProtoRead for ElevationData {
+impl ProtoRead for GridData {
     fn read(&mut self, tag: u64, pb: &mut Protobuf) {
         match tag {
             0 => self.extent = pb.read_varint(),
@@ -38,12 +49,13 @@ impl ProtoRead for ElevationData {
                     .map(|v| unmap_value(v as f64, self.min, self.max, self.extent.into()))
                     .collect()
             }
+            5 => self.name = pb.read_string(),
             #[tarpaulin::skip]
             _ => panic!("unknown tag: {}", tag),
         }
     }
 }
-impl ProtoWrite for ElevationData {
+impl ProtoWrite for GridData {
     fn write(&self, pb: &mut Protobuf) {
         let max = self.data.iter().fold(f64::MIN, |a, b| f64::max(a, *b));
         let min = self.data.iter().fold(f64::MAX, |a, b| f64::min(a, *b));
@@ -56,6 +68,7 @@ impl ProtoWrite for ElevationData {
         pb.write_varint_field(2, min);
         pb.write_varint_field(3, max);
         pb.write_packed_varint(4, &d_coded);
+        pb.write_string_field(5, &self.name);
     }
 }
 

@@ -1,4 +1,4 @@
-import type { BBox, BBox3D, Point, Point3D } from './vectorTile.spec';
+import type { BBOX, BBox, BBox3D, Point, Point3D } from './vectorTile.spec';
 
 /**
  * Encode a command with the given length of the data that follows.
@@ -412,7 +412,7 @@ function unpackFloat(buffer: Uint8Array, offset: number): number {
  * @param bbox - either 2D or 3D.
  * @returns - the quantized bounding box
  */
-export function quantizeBBox(bbox: BBox | BBox3D): Uint8Array {
+export function quantizeBBox(bbox: BBOX): Uint8Array {
   const is3D = bbox.length === 6;
   const buffer = new Uint8Array(is3D ? 20 : 12);
 

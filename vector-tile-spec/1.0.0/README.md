@@ -15,7 +15,7 @@ this document are to be interpreted as described in [RFC 2119](https://www.ietf.
     1. [Vector Layer](#43-vector-layer)
     1. [Shapes](#44-shapes)
     1. [Feature](#45-feature)
-    1. [Elevation Layer](#46-elevation-layer)
+    1. [Grid Layer](#46-grid-layer)
     1. [Image Layer](#47-image-layer)
 1. [Utility Functions](#5-utility-functions)
     1. [ZigZag](#51-zigzag)
@@ -62,9 +62,15 @@ Vector Tiles that utilize the OVT format MUST contain a column cache to store al
 
 Tile's utilize Protobuf encoding to store layer and column-cache data at the top level. MVT Layers are stored with "message id" `3` and OVT Layers are stored with "message id" `4`. All column-cache data is stored with "message id" `5`.
 
-#### 4.1.1. Mapbox Vector Tile (MVT) Layer
+#### 4.1.1. Mapbox Vector Tile (MVT) Layer & Open Flat Vector Tile (OFVT) Layer
 
 The tile, layer, and feature encodings follow the specification for the [Mapbox Vector Tile Specification](https://github.com/mapbox/vector-tile-spec). This format is widely adopted and ensures that existing tools and libraries can work seamlessly with the tiles.
+
+The `Open Flat Vector Tile` (OFVT) is a modified version of the MVT format that is optimized for better performance. It fixes 3 issues with the MVT format:
+
+1. The `extent` field is now required as it was always intented to be.
+2. Polygons now support a `closePolygon` flag for better compression and decompression without having to rebuild them.
+3. Polygons support indices and tesselation values to remove the need to earclip them before rendering.
 
 ### 4.1.2. Open Vector Tile (OVT) Layer
 
@@ -916,17 +922,23 @@ Tessellation Data is OPTIONAL.
 
 If the feature is a `Polygon` or `Polygon3D`, the tessellation data MUST be stored in the column cache's `points` or `points3D` columns respectively. No additional encoding is required.
 
-### 4.6. Elevation Layer
+### 4.6. Grid Layer
 
-This is a new and unique solution to the problem of storing elevation information. While old methods have stored elevation in RGBA images, note that the method is both lossy and often times memory expensive. The new method takes advantage of the delta encoding we have.
+This is a new and unique solution to the problem of storing gridded information. While old methods have stored elevation in RGBA images, note that the method is both lossy and often times memory expensive. The new method takes advantage of the delta encoding we have.
 
-An elevation layer consists of several key components:
+Examples of common grid data are `elevation`, `temperature`, `precipitation`, etc.
+It also has interesting multi-band support with the naming convention. So you could store gridded V and U wind components in separate grid layers, and then combine them in the client.
 
+An grid layer consists of several key components:
+
+- **name**: The name of the layer.
 - **extent**: An `enum` that defines the grid size used to specify feature geometry.
 - **size**: A size defines the square length and width of the grid in "pixels".
-- **min**: The minimum elevation value of the grid.
-- **max**: The maximum elevation value of the grid.
-- **data**: The actual elevation data.
+- **min**: The minimum grid value.
+- **max**: The maximum grid value.
+- **data**: The actual grid data.
+
+A Layer MUST contain a `name` field.
 
 A Layer MUST contain an `extent` field.
 
@@ -948,11 +960,11 @@ The size of the layer represents the square length and width of the grid in pixe
 
 #### 4.6.3. Min * Max
 
-The `min` is the lowest elevation value in the grid and the `max` is the highest elevation value in the grid.
+The `min` is the lowest grid value in the grid and the `max` is the highest grid value in the grid.
 
 #### 4.6.4. Data
 
-To store the elevation we first map the elevation data to a range of 0 to `extent`:
+To store the grid we first map the grid data to a range of 0 to `extent`:
 
 ```pscript
 function mapElevation(array, extent, min, max):
@@ -966,14 +978,17 @@ This ensures the data is in an unsigned 32-bit range. At this point we varint pa
 
 ### 4.7. Image Layer
 
-This is a new and unique solution to the problem of storing elevation information. While old methods have stored elevation in RGBA images, note that the method is both lossy and often times memory expensive. The new method takes advantage of the delta encoding we have.
+This is a convenience layer to include image data with vector or grid data. This helps reduce server requests and reduce file size. This layer supports storing via a naming convention, so if needed you can store multiple image layers in the same tile.
 
-An elevation layer consists of several key components:
+An image layer consists of several key components:
 
+- **name**: The name of the layer.
 - **type**: The type of image data. E.G. `image/png` or `image/jpeg`.
 - **width**: The width of the image.
 - **height**: The height of the image.
 - **data**: The actual image data.
+
+A Layer MUST contain a `name` field.
 
 A Layer MUST contain an `type` field.
 
@@ -996,6 +1011,7 @@ enum ImageType {
   AVIF = 4,
   SVG = 5,
   BMP = 6,
+  UNKNOWN = 7
 }
 ```
 

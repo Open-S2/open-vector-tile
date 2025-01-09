@@ -528,26 +528,30 @@ pub fn write_feature(
     feature: &BaseVectorFeature,
     keys: &mut BTreeMap<String, usize>,
     values: &mut BTreeMap<Value, usize>,
+    mapbox_support: bool,
 ) -> Vec<u8> {
     let mut pbf = Protobuf::new();
 
     let properties: Properties = feature.properties().clone().into();
     if let Some(id) = feature.id() {
-        pbf.write_varint_field(15, id);
+        pbf.write_varint_field(if mapbox_support { 1 } else { 15 }, id);
     }
-    pbf.write_bytes_field(1, &write_properties(&properties, keys, values));
+    pbf.write_bytes_field(
+        if mapbox_support { 2 } else { 1 },
+        &write_properties(&properties, keys, values),
+    );
     let _type: FeatureType = feature.get_type().into();
-    pbf.write_varint_field(2, _type);
+    pbf.write_varint_field(if mapbox_support { 3 } else { 2 }, _type);
     // Geometry
-    let written = write_geometry(feature);
-    pbf.write_bytes_field(3, &written);
+    let written = write_geometry(feature, mapbox_support);
+    pbf.write_bytes_field(if mapbox_support { 4 } else { 3 }, &written);
     // Indices
     if let Some(indices) = feature.indices() {
-        pbf.write_bytes_field(4, &write_indices(&indices));
+        pbf.write_bytes_field(if mapbox_support { 5 } else { 4 }, &write_indices(&indices));
     }
     // Tesselation
     if let Some(TesselationWrapper::Tesselation(tess)) = feature.tesselation() {
-        pbf.write_bytes_field(5, &write_tesselation(&tess));
+        pbf.write_bytes_field(if mapbox_support { 6 } else { 5 }, &write_tesselation(&tess));
     }
 
     pbf.take()
@@ -605,13 +609,15 @@ fn write_tesselation(geometry: &[Point]) -> Vec<u8> {
 }
 
 /// write the geometry to a protobuffer using the S2 Specification
-fn write_geometry(feature: &BaseVectorFeature) -> Vec<u8> {
+fn write_geometry(feature: &BaseVectorFeature, mapbox_support: bool) -> Vec<u8> {
     use BaseVectorFeature::*;
     let mut pbf = Protobuf::new();
     match feature {
         BaseVectorPointsFeature(points) => write_geometry_points(&points.geometry, &mut pbf),
         BaseVectorLinesFeature(lines) => write_geometry_lines(&lines.geometry, &mut pbf),
-        BaseVectorPolysFeature(polys) => write_geometry_polys(&polys.geometry, &mut pbf),
+        BaseVectorPolysFeature(polys) => {
+            write_geometry_polys(&polys.geometry, &mut pbf, mapbox_support)
+        }
         #[tarpaulin::skip]
         _ => panic!("unknown feature type: {:?}", feature.get_type()),
     };
@@ -668,7 +674,11 @@ fn write_geometry_lines(lines: &[VectorLineWithOffset], pbf: &mut Protobuf) {
 }
 
 /// write the polys geometry to a protobuffer using the S2 Specification
-fn write_geometry_polys(polys: &[Vec<VectorLineWithOffset>], pbf: &mut Protobuf) {
+fn write_geometry_polys(
+    polys: &[Vec<VectorLineWithOffset>],
+    pbf: &mut Protobuf,
+    mapbox_support: bool,
+) {
     let mut x = 0;
     let mut y = 0;
 
@@ -696,6 +706,7 @@ fn write_geometry_polys(polys: &[Vec<VectorLineWithOffset>], pbf: &mut Protobuf)
             }
             pbf.write_varint(command_encode(7, 1)); // ClosePath
         }
-        pbf.write_varint(command_encode(4, 1)); // ClosePolygon
+        // ClosePolygon (Mapbox does not support so close path if not supported)
+        pbf.write_varint(command_encode(if mapbox_support { 7 } else { 4 }, 1));
     }
 }

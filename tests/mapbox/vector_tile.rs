@@ -160,7 +160,7 @@ mod tests {
         tile.add_layer(polys_layer);
 
         // convert BaseVectorLayer into MapboxVectorTile
-        let mapbox_tile_bytes = write_tile(&mut tile);
+        let mapbox_tile_bytes = write_tile(&mut tile, false);
 
         let mut mapbox_tile = MapboxVectorTile::new(mapbox_tile_bytes, None);
 
@@ -170,7 +170,7 @@ mod tests {
 
         let m_points_layer = mapbox_tile.layer("points").unwrap();
 
-        assert_eq!(m_points_layer.version(), 1);
+        assert_eq!(m_points_layer.version(), 5);
         assert_eq!(m_points_layer.name(), "points");
         assert_eq!(m_points_layer.extent(), 4_096);
 
@@ -183,7 +183,7 @@ mod tests {
             // properties
             assert_eq!(m_feature.properties(), example_value);
             // version
-            assert_eq!(m_feature.version(), 1);
+            assert_eq!(m_feature.version(), 5);
             // extent
             assert_eq!(m_feature.extent(), 4_096);
             // get_type
@@ -248,7 +248,7 @@ mod tests {
             // properties
             assert_eq!(m_feature.properties(), example_value2);
             // version
-            assert_eq!(m_feature.version(), 1);
+            assert_eq!(m_feature.version(), 5);
             // extent
             assert_eq!(m_feature.extent(), 4_096);
             // get_type
@@ -287,7 +287,7 @@ mod tests {
 
         let m_lines_layer = mapbox_tile.layer("lines").unwrap();
 
-        assert_eq!(m_lines_layer.version(), 1);
+        assert_eq!(m_lines_layer.version(), 5);
         assert_eq!(m_lines_layer.name(), "lines");
         assert_eq!(m_lines_layer.extent(), 2_048);
 
@@ -300,7 +300,7 @@ mod tests {
             // properties
             assert_eq!(m_feature.properties(), example_value);
             // version
-            assert_eq!(m_feature.version(), 1);
+            assert_eq!(m_feature.version(), 5);
             // extent
             assert_eq!(m_feature.extent(), 2_048);
             // get_type
@@ -348,7 +348,7 @@ mod tests {
             // properties
             assert_eq!(m_feature.properties(), example_value2);
             // version
-            assert_eq!(m_feature.version(), 1);
+            assert_eq!(m_feature.version(), 5);
             // extent
             assert_eq!(m_feature.extent(), 2_048);
             // get_type
@@ -400,7 +400,7 @@ mod tests {
 
         let m_polygons_layer = mapbox_tile.layer("polys").unwrap();
 
-        assert_eq!(m_polygons_layer.version(), 1);
+        assert_eq!(m_polygons_layer.version(), 5);
         assert_eq!(m_polygons_layer.name(), "polys");
         assert_eq!(m_polygons_layer.extent(), 8_192);
 
@@ -413,7 +413,7 @@ mod tests {
             // properties
             assert_eq!(m_feature.properties(), example_value);
             // version
-            assert_eq!(m_feature.version(), 1);
+            assert_eq!(m_feature.version(), 5);
             // extent
             assert_eq!(m_feature.extent(), 8_192);
             // get_type
@@ -505,7 +505,7 @@ mod tests {
             // properties
             assert_eq!(m_feature.properties(), example_value2);
             // version
-            assert_eq!(m_feature.version(), 1);
+            assert_eq!(m_feature.version(), 5);
             // extent
             assert_eq!(m_feature.extent(), 8_192);
             // get_type

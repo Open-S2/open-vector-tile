@@ -7,15 +7,21 @@ import {
 } from '../../src';
 import { expect, test } from 'bun:test';
 
-import type { ElevationInput } from '../../src/open/elevationData';
+import type { GridInput } from '../../src/open';
 
 test('Elevation Tile', async () => {
   const data = await convertImageToHeightMap(__dirname + '/terrarium_ex.webp');
-  const inputData: ElevationInput = { size: 512, data, extent: 8_192 };
-  const tileData = writeOVTile(undefined, undefined, inputData);
+  const inputData: GridInput = { name: 'elevation', size: 512, data, extent: 8_192 };
+  const tileData = writeOVTile(undefined, undefined, [inputData]);
   // encode - decode
   const vectorTile = new VectorTile(tileData);
-  const decodedData = vectorTile.readElevationData();
+  const gridData = vectorTile.grids.elevation;
+  expect(gridData.name).toEqual('elevation');
+  expect(gridData.extent).toEqual(8192);
+  expect(gridData.min).toEqual(-4440);
+  expect(gridData.max).toEqual(0);
+  expect(gridData.size).toEqual(512);
+  const decodedData = gridData.data();
   for (let i = 0; i < data.length; i++) {
     expect(data[i]).toBeCloseTo(decodedData![i], 0);
   }

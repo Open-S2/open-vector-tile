@@ -10,15 +10,22 @@ test('Elevation Tile', async () => {
   const { data: image, info } = imageBuf;
   const { format, width, height } = info;
   // encode
-  const imageData: ImageDataInput = { type: format as ImageTypeString, image, width, height };
-  const tileData = writeOVTile(undefined, imageData);
+  const imageData: ImageDataInput = {
+    name: 'terrarium',
+    type: format as ImageTypeString,
+    image,
+    width,
+    height,
+  };
+  const tileData = writeOVTile(undefined, [imageData]);
   // decode
   const vectorTile = new VectorTile(tileData);
-  const decodedImage = vectorTile.imageData;
-  expect(decodedImage?.type).toEqual('webp');
-  expect(decodedImage?.image).toEqual(image);
-  expect(decodedImage?.width).toEqual(width);
-  expect(decodedImage?.height).toEqual(height);
+  const decodedImage = vectorTile.images.terrarium;
+  expect(decodedImage.name).toEqual('terrarium');
+  expect(decodedImage.type).toEqual('webp');
+  expect(decodedImage.image()).toEqual(image);
+  expect(decodedImage.width).toEqual(width);
+  expect(decodedImage.height).toEqual(height);
 });
 
 test('fromImageType and toImageType', () => {

@@ -35,7 +35,7 @@ message Tile {
   }
 
   // Features are described in section 4.2 of the specification
-  message Feature {
+  message MapboxFeature {
     optional uint64 id = 1 [ default = 0 ];
     // Tags of this feature are encoded as repeated pairs of
     // integers.
@@ -50,7 +50,27 @@ message Tile {
     repeated uint32 geometry = 4 [ packed = true ];
   }
 
-  // Layers are described in section 4.1 of the specification
+  // Features are described in section 4.2 of the specification
+  message OpenFlatFeature {
+    optional uint64 id = 15 [ default = 0 ];
+    // Tags of this feature are encoded as repeated pairs of
+    // integers.
+    // A detailed description of tags is located in sections
+    // 4.2 and 4.4 of the specification
+    repeated uint32 tags = 1 [ packed = true ];
+    // The type of geometry stored in this feature.
+    optional GeomType type = 2 [ default = UNKNOWN ];
+    // Contains a stream of commands and parameters (vertices).
+    // A detailed description on geometry encoding is located in 
+    // section 4.3 of the specification.
+    repeated uint32 geometry = 3 [ packed = true ];
+    // 
+    repeated uint32 indices = 4 [ packed = true ];
+    //
+    repeated uint32 tesselation = 5 [ packed = true ];
+  }
+
+  // Layers are described in section 4.1 of the mapbox specification
   message MapboxLayer {
     // Any compliant implementation must first read the version
     // number encoded in this message and choose the correct
@@ -60,7 +80,29 @@ message Tile {
     // The name of the layer
     required string name = 1;
     // The actual features in this tile.
-    repeated Feature features = 2;
+    repeated MapboxFeature features = 2;
+    // Dictionary encoding for keys
+    repeated string keys = 3;
+    // Dictionary encoding for values
+    repeated Value values = 4;
+    // The extent of the layer
+    required uint32 extent = 5;
+    // potential extensions
+    extensions 16 to max;
+  }
+
+  // Layers are described in section 4.1 of the specification
+  // See https://github.com/mapbox/vector-tile-spec
+  message OpenFlatLayer {
+    // Any compliant implementation must first read the version
+    // number encoded in this message and choose the correct
+    // implementation for this version number before proceeding to
+    // decode other parts of this message.
+    required uint32 version = 15 [ default = 1 ];
+    // The name of the layer
+    required string name = 1;
+    // The actual features in this tile.
+    repeated OpenFlatFeature features = 2;
     // Dictionary encoding for keys
     repeated string keys = 3;
     // Dictionary encoding for values
@@ -72,6 +114,7 @@ message Tile {
     extensions 16 to max;
   }
 
+  // See #43-vector-layer
   message OpenLayer {
     required uint32 version = 1;
     // The index pointing to the where in the column cache's "string" column
@@ -108,12 +151,51 @@ message Tile {
     extensions 16 to max;
   }
 
+  // See 4.6 Grid Layer #46-grid-layer in the spec
+  message GridLayer {
+    // The extent of the layer
+    required uint32 extent = 0;
+    required uint32 size = 1;
+    required float min = 2;
+    required float max = 3;
+    repeated bytes data = 4;
+    required string name = 5;
+  }
+
+  // GeomType is described in section 4.3.4 of the specification
+  enum ImageType {
+    PNG = 0;
+    JPG = 1;
+    WEBP = 2;
+    GIF = 3;
+    AVIF = 4;
+    SVG = 5;
+    BMP = 6;
+    UNKNOWN = 7;
+  }
+
+  // See 4.7 Image Layer (#47-image-layer) in the spec
+  message ImageLayer {
+    // enum representing the image type
+    required ImageType type = 0;
+    required uint32 width = 1;
+    required uint32 height = 2;
+    required bytes image = 3;
+    required string name = 4;
+  }
+
+  // The Open S2 Flat Tile Specification
+  repeated OpenFlatLayer layers = 1;
   // The Mapbox Vector Tile Specification
   repeated MapboxLayer layers = 3;
   // The Open Vector Tile Specification
   repeated OpenLayer layers = 4;
   // Note: required if using the Open Vector Tile Specification
   optional ColumnCache column_cache = 5;
+  // Grided data
+  repeated GridLayer grids = 6;
+  // Image data
+  repeated ImageLayer images = 7;
   // potential extensions
   extensions 16 to 8191;
 }

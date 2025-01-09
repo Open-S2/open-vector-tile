@@ -10,11 +10,11 @@ mod tests {
             BaseVectorPolysFeature, BaseVectorTile,
         },
         open::{
-            ElevationData, Extent, FeatureType, ImageData, ImageType, PrimitiveValue, Value,
+            Extent, FeatureType, GridData, ImageData, ImageType, PrimitiveValue, Value,
             ValuePrimitiveType, ValueType,
         },
-        write_elevation_tile, write_tile, BBox, BBox3D, Point, Point3D, VectorGeometry,
-        VectorLayerMethods, VectorLine3DWithOffset, VectorLineWithOffset, VectorTile, BBOX,
+        write_tile, BBox, BBox3D, Point, Point3D, VectorGeometry, VectorLayerMethods,
+        VectorLine3DWithOffset, VectorLineWithOffset, VectorTile, BBOX,
     };
 
     use std::panic::{self, AssertUnwindSafe};
@@ -169,7 +169,7 @@ mod tests {
         tile.add_layer(polys_layer);
 
         // convert BaseVectorLayer into OpenVectorTile
-        let open_tile_bytes = write_tile(&mut tile, None);
+        let open_tile_bytes = write_tile(Some(&mut tile), None, None);
 
         let mut open_tile = VectorTile::new(open_tile_bytes, None);
 
@@ -882,7 +882,7 @@ mod tests {
         tile.add_layer(polys_layer);
 
         // convert BaseVectorLayer into OpenVectorTile
-        let open_tile_bytes = write_tile(&mut tile, None);
+        let open_tile_bytes = write_tile(Some(&mut tile), None, None);
 
         let mut open_tile = VectorTile::new(open_tile_bytes, None);
 
@@ -1491,7 +1491,7 @@ mod tests {
 
         tile.add_layer(points_layer);
 
-        let open_tile_bytes = write_tile(&mut tile, None);
+        let open_tile_bytes = write_tile(Some(&mut tile), None, None);
         let mut _open_tile = VectorTile::new(open_tile_bytes, None);
 
         // let base_tile = BaseVectorTile::from(&mut open_tile);
@@ -1511,27 +1511,35 @@ mod tests {
 
     #[test]
     fn test_vector_tile_empty_with_image() {
-        let mut tile = BaseVectorTile::default();
+        let image =
+            ImageData::new("test".to_string(), ImageType::AVIF, 2, 3, Vec::from([1, 2, 3, 10]));
 
-        let image = ImageData::new(ImageType::AVIF, 2, 3, Vec::from([1, 2, 3, 10]));
-
-        let open_tile_bytes = write_tile(&mut tile, Some(&image));
+        let open_tile_bytes = write_tile(None, Some(vec![&image]), None);
         let open_tile = VectorTile::new(open_tile_bytes, None);
+        let image_from_tile = open_tile.images.get("test").unwrap();
 
-        assert_eq!(open_tile.image.unwrap(), image);
+        assert_eq!(*image_from_tile, image);
     }
 
     #[test]
     fn test_elevation_data() {
-        let mut elevation_data =
-            ElevationData::new(8_192.into(), 512.0, 0.0, 0.0, vec![-1.0, 2.0, 3.0, 4.0]);
-        let bytes = write_elevation_tile(&mut elevation_data);
+        let elevation_data = GridData::new(
+            "elevation".to_owned(),
+            8_192.into(),
+            512.0,
+            0.0,
+            0.0,
+            vec![-1.0, 2.0, 3.0, 4.0],
+        );
+        let bytes = write_tile(None, None, Some(vec![&elevation_data]));
 
         let open_tile = VectorTile::new(bytes, None);
+        let grid_data = open_tile.grids.get("elevation").unwrap();
 
         assert_eq!(
-            open_tile.elevation.unwrap(),
-            ElevationData {
+            *grid_data,
+            GridData {
+                name: "elevation".to_owned(),
                 extent: Extent::Extent8192,
                 size: 512.0,
                 min: -1.0,

@@ -11,7 +11,7 @@ use crate::{
     base::BaseVectorTile,
     mapbox::MapboxVectorLayer,
     open::{
-        write_layer, ColumnCacheReader, ColumnCacheWriter, ElevationData, FeatureType, ImageData,
+        write_layer, ColumnCacheReader, ColumnCacheWriter, FeatureType, GridData, ImageData,
         OpenVectorLayer, Properties,
     },
     VectorGeometry, VectorLines3DWithOffset, VectorLinesWithOffset, VectorPoints, VectorPoints3D,
@@ -135,7 +135,53 @@ impl VectorLayerMethods for VectorLayer {
     }
 }
 
-/// The vector tile struct that covers both "open" and "mapbox" specifications
+/// # Open Vector Tile
+///
+/// ## Description
+/// A Vector Tile may parse either Mapbox or OpenVector Tile Layers
+/// The input is an unsigned byte array that has encoded protobuffer messages.
+///
+/// Types of layers include:
+/// - Vector data - vector points, lines, and polygons with 3D coordinates, properties, and/or m-values
+/// - Image data - raster data that is RGB(A) encoded
+/// - Grid data: data that has a max-min range, works much like an image but has floating/double precision point values for each point on the grid
+///
+/// ## Usage
+/// ```rust,ignore
+/// use ovtile::{VectorTile, VectorLayerMethods};
+///
+/// let data: Vec<u8> = vec![];
+/// let mut tile = VectorTile::new(data, None);
+///
+/// // VECTOR API
+///
+/// let landuse = tile.layer("landuse").unwrap();
+///
+/// // grab the first feature
+/// let firstFeature = landuse.feature(0).unwrap();
+/// // grab the geometry
+/// let geometry = firstFeature.load_geometry();
+///
+/// // OR specifically ask for a geometry type
+/// let points = firstFeature.load_points();
+/// let lines = firstFeature.load_lines();
+///
+/// // If you want to take advantage of the pre-tessellated and indexed geometries
+/// // and you're loading the data for a renderer, you can grab the pre-tessellated geometry
+/// let (geometry_flat, indices) = firstFeature.load_geometry_flat();
+///
+/// // IMAGE API
+///
+/// let satellite = tile.images.get("satellite").unwrap();
+/// // grab the image data
+/// let data = &satellite.image;
+///
+/// // GRID API
+///
+/// let elevation = tile.grids.get("elevation").unwrap();
+/// // grab the grid data
+/// let data = &elevation.data;
+/// ```
 #[derive(Debug)]
 pub struct VectorTile {
     /// the layers in the vector tile
@@ -147,10 +193,10 @@ pub struct VectorTile {
     pbf: Rc<RefCell<Protobuf>>,
     /// the column cache
     columns: Option<Rc<RefCell<ColumnCacheReader>>>,
-    /// Elevation data
-    pub elevation: Option<ElevationData>,
+    /// Gridded data
+    pub grids: BTreeMap<String, GridData>,
     /// Image data
-    pub image: Option<ImageData>,
+    pub images: BTreeMap<String, ImageData>,
 }
 impl VectorTile {
     /// Create a new vector tile
@@ -161,8 +207,8 @@ impl VectorTile {
             columns: None,
             layer_indexes: Vec::new(),
             layers: BTreeMap::new(),
-            elevation: None,
-            image: None,
+            grids: BTreeMap::new(),
+            images: BTreeMap::new(),
         };
 
         pbf.borrow_mut().read_fields(&mut vt, end);
@@ -214,14 +260,14 @@ impl ProtoRead for VectorTile {
                 self.columns = Some(Rc::new(RefCell::new(column_reader)));
             }
             6 => {
-                let mut elevation = ElevationData::default();
-                pb.read_message(&mut elevation);
-                self.elevation = Some(elevation);
+                let mut grid = GridData::default();
+                pb.read_message(&mut grid);
+                self.grids.insert(grid.name.clone(), grid);
             }
             7 => {
                 let mut image = ImageData::default();
                 pb.read_message(&mut image);
-                self.image = Some(image);
+                self.images.insert(image.name.clone(), image);
             }
             #[tarpaulin::skip]
             _ => panic!("unknown tag: {}", tag),
@@ -230,29 +276,34 @@ impl ProtoRead for VectorTile {
 }
 
 /// writer for converting a BaseVectorTile to encoded bytes of the Open Vector Tile format
-pub fn write_tile(tile: &mut BaseVectorTile, image: Option<&ImageData>) -> Vec<u8> {
+pub fn write_tile(
+    tile: Option<&mut BaseVectorTile>,
+    images: Option<Vec<&ImageData>>,
+    grids: Option<Vec<&GridData>>,
+) -> Vec<u8> {
     let mut pbf = Protobuf::new();
     let mut cache = ColumnCacheWriter::default();
 
     // first write layers
-    for layer in tile.layers.values_mut() {
-        pbf.write_bytes_field(4, &write_layer(layer, &mut cache));
+    if let Some(tile) = tile {
+        for layer in tile.layers.values_mut() {
+            pbf.write_bytes_field(4, &write_layer(layer, &mut cache));
+        }
+        // now we can write columns
+        pbf.write_message(5, &cache);
     }
-    // now we can write columns
-    pbf.write_message(5, &cache);
     // if an image exists, let's write it
-    if let Some(image) = image {
-        pbf.write_message(7, image);
+    if let Some(images) = images {
+        for image in images.iter() {
+            pbf.write_message(7, *image);
+        }
     }
-
-    pbf.take()
-}
-
-/// write elevation tile
-pub fn write_elevation_tile(e_data: &mut ElevationData) -> Vec<u8> {
-    let mut pbf = Protobuf::new();
-
-    pbf.write_message(6, e_data);
+    // if an gridded data exists, let's write it
+    if let Some(grids) = grids {
+        for grid in grids.iter() {
+            pbf.write_message(6, *grid);
+        }
+    }
 
     pbf.take()
 }
