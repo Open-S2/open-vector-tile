@@ -676,7 +676,7 @@ export function writeOVFeature(
   shape: Shape,
   mShape: Shape = {},
   cache: ColumnCacheWriter,
-): Buffer {
+): Uint8Array {
   // write id, type, properties, bbox, geometry, indices, tesselation, mValues
   const pbf = new Protobuf();
   // type is just stored as a varint
@@ -715,6 +715,5 @@ export function writeOVFeature(
   // bbox is stored in double column.
   if (hasBBox) pbf.writeVarint(cache.addColumnData(OColumnName.bbox, feature.bbox));
 
-  const data = pbf.commit();
-  return Buffer.from(data.buffer, data.byteOffset, data.byteLength);
+  return pbf.commit();
 }

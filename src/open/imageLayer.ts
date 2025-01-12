@@ -73,7 +73,7 @@ export interface ImageDataInput {
   /** The height of the image */
   height: number;
   /** The raw image data */
-  image: Buffer;
+  image: Buffer | Uint8Array | ArrayBuffer;
 }
 
 /**

@@ -420,9 +420,7 @@ export class ColumnCacheWriter {
     // bbox
     const allBBox = [...column[OColumnName.bbox].values()];
     for (const bbox of allBBox) {
-      const data = quantizeBBox(bbox.data);
-      const dataBuf = Buffer.from(data.buffer, data.byteOffset, data.byteLength);
-      pbf.writeBytesField(OColumnName.bbox, dataBuf);
+      pbf.writeBytesField(OColumnName.bbox, quantizeBBox(bbox.data));
     }
   }
 }

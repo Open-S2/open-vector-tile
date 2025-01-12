@@ -171,18 +171,16 @@ export function writeOVTile(
   // write the image if applicable
   if (images !== undefined) {
     for (const image of images) {
-      const imageTile = writeImageData(image);
       pbf.writeBytesField(
         7,
-        Buffer.from(imageTile.buffer, imageTile.byteOffset, imageTile.byteLength),
+        writeImageData(image),
       );
     }
   }
   // write the grid data if provided
   if (griddedData !== undefined) {
     for (const gridData of griddedData) {
-      const data = writeGridData(gridData);
-      pbf.writeBytesField(6, Buffer.from(data.buffer, data.byteOffset, data.byteLength));
+      pbf.writeBytesField(6, writeGridData(gridData));
     }
     return pbf.commit();
   }
