@@ -171,10 +171,7 @@ export function writeOVTile(
   // write the image if applicable
   if (images !== undefined) {
     for (const image of images) {
-      pbf.writeBytesField(
-        7,
-        writeImageData(image),
-      );
+      pbf.writeBytesField(7, writeImageData(image));
     }
   }
   // write the grid data if provided
