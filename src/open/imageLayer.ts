@@ -16,11 +16,22 @@ export const enum ImageType {
   SVG = 5,
   /** BMP Image */
   BMP = 6,
+  /** RAW Image */
+  RAW = 7,
   /** Unknown image type */
-  UNKNOWN = 7,
+  UNKNOWN = 8,
 }
 /** String version of ImageType */
-export type ImageTypeString = 'png' | 'jpg' | 'webp' | 'gif' | 'avif' | 'svg' | 'bmp' | 'unknown';
+export type ImageTypeString =
+  | 'raw'
+  | 'png'
+  | 'jpg'
+  | 'webp'
+  | 'gif'
+  | 'avif'
+  | 'svg'
+  | 'bmp'
+  | 'unknown';
 
 /** Elevation object to read from */
 export class ImageData {
@@ -104,6 +115,7 @@ export function fromImageType(imageType: ImageType): ImageTypeString {
   else if (imageType === ImageType.AVIF) return 'avif';
   else if (imageType === ImageType.SVG) return 'svg';
   else if (imageType === ImageType.BMP) return 'bmp';
+  else if (imageType === ImageType.RAW) return 'raw';
   else if (imageType === ImageType.UNKNOWN) return 'unknown';
   throw new Error('Invalid image type');
 }
@@ -120,6 +132,7 @@ export function toImageType(imageType: ImageTypeString): ImageType {
   else if (imageType === 'avif') return ImageType.AVIF;
   else if (imageType === 'svg') return ImageType.SVG;
   else if (imageType === 'bmp') return ImageType.BMP;
+  else if (imageType === 'raw') return ImageType.RAW;
   else if (imageType === 'unknown') return ImageType.UNKNOWN;
   throw new Error('Invalid image type');
 }

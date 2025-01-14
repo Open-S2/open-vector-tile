@@ -1,6 +1,6 @@
 [package]
 name = "open-vector-tile"
-version = "1.2.0"
+version = "1.2.1"
 edition = "2021"
 authors = ["Craig O'Connor <oconnorct1@gmail.com>"]
 description = "This library reads/writes The Open Vector Tiles 1.0 Specification"

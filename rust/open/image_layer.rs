@@ -22,8 +22,10 @@ pub enum ImageType {
     SVG = 5,
     /// BMP
     BMP = 6,
+    /// RAW
+    RAW = 7,
     /// Unknown
-    UNKNOWN = 7,
+    UNKNOWN = 8,
 }
 impl BitCast for ImageType {
     fn to_u64(&self) -> u64 {
@@ -38,7 +40,8 @@ impl BitCast for ImageType {
             4 => ImageType::AVIF,
             5 => ImageType::SVG,
             6 => ImageType::BMP,
-            7 => ImageType::UNKNOWN,
+            7 => ImageType::RAW,
+            8 => ImageType::UNKNOWN,
             _ => panic!("unknown value: {}", value),
         }
     }
@@ -55,6 +58,7 @@ impl FromStr for ImageType {
             "AVIF" => Ok(ImageType::AVIF),
             "SVG" => Ok(ImageType::SVG),
             "BMP" => Ok(ImageType::BMP),
+            "RAW" => Ok(ImageType::RAW),
             "UNKNOWN" => Ok(ImageType::UNKNOWN),
             #[tarpaulin::skip]
             _ => Err("Unknown image type"),
@@ -76,6 +80,7 @@ impl fmt::Display for ImageType {
             ImageType::AVIF => "AVIF",
             ImageType::SVG => "SVG",
             ImageType::BMP => "BMP",
+            ImageType::RAW => "RAW",
             ImageType::UNKNOWN => "UNKNOWN",
         };
         write!(f, "{}", name)
