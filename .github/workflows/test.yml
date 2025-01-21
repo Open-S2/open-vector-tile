@@ -1,6 +1,8 @@
 name: test-workflow
 
-on: push
+on:
+  push:
+  pull_request:
 
 jobs:
   test:
@@ -55,5 +57,5 @@ jobs:
 
     # Run tarpaulin to calculate and enforce coverage
     - name: Run Coverage and Enforce Threshold
-      run: cargo tarpaulin --out Xml --fail-under 95
+      run: cargo tarpaulin --fail-under 95
       shell: bash
