@@ -1,7 +1,7 @@
 import VectorFeature from './vectorFeature';
 
 import type { Extents } from '../open';
-import type { Pbf as Protobuf } from 'pbf-ts';
+import type { PbfReader } from 'pbf-ts';
 import type { Value } from '../vectorTile.spec';
 
 /**
@@ -15,7 +15,7 @@ export default class MapboxVectorLayer {
   extent: Extents = 4_096;
   length = 0;
   isS2: boolean;
-  #pbf: Protobuf;
+  #pbf: PbfReader;
   #keys: string[] = [];
   #values: Value[] = [];
   #featuresPos: number[] = [];
@@ -25,7 +25,7 @@ export default class MapboxVectorLayer {
    * @param end - The end position of the message in the buffer
    * @param isS2 - Whether the layer is an S2 layer or Mapbox layer
    */
-  constructor(pbf: Protobuf, end: number, isS2 = false) {
+  constructor(pbf: PbfReader, end: number, isS2 = false) {
     this.#pbf = pbf;
     this.isS2 = isS2;
     pbf.readFields(this.#readLayer, this, end);
@@ -37,7 +37,7 @@ export default class MapboxVectorLayer {
    * @param layer - The layer to mutate
    * @param pbf - The Protobuf object to read from
    */
-  #readLayer(tag: number, layer: MapboxVectorLayer, pbf: Protobuf): void {
+  #readLayer(tag: number, layer: MapboxVectorLayer, pbf: PbfReader): void {
     if (tag === 15) layer.version = pbf.readVarint();
     else if (tag === 1) layer.name = pbf.readString();
     else if (tag === 2) layer.#featuresPos.push(pbf.pos);
@@ -76,7 +76,7 @@ export default class MapboxVectorLayer {
    * @param pbf - The Protobuffer object to read from
    * @returns - A parsed Value
    */
-  #readValueMessage(pbf: Protobuf): Value {
+  #readValueMessage(pbf: PbfReader): Value {
     let value: Value = null;
 
     const end = pbf.readVarint() + pbf.pos;

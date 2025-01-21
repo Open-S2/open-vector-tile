@@ -1,4 +1,4 @@
-import type { Pbf as Protobuf } from 'pbf-ts';
+import type { PbfReader } from 'pbf-ts';
 import type {
   BBox,
   BBox3D,
@@ -23,7 +23,7 @@ export default class MapboxVectorFeature {
   extent: number;
   type: OldVectorFeatureType = 1;
   isS2: boolean;
-  #pbf: Protobuf;
+  #pbf: PbfReader;
   #indices = -1;
   #geometry = -1;
   #tesselation = -1;
@@ -39,7 +39,7 @@ export default class MapboxVectorFeature {
    * @param values - the values in the vector layer to pull from
    */
   constructor(
-    pbf: Protobuf,
+    pbf: PbfReader,
     end: number,
     isS2: boolean,
     extent: number,
@@ -92,7 +92,7 @@ export default class MapboxVectorFeature {
    * @param feature - the feature to mutate with the new data
    * @param pbf - the Protobuf object to read from
    */
-  #readFeature(tag: number, feature: MapboxVectorFeature, pbf: Protobuf): void {
+  #readFeature(tag: number, feature: MapboxVectorFeature, pbf: PbfReader): void {
     // old spec
     if (feature.isS2) {
       if (tag === 15) feature.id = pbf.readVarint();
@@ -115,7 +115,7 @@ export default class MapboxVectorFeature {
    * @param pbf - the Protobuf object
    * @param feature - the feature to mutate relative to the tag.
    */
-  #readTag(pbf: Protobuf, feature: MapboxVectorFeature): void {
+  #readTag(pbf: PbfReader, feature: MapboxVectorFeature): void {
     const end = pbf.readVarint() + pbf.pos;
 
     while (pbf.pos < end) {

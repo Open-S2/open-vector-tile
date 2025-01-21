@@ -1,6 +1,6 @@
 import { OColumnName } from './columnCache';
-import { Pbf as Protobuf } from 'pbf-ts';
 import { OVectorFeature, readFeature, writeOVFeature } from './vectorFeature';
+import { PbfReader, Pbf as Protobuf } from 'pbf-ts';
 import { decodeShape, encodeShape } from './shape';
 
 import type { BaseVectorLayer } from '../base';
@@ -22,7 +22,7 @@ export class OVectorLayer {
   #shapeIndex: number = -1;
   #mShapeIndex: number = -1;
   #features = new Map<number, OVectorFeature>();
-  #pbf: Protobuf;
+  #pbf: PbfReader;
   #cache: ColumnCacheReader;
   #featuresPos: number[] = [];
   /**
@@ -30,7 +30,7 @@ export class OVectorLayer {
    * @param end - the position to stop at
    * @param cache - the cache where all data is stored in a column format
    */
-  constructor(pbf: Protobuf, end: number, cache: ColumnCacheReader) {
+  constructor(pbf: PbfReader, end: number, cache: ColumnCacheReader) {
     this.#pbf = pbf;
     this.#cache = cache;
     pbf.readFields(this.#readLayer, this, end);
@@ -41,7 +41,7 @@ export class OVectorLayer {
    * @param layer - the layer to mutate
    * @param pbf - the pbf to read from
    */
-  #readLayer(tag: number, layer: OVectorLayer, pbf: Protobuf): void {
+  #readLayer(tag: number, layer: OVectorLayer, pbf: PbfReader): void {
     // lets convert from switch to if statements
     if (tag === 1) layer.version = pbf.readVarint();
     else if (tag === 2) layer.name = layer.#cache.getColumn(OColumnName.string, pbf.readVarint());

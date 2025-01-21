@@ -10,7 +10,6 @@ import {
   weaveAndDeltaEncodeArray,
 } from '../util';
 
-import type { Pbf as Protobuf } from 'pbf-ts';
 import type {
   BBox,
   BBox3D,
@@ -19,6 +18,7 @@ import type {
   VectorPoints,
   VectorPoints3D,
 } from '../vectorTile.spec';
+import type { PbfReader, Pbf as Protobuf } from 'pbf-ts';
 
 /**
  * Column Types take up 3 bits.
@@ -142,12 +142,12 @@ export class ColumnCacheReader {
   /** Stores both BBox and BBox3D in a single column */
   [OColumnName.bbox]: ColumnValueRead<BBox | BBox3D> = [];
 
-  readonly #pbf: Protobuf;
+  readonly #pbf: PbfReader;
   /**
    * @param pbf - the pbf protocol we are reading from
    * @param end - the position to stop at
    */
-  constructor(pbf: Protobuf, end = 0) {
+  constructor(pbf: PbfReader, end = 0) {
     this.#pbf = pbf;
     pbf.readFields(this.#read.bind(this), this, end);
   }

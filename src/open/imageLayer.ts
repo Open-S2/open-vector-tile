@@ -1,4 +1,4 @@
-import { Pbf as Protobuf } from 'pbf-ts';
+import { PbfReader, Pbf as Protobuf } from 'pbf-ts';
 
 /** Image type */
 export const enum ImageType {
@@ -35,7 +35,7 @@ export type ImageTypeString =
 
 /** Elevation object to read from */
 export class ImageData {
-  #pbf: Protobuf;
+  #pbf: PbfReader;
   name: string = 'default';
   private imagePos: number = 0;
   type: ImageTypeString = 'png';
@@ -45,7 +45,7 @@ export class ImageData {
    * @param pbf - the pbf protocol we are reading from
    * @param end - the position to stop at
    */
-  constructor(pbf: Protobuf, end: number) {
+  constructor(pbf: PbfReader, end: number) {
     this.#pbf = pbf;
     pbf.readFields(this.#readImage, this, end);
   }
@@ -64,7 +64,7 @@ export class ImageData {
    * @param imageData - the image data to mutate
    * @param pbf - the Protobuf to pull the appropriate data from
    */
-  #readImage(tag: number, imageData: ImageData, pbf: Protobuf): void {
+  #readImage(tag: number, imageData: ImageData, pbf: PbfReader): void {
     if (tag === 0) imageData.type = fromImageType(pbf.readVarint() as ImageType);
     else if (tag === 1) imageData.width = pbf.readVarint();
     else if (tag === 2) imageData.height = pbf.readVarint();

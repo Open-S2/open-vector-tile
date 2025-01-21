@@ -1,11 +1,11 @@
-import { Pbf as Protobuf } from 'pbf-ts';
+import { PbfReader, Pbf as Protobuf } from 'pbf-ts';
 import { deltaDecodeArray, deltaEncodeArray } from '../util';
 
 import type { Extents } from '.';
 
 /** Grid object to read from */
 export class GridData {
-  #pbf: Protobuf;
+  #pbf: PbfReader;
   name: string = 'default';
   private dataPos = 0;
   extent: Extents = 8_192;
@@ -17,7 +17,7 @@ export class GridData {
    * @param pbf - the pbf protocol we are reading from
    * @param end - the position to stop at
    */
-  constructor(pbf: Protobuf, end: number) {
+  constructor(pbf: PbfReader, end: number) {
     this.#pbf = pbf;
     pbf.readFields(this.#readGrid, this, end);
   }
@@ -38,7 +38,7 @@ export class GridData {
    * @param grid - the elevation data to mutate
    * @param pbf - the Protobuf to pull the appropriate data from
    */
-  #readGrid(tag: number, grid: GridData, pbf: Protobuf): void {
+  #readGrid(tag: number, grid: GridData, pbf: PbfReader): void {
     if (tag === 0) grid.extent = pbf.readVarint() as Extents;
     else if (tag === 1) grid.size = pbf.readVarint();
     else if (tag === 2) grid.min = pbf.readFloat();

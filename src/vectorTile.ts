@@ -1,5 +1,4 @@
 import { MapboxVectorLayer } from './mapbox';
-import { Pbf as Protobuf } from 'pbf-ts';
 import { BaseVectorLayer, BaseVectorTile } from './base';
 import {
   ColumnCacheReader,
@@ -11,6 +10,7 @@ import {
   writeImageData,
   writeOVLayer,
 } from './open';
+import { PbfReader, Pbf as Protobuf } from 'pbf-ts';
 
 import type { GridInput, ImageDataInput } from './open';
 
@@ -26,7 +26,6 @@ type Layers = Record<string, MapboxVectorLayer | OVectorLayer>;
  * ## Description
  * A Vector Tile may parse either Mapbox or OpenVector Tile Layers
  * The input is a Uint8Array that has encoded protobuffer messages.
- * @see {@link Protobuf}.
  *
  * Types of layers include:
  * - Vector data - vector points, lines, and polygons with 3D coordinates, properties, and/or m-values
@@ -91,7 +90,7 @@ export class VectorTile {
    * @param end - the size of the data, leave blank to parse the entire data
    */
   constructor(data: ArrayBuffer | Uint8Array, end = 0) {
-    const pbf = new Protobuf(data);
+    const pbf = new PbfReader(data);
     pbf.readFields(this.#readTile, this, end);
     this.#readLayers(pbf);
   }
@@ -102,7 +101,7 @@ export class VectorTile {
    * @param vectorTile - the vector tile to mutate
    * @param pbf - the Protobuf to pull the appropriate data from
    */
-  #readTile(tag: number, vectorTile: VectorTile, pbf: Protobuf): void {
+  #readTile(tag: number, vectorTile: VectorTile, pbf: PbfReader): void {
     if (tag === 1 || tag === 3) {
       const layer = new MapboxVectorLayer(pbf, pbf.readVarint() + pbf.pos, tag === 1);
       if (layer.length !== 0) vectorTile.layers[layer.name] = layer;
@@ -124,7 +123,7 @@ export class VectorTile {
   /**
    * @param pbf - the pbf to read from
    */
-  #readLayers(pbf: Protobuf): void {
+  #readLayers(pbf: PbfReader): void {
     for (const pos of this.#layerIndexes) {
       pbf.pos = pos;
       const layer = new OVectorLayer(pbf, pbf.readVarint() + pbf.pos, this.#columns);
