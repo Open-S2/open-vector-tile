@@ -13,7 +13,7 @@
     <img src="https://img.shields.io/crates/v/open-vector-tile.svg?logo=rust&logoColor=white" alt="crate">
   </a>
   <a href="https://bundlejs.com/?q=open-vector-tile&treeshake=%5B%7B+VectorTile+%7D%5D">
-    <img src="https://img.shields.io/bundlejs/size/open-vector-tile?exports=VectorTile" alt="bundle">
+    <img src="https://deno.bundlejs.com/badge?q=open-vector-tile&treeshake=[{+VectorTile+}]" alt="bundle">
   </a>
   <a href="https://www.npmjs.com/package/open-vector-tile">
     <img src="https://img.shields.io/npm/dm/open-vector-tile.svg" alt="downloads">
