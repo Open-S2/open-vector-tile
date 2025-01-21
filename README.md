@@ -103,7 +103,7 @@ const fixture = await Bun.file('./x-y-z.vector.pbf').arrayBuffer();
 // load the protobuf parsing it directly
 const tile = new VectorTile(fixture);
 
-// VECTOR API:
+// THE VECTOR API:
 
 // example layer
 const { landuse } = tile.layers;
