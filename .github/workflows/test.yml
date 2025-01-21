@@ -20,9 +20,9 @@ jobs:
         fetch-depth: 0
 
     - name: Set up Bun
-      uses: oven-sh/setup-bun@v1
+      uses: oven-sh/setup-bun@v2
       with:
-        bun-version: 1.1.38
+        bun-version: latest
 
     - name: Install dependencies
       run: bun install
@@ -49,6 +49,11 @@ jobs:
       run: cargo fmt -- --check
       shell: bash
 
-    - name: Run Rust tests
-      run: cargo test --lib
+    # Install cargo-tarpaulin
+    - name: Install cargo-tarpaulin
+      run: cargo install cargo-tarpaulin
+
+    # Run tarpaulin to calculate and enforce coverage
+    - name: Run Coverage and Enforce Threshold
+      run: cargo tarpaulin --out Xml --fail-under 95
       shell: bash
