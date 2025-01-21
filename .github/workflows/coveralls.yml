@@ -7,26 +7,26 @@ jobs:
     name: Coveralls Upload
     runs-on: ubuntu-latest
 
-    steps:
-    # Setup
+    # setup
 
+    steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
     - name: Set up Bun
       uses: oven-sh/setup-bun@v1
       with:
-        bun-version: 1.1.38
+        bun-version: 1.1.45
 
     - name: Install dependencies
       run: bun install
 
-    # Run JavaScript/TypeScript Tests
+    # Bun tests
 
     - name: Run JavaScript/TypeScript tests
       run: bun run test
 
-    # Setup Rust
+    # setup rust
 
     - name: Set up Rust
       uses: actions-rs/toolchain@v1
@@ -35,45 +35,27 @@ jobs:
         override: true
         components: rustfmt, clippy, llvm-tools-preview
 
-    - name: Update Rust Nightly
-      run: rustup update nightly
-
-    - name: Install grcov and LLVM Tools
+    - name: Install grcov
       run: |
         sudo apt-get install lcov
         cargo install grcov
-        rustup component add llvm-tools-preview || true
-
-    # Build Rust Project
 
     - name: Build Rust project
       run: cargo build
       shell: bash
 
-    # Run Rust Tests with Coverage
+    # Rust tests
 
     - name: Run Rust tests with coverage
       run: |
-        set -e
-        mkdir -p coverage
         export CARGO_INCREMENTAL=0
         export RUSTFLAGS='-Cinstrument-coverage'
         export LLVM_PROFILE_FILE='cargo-test-%p-%m.profraw'
-        cargo test || {
-          echo "Rust tests failed with coverage; retrying without coverage."
-          export RUSTFLAGS=""
-          cargo test
-        }
-        if command -v llvm-profdata >/dev/null; then
-          grcov . --binary-path ./target/debug/ -s . -t lcov --branch \
-            --ignore-not-existing --ignore "/*/.cargo/*" --ignore "/*/target/*" \
-            -o ./coverage/rust-lcov.info
-        else
-          echo "llvm-profdata not found; skipping coverage generation."
-        fi
+        cargo test
+        grcov . --binary-path ./target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*/.cargo/*" --ignore "/*/target/*" -o ./coverage/rust-lcov.info
       shell: bash
 
-    # Merge LCOV Reports
+    # Merge LCOV reports 
 
     - name: Merge Bun and Rust LCOV reports
       run: |
@@ -83,8 +65,8 @@ jobs:
         elif [ -f ./coverage/rust-lcov.info ]; then
           mv ./coverage/rust-lcov.info ./coverage/lcov.info
         fi
-
-    # Upload to Coveralls
+    
+    # upload to Coveralls
 
     - name: Upload coverage to Coveralls
       run: |
