@@ -1,6 +1,6 @@
 import { OColumnName } from './columnCache';
-import { Pbf as Protobuf } from 'pbf-ts';
 import { decodeOffset } from '../base';
+import { PbfReader, Pbf as Protobuf } from 'pbf-ts';
 import { decodeValue, encodeValue } from './shape';
 import { unweave2D, unweave3D, zagzig } from '../util';
 
@@ -607,7 +607,7 @@ export function readFeature(
   shape: Shape,
   mShape: Shape = {},
 ): OVectorFeature {
-  const pbf = new Protobuf(bytes);
+  const pbf = new PbfReader(bytes);
   // pull in the type
   const type = pbf.readVarint();
   // next the flags

@@ -224,7 +224,7 @@ export class ColumnCacheReader {
    * @param reader - the column cache to read from
    * @param pbf - the protobuf object to read from
    */
-  #read(tag: number, reader: ColumnCacheReader, pbf: Protobuf): void {
+  #read(tag: number, reader: ColumnCacheReader, pbf: PbfReader): void {
     if (tag < 0 || tag > 10) throw new Error('Unknown column type');
     const columnType = tag as OColumnName;
     reader[columnType].push({ pos: pbf.pos });
