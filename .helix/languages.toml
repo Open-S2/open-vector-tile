@@ -25,20 +25,30 @@ quiet = false
 rulesCustomizations = []
 run = "onType"
 validate = "on"
-experimental = {}
+experimental = { useFlatConfig = true }
 problems = { shortenToSingleLine = false }
+
+[language-server.eslint.config.codeAction.showDocumentation]
+enable = true
+
+[language-server.eslint.config.codeActionOnSave]
+enable = true
+mode = "fixAll"
+
+[language-server.eslint.config.workingDirectory]
+mode = "location"
 
 [[language]]
 name = "typescript"
 language-servers = ["typescript-language-server", "eslint", "emmet-ls", "gpt"]
-formatter = { command = "prettier", args = ["--parser", "typescript"] }
+# formatter = { command = "eslint", args = ["--fix", "%filepath"] }
 auto-format = true
 rulers = [100]
 
 [[language]]
 name = "javascript"
 language-servers = ["typescript-language-server", "eslint", "emmet-ls", "gpt"]
-formatter = { command = "prettier", args = ["--parser", "typescript"] }
+# formatter = { command = "eslint", args = ["--fix", "%filepath"] }
 auto-format = true
 rulers = [100]
 

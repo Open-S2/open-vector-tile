@@ -22,7 +22,7 @@ checksum = "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
 
 [[package]]
 name = "open-vector-tile"
-version = "1.2.1"
+version = "1.2.2"
 dependencies = [
  "libm",
  "pbf",
@@ -32,9 +32,9 @@ dependencies = [
 
 [[package]]
 name = "pbf"
-version = "0.3.1"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "78ce7e535daa67c6d2abec6badb0e3d38d02b2f26add6c68e73d5a339086be03"
+checksum = "1abf524470125aea48aea26205d8fdbd53bcd58bda6906a31eb49233df71968c"
 
 [[package]]
 name = "proc-macro2"

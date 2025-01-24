@@ -1,6 +1,6 @@
 [package]
 name = "open-vector-tile"
-version = "1.2.1"
+version = "1.2.2"
 edition = "2021"
 authors = ["Craig O'Connor <oconnorct1@gmail.com>"]
 description = "This library reads/writes The Open Vector Tiles 1.0 Specification"
@@ -30,7 +30,7 @@ bench = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-pbf = "0.3"
+pbf = "1"
 libm = "0.2"
 serde = { version = "1.0", default-features = false, features = ["alloc", "derive"] }
 serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
