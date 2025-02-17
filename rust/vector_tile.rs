@@ -1,9 +1,6 @@
 use pbf::{ProtoRead, Protobuf};
 
-use alloc::collections::BTreeMap;
-use alloc::rc::Rc;
-use alloc::string::String;
-use alloc::vec::Vec;
+use alloc::{collections::BTreeMap, rc::Rc, string::String, vec::Vec};
 
 use core::cell::RefCell;
 

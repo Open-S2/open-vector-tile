@@ -1,42 +1,11 @@
-[package]
-name = "open-vector-tile"
-version = "1.2.2"
-edition = "2021"
-authors = ["Craig O'Connor <oconnorct1@gmail.com>"]
-description = "This library reads/writes The Open Vector Tiles 1.0 Specification"
-documentation = "https://docs.rs/open-vector-tile"
-homepage = "https://github.com/OpenS2/open-vector-tile"
-repository = "https://github.com/OpenS2/open-vector-tile"
-readme = "README.md"
-categories = ["encoding", "wasm", "embedded", "no-std"]
-keywords = ["open", "vector", "tile", "gis", "low-cost-code"]
-license = "MIT"
-# Include only specific files and directories
-# include = ["Cargo.toml", "Cargo.lock", "README.md", "LICENSE"]
-exclude = [
-    "/assets",
-    "/benchmarks",
-    "/docs",
-    "/tests",
-    "/tools",
-    "/src",
-]
-
-[lib]
-name = "ovtile"
-path = "rust/lib.rs"
-bench = true
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-pbf = "1"
-libm = "0.2"
-serde = { version = "1.0", default-features = false, features = ["alloc", "derive"] }
-serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
-
-[dev-dependencies]
-# tarpaulin = "*"
+[workspace]
+members = ["rust", "rust-wasm"]
+default-members = ["rust"]
+resolver = "2"
 
 [profile.bench]
 opt-level = 3
+
+[profile.release]
+lto = true
+codegen-units = 1

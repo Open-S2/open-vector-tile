@@ -1,4 +1,4 @@
-use alloc::{fmt, str::FromStr, vec::Vec};
+use alloc::{fmt, str::FromStr, string::String, vec::Vec};
 
 use pbf::{BitCast, ProtoRead, ProtoWrite, Protobuf};
 

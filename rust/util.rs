@@ -2,8 +2,7 @@ use crate::{BBox, BBox3D, Point, Point3D, BBOX};
 
 use libm::round;
 
-use alloc::vec;
-use alloc::vec::Vec;
+use alloc::{vec, vec::Vec};
 
 use core::cmp::Ordering;
 

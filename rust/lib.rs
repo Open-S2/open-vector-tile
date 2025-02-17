@@ -1,4 +1,4 @@
-// #![no_std]
+#![no_std]
 #![deny(missing_docs)]
 #![feature(stmt_expr_attributes)]
 #![feature(register_tool)]

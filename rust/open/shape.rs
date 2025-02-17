@@ -613,7 +613,6 @@ impl ValuePrimitiveType {
     }
 
     fn same_nested(&self, nested: &BTreeMap<String, PrimitiveValue>) -> bool {
-        println!("self: {self:?}, nested: {nested:?}");
         match self {
             ValuePrimitiveType::Primitive(_) => false,
             ValuePrimitiveType::NestedPrimitive(val) => {
