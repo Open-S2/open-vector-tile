@@ -36,7 +36,7 @@
     "build:rust:twiggy": "twiggy top target/wasm32-unknown-unknown/release/optimized.wasm",
     "types:bundle": "bun run types:build && node scripts/types.mjs",
     "prepublishOnly": "bun run lint+build+test+docs",
-    "cargo:publish": "cargo publish -p open-vector-tile --dry-run",
+    "cargo:publish": "cargo publish -p open-vector-tile",
     "package-check": "package-check",
     "test:dev": "bun test --watch --coverage",
     "test": "bun test",
