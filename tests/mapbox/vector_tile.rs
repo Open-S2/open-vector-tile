@@ -10,7 +10,6 @@ mod tests {
         open::{Extent, FeatureType, Value},
         Point, VectorGeometry, VectorLayerMethods, VectorLineWithOffset, VectorTile,
     };
-
     use std::{
         fs,
         panic::{self, AssertUnwindSafe},

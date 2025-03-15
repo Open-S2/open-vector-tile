@@ -16,7 +16,6 @@ mod tests {
         write_tile, BBox, BBox3D, Point, Point3D, VectorGeometry, VectorLayerMethods,
         VectorLine3DWithOffset, VectorLineWithOffset, VectorTile, BBOX,
     };
-
     use std::panic::{self, AssertUnwindSafe};
 
     #[test]

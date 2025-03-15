@@ -1,20 +1,15 @@
 #[cfg(test)]
 mod tests {
     extern crate alloc;
+    use alloc::{collections::BTreeMap, rc::Rc, string::String};
+    use core::cell::RefCell;
     use ovtile::{
         base::{BaseVectorFeature, BaseVectorPointsFeature},
         mapbox::{write_feature, MapboxVectorFeature, Value as MapboxValue},
         open::Value,
         CustomOrdWrapper, Point,
     };
-
     use pbf::Protobuf;
-
-    use alloc::collections::BTreeMap;
-    use alloc::rc::Rc;
-    use alloc::string::String;
-
-    use core::cell::RefCell;
 
     #[test]
     fn test_mapbox_vector_feature_write_read() {

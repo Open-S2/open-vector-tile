@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     extern crate alloc;
+    use alloc::{collections::BTreeMap, vec};
     use ovtile::{
         base::{
             decode_offset, encode_offset, BaseVectorFeature, BaseVectorLines3DFeature,
@@ -11,9 +12,6 @@ mod tests {
         BBox, BBox3D, Point, Point3D, VectorGeometry, VectorLine3DWithOffset, VectorLineWithOffset,
         BBOX,
     };
-
-    use alloc::collections::BTreeMap;
-    use alloc::vec;
 
     #[test]
     fn test_base_vector_points_feature() {

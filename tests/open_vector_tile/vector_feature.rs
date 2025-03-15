@@ -2,9 +2,10 @@
 mod tests {
     extern crate alloc;
 
-    use ovtile::mapbox::FeatureType as MapboxFeatureType;
-    use ovtile::open::{Extent, FeatureType};
-
+    use ovtile::{
+        mapbox::FeatureType as MapboxFeatureType,
+        open::{Extent, FeatureType},
+    };
     use pbf::Protobuf;
 
     #[test]

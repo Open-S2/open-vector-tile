@@ -2,19 +2,18 @@
 mod tests {
     extern crate alloc;
 
-    use alloc::collections::BTreeMap;
-    use alloc::rc::Rc;
+    use alloc::{collections::BTreeMap, rc::Rc};
     use core::cell::RefCell;
-    use ovtile::CustomOrdWrapper;
-
-    use ovtile::mapbox::Value as MapboxValue;
-    use ovtile::open::{
-        validate_types, ColumnCacheReader, ColumnCacheWriter, ColumnValue, PrimitiveShape,
-        PrimitiveValue, Shape, ShapeDefinition, ShapePair, ShapePrimitiveType, ShapeType, Value,
-        ValuePrimitiveType, ValueType,
+    use ovtile::{
+        mapbox::Value as MapboxValue,
+        open::{
+            validate_types, ColumnCacheReader, ColumnCacheWriter, ColumnValue, PrimitiveShape,
+            PrimitiveValue, Shape, ShapeDefinition, ShapePair, ShapePrimitiveType, ShapeType,
+            Value, ValuePrimitiveType, ValueType,
+        },
+        CustomOrdWrapper,
     };
     use pbf::Protobuf;
-
     use std::panic::{self, AssertUnwindSafe};
 
     #[test]
