@@ -1,7 +1,13 @@
 import { OColumnName } from './columnCache';
 
 import type { ColumnCacheReader, ColumnCacheWriter, ColumnValue } from './columnCache';
-import type { OProperties, OValue, Primitive, Properties, ValueArray } from '../vectorTile.spec';
+import type {
+  Properties as OProperties,
+  Value as OValue,
+  Primitive,
+  Properties,
+  ValueArray,
+} from 's2json-spec';
 
 //? Shapes exist solely to deconstruct and rebuild objects.
 //?

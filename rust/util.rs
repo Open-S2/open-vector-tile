@@ -1,10 +1,7 @@
 use crate::{BBox, BBox3D, Point, Point3D, BBOX};
-
-use libm::round;
-
 use alloc::{vec, vec::Vec};
-
 use core::cmp::Ordering;
+use libm::round;
 
 /// Manager for float based comparisons
 pub trait CustomOrd {

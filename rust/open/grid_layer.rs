@@ -1,7 +1,5 @@
-use alloc::{string::String, vec::Vec};
-
 use crate::{delta_decode_array, delta_encode_array, open::Extent};
-
+use alloc::{string::String, vec::Vec};
 use libm::round;
 use pbf::{ProtoRead, ProtoWrite, Protobuf};
 

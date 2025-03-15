@@ -1,16 +1,10 @@
-use pbf::{ProtoRead, Protobuf};
-
-use alloc::collections::BTreeMap;
-use alloc::rc::Rc;
-use alloc::string::String;
-use alloc::vec::Vec;
-
-use core::cell::RefCell;
-
 use crate::{
     base::BaseVectorTile,
     mapbox::{write_layer, MapboxVectorLayer},
 };
+use alloc::{collections::BTreeMap, rc::Rc, string::String, vec::Vec};
+use core::cell::RefCell;
+use pbf::{ProtoRead, Protobuf};
 
 /// The vector tile struct that covers both "open" and "mapbox" specifications
 #[derive(Debug)]

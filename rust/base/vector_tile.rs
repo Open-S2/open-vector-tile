@@ -1,9 +1,7 @@
 use crate::{
     base::BaseVectorLayer, mapbox::vector_tile::MapboxVectorTile, VectorLayer, VectorTile,
 };
-
-use alloc::collections::BTreeMap;
-use alloc::string::String;
+use alloc::{collections::BTreeMap, string::String};
 
 /// Base Vector Tile
 /// This is an intermediary for storing feature data in the Open Vector Tile format.

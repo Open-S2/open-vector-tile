@@ -3,13 +3,9 @@ use crate::{
     unweave_and_delta_decode_array, weave_and_delta_encode_3d_array, weave_and_delta_encode_array,
     CustomOrdWrapper, Point, Point3D, VectorPoints, VectorPoints3D, BBOX,
 };
-
-use pbf::{ProtoRead, ProtoWrite, Protobuf};
-
-use alloc::collections::BTreeMap;
-use alloc::string::String;
-use alloc::vec::Vec;
+use alloc::{collections::BTreeMap, string::String, vec::Vec};
 use core::cell::RefCell;
+use pbf::{ProtoRead, ProtoWrite, Protobuf};
 
 /// Column Types take up 3 bits.
 /// ColumnNames define various common data structures to be stored in a column fashion

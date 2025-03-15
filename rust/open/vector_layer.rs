@@ -1,5 +1,3 @@
-use pbf::{ProtoRead, Protobuf};
-
 use crate::{
     base::BaseVectorLayer,
     open::{
@@ -8,12 +6,9 @@ use crate::{
     },
     VectorLayerMethods,
 };
-
+use alloc::{rc::Rc, string::String, vec::Vec};
 use core::cell::RefCell;
-
-use alloc::rc::Rc;
-use alloc::string::String;
-use alloc::vec::Vec;
+use pbf::{ProtoRead, Protobuf};
 
 /// The Open Vector Layer class represents a layer in an Open Vector Tile.
 /// Contains an extent, name, version, and features.

@@ -1,6 +1,8 @@
 import { MltDecoder, TileSetMetadata } from '@maplibre/maplibre-tile-spec';
 import { VectorTile, writeOVTile } from '../src';
 
+import '../src/polyfill';
+
 const FOLDER = 'bing';
 const XYZ = '4_8_5';
 
@@ -10,7 +12,7 @@ const MLT_META = await Bun.file(
   `${__dirname}/data/${FOLDER}/mlt/${XYZ}.mlt.meta.pbf`,
 ).arrayBuffer();
 const mvTile = new VectorTile(new Uint8Array(MVT));
-const OVT = writeOVTile(mvTile);
+const OVT = await writeOVTile(mvTile);
 
 const ovtTile = new VectorTile(OVT);
 

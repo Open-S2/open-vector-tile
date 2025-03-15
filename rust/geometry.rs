@@ -1,8 +1,6 @@
 use crate::open::{LineStringMValues, MValue};
-
-use core::cmp::Ordering;
-
 use alloc::vec::Vec;
+use core::cmp::Ordering;
 
 /// The Bounding box, whether the tile bounds or lon-lat bounds or whatever.
 #[derive(Default, Copy, Clone, Debug, PartialEq, PartialOrd, Eq)]

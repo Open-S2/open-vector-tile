@@ -5,6 +5,8 @@ import { brotliCompressSync } from 'zlib';
 import { markdownTable } from 'markdown-table';
 import { VectorTile, writeOVTile } from '../src';
 
+import '../src/polyfill';
+
 /** Finding the averages for each zoom or all */
 interface AverageTracker {
   sum: number;
@@ -35,7 +37,7 @@ for (const { folder, fileType } of RULES) {
   const fileList = getFileList(folder);
 
   for (const { fileName, zoom } of fileList) {
-    const sizes = buildFilesizeBenchmarks(folder, fileName, fileType);
+    const sizes = await buildFilesizeBenchmarks(folder, fileName, fileType);
     addBench(sizeBenchmarks, sizes, zoom);
   }
 
@@ -78,7 +80,7 @@ function buildAverages(benchmarks: SizeBenchmarks) {
  * @returns list of file names
  */
 function getFileList(folder: string): { fileName: string; zoom: number }[] {
-  const files = fs.readdirSync(`./benchmarks/data/${folder}/covt`);
+  const files = fs.readdirSync(`${__dirname}/data/${folder}/covt`);
   return files.map((file) => {
     const fileName = file.split('.')[0];
     const zoom = fileName.split('_')[0];
@@ -105,16 +107,18 @@ interface AllFileSizes {
  * @param fileType - in the mvt folder sometimes its pbf, sometimes its mvt
  * @returns AllFileSizes and compression formats for each tile format
  */
-function buildFilesizeBenchmarks(folder: string, xyz: string, fileType: string): AllFileSizes {
+async function buildFilesizeBenchmarks(
+  folder: string,
+  xyz: string,
+  fileType: string,
+): Promise<AllFileSizes> {
   const MVT = fs.readFileSync(
-    path.join(__dirname, `../benchmarks/data/${folder}/mvt/${xyz}.${fileType}`),
+    path.join(__dirname, `${__dirname}/${folder}/mvt/${xyz}.${fileType}`),
   );
-  const COVT = fs.readFileSync(
-    path.join(__dirname, `../benchmarks/data/${folder}/covt/${xyz}.covt`),
-  );
+  const COVT = fs.readFileSync(path.join(__dirname, `${__dirname}/${folder}/covt/${xyz}.covt`));
   const tile = new VectorTile(new Uint8Array(MVT));
 
-  const OVT = writeOVTile(tile);
+  const OVT = await writeOVTile(tile);
 
   return {
     covt: brotliCompressSync(COVT).length,

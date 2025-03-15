@@ -8,7 +8,7 @@ for (const file of files) {
   const fullPath = path.join(__dirname, `../test/fixtures/${file}`);
   const data = fs.readFileSync(fullPath);
   const tile = new VectorTile(new Uint8Array(data));
-  const result = writeOVTile(tile);
+  const result = await writeOVTile(tile);
   console.info('writing', name);
   fs.writeFileSync(path.join(__dirname, `../test/fixtures/${name}.ovt`), result);
 }

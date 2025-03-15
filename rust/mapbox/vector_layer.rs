@@ -3,16 +3,14 @@ use crate::{
     mapbox::{write_feature, MapboxVectorFeature, Value},
     VectorFeatureMethods, VectorLayerMethods,
 };
-
-use pbf::{ProtoRead, Protobuf};
-
+use alloc::{
+    collections::{btree_map::Entry, BTreeMap},
+    rc::Rc,
+    string::String,
+    vec::Vec,
+};
 use core::cell::RefCell;
-
-use alloc::collections::btree_map::Entry;
-use alloc::collections::BTreeMap;
-use alloc::rc::Rc;
-use alloc::string::String;
-use alloc::vec::Vec;
+use pbf::{ProtoRead, Protobuf};
 
 /// Mapbox specification for a Layer
 #[derive(Debug)]

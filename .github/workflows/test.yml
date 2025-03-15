@@ -55,5 +55,5 @@ jobs:
 
     # Run tarpaulin to calculate and enforce coverage
     - name: Run Coverage and Enforce Threshold
-      run: cargo tarpaulin -p open-vector-tile
+      run: cargo tarpaulin --fail-under 95
       shell: bash

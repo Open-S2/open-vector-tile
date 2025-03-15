@@ -1,5 +1,3 @@
-use pbf::{BitCast, ProtoRead, ProtoWrite, Protobuf, Type};
-
 use crate::{
     base::{BaseVectorFeature, TesselationWrapper},
     command_encode,
@@ -7,14 +5,9 @@ use crate::{
     zigzag, CustomOrdWrapper, Point, VectorFeatureMethods, VectorGeometry, VectorLineWithOffset,
     VectorLines3DWithOffset, VectorLinesWithOffset, VectorPoints, VectorPoints3D, BBOX,
 };
-
+use alloc::{collections::BTreeMap, rc::Rc, string::String, vec, vec::Vec};
 use core::cell::RefCell;
-
-use alloc::collections::BTreeMap;
-use alloc::rc::Rc;
-use alloc::string::String;
-use alloc::vec;
-use alloc::vec::Vec;
+use pbf::{BitCast, ProtoRead, ProtoWrite, Protobuf, Type};
 
 /// Mapbox specification for a Feature
 #[derive(Debug)]

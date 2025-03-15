@@ -6,11 +6,8 @@ import type { ColumnCacheWriter } from '../open/columnCache';
 import type MapboxVectorFeature from '../mapbox/vectorFeature';
 import type { VectorFeatures as S2JSONFeature } from 's2json-spec';
 import type { Shape } from '../open/shape';
+import type { BBOX, BBox, BBox3D, Properties as OProperties } from 's2json-spec';
 import type {
-  BBOX,
-  BBox,
-  BBox3D,
-  OProperties,
   Point,
   Point3D,
   VectorLine,

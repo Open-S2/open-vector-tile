@@ -7,10 +7,9 @@ import { unweave2D, unweave3D, zagzig } from '../util';
 import type { BaseVectorFeature } from '../base';
 import type { Extents } from './vectorLayer';
 import type { Shape } from './shape';
+import type { BBox, BBox3D, Properties as OProperties } from 's2json-spec';
+import type { ColumnCacheReader, ColumnCacheWriter } from './columnCache';
 import type {
-  BBox,
-  BBox3D,
-  OProperties,
   Point,
   Point3D,
   VectorFeatureType,
@@ -25,7 +24,6 @@ import type {
   VectorPoints,
   VectorPoints3D,
 } from '../vectorTile.spec';
-import type { ColumnCacheReader, ColumnCacheWriter } from './columnCache';
 
 /**
  * Vector Feature Base

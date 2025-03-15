@@ -1,7 +1,6 @@
 import type { PbfReader } from 'pbf-ts';
+import type { BBox, BBox3D } from 's2json-spec';
 import type {
-  BBox,
-  BBox3D,
   OldVectorFeatureType,
   Point,
   Properties,

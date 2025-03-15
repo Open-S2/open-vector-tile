@@ -1,9 +1,3 @@
-use pbf::{ProtoRead, Protobuf};
-
-use alloc::{collections::BTreeMap, rc::Rc, string::String, vec::Vec};
-
-use core::cell::RefCell;
-
 use crate::{
     base::BaseVectorTile,
     mapbox::MapboxVectorLayer,
@@ -14,6 +8,9 @@ use crate::{
     VectorGeometry, VectorLines3DWithOffset, VectorLinesWithOffset, VectorPoints, VectorPoints3D,
     BBOX,
 };
+use alloc::{collections::BTreeMap, rc::Rc, string::String, vec::Vec};
+use core::cell::RefCell;
+use pbf::{ProtoRead, Protobuf};
 
 /// Methods that all vector features should have
 pub trait VectorFeatureMethods {

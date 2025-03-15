@@ -3,9 +3,7 @@ use crate::{
     mapbox::MapboxVectorLayer,
     open::{Extent, Shape},
 };
-
-use alloc::string::String;
-use alloc::vec::Vec;
+use alloc::{string::String, vec::Vec};
 
 /// Base Vector Layer
 /// This is an intermediary for storing layer data in the Open Vector Tile format.

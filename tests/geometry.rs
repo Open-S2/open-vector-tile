@@ -4,9 +4,10 @@ mod tests {
 
     use alloc::collections::BTreeMap;
     use core::cmp::Ordering;
-
-    use ovtile::geometry::{BBox, BBox3D, Point, Point3D, VectorLineWithOffset, BBOX};
-    use ovtile::open::Value;
+    use ovtile::{
+        geometry::{BBox, BBox3D, Point, Point3D, VectorLineWithOffset, BBOX},
+        open::Value,
+    };
 
     #[test]
     fn test_bounding_box() {

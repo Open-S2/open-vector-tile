@@ -1,5 +1,4 @@
 use alloc::{fmt, str::FromStr, string::String, vec::Vec};
-
 use pbf::{BitCast, ProtoRead, ProtoWrite, Protobuf};
 
 // TODO: This could be faster if we don't read in the grid data on parsing but only if the user needs it

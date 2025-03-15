@@ -1,24 +1,18 @@
-import type { Face, VectorFeatures } from 's2json-spec';
+import type {
+  BBOX,
+  BBox,
+  BBox3D,
+  Face,
+  Properties as OProperties,
+  VectorFeatures,
+} from 's2json-spec';
 
-/**
- * A BBOX is defined in lon-lat space and helps with zooming motion to
- * see the entire line or polygon
- */
-export type BBox = [left: number, bottom: number, right: number, top: number];
-/**
- * A BBOX is defined in lon-lat space and helps with zooming motion to
- * see the entire 3D line or polygon
- */
-export type BBox3D = [
-  left: number,
-  bottom: number,
-  right: number,
-  top: number,
-  near: number,
-  far: number,
-];
-/** A 2D or 3D Bounding Box */
-export type BBOX = BBox | BBox3D;
+// NOTE: A lot of this exists for the concept of being more precise.
+// most of this is redundant to s2json-spec, but it's easier to explain 2D and 3D concepts this way
+
+// The geometry constructs build upon the geometry types from s2json-spec, where this
+// is specifically designed for vector tiles and visual data, so offsets are included and
+// the types are precomputed for compression.
 
 /**
  * Value is the old type used by Mapbox vector tiles. Properties can not be nested, so we only
@@ -31,29 +25,6 @@ export type Value = string | number | boolean | null;
  * any basic type of Value
  */
 export type Properties = Record<string, Value>;
-
-/** Primitive types supported by Properties */
-export type Primitive = string | number | boolean | null | undefined;
-
-/**
- * When an array is used, it must be an array of the same type.
- * Arrays are also limited to primitives and objects of primitives
- */
-export type ValueArray =
-  Array<Primitive | { [key: string]: Primitive }> extends (infer U)[] ? U[] : never;
-
-/**
- * The new OpenVectorTile type can create complex nested objects.
- * May either be a string, number, boolean, null, an array of those types, or an object of those types
- * Object keys are always strings, values can be any basic type, an array, or a nested object.
- */
-export type OValue = Primitive | ValueArray | { [key: string]: OValue };
-
-/**
- * Some components inside the OpenVectorTile spec require the starting with an object of key-value pairs.
- * `MValues`and `feature properties` are such a case.
- */
-export type OProperties = Record<string, OValue>;
 
 /** Mapbox Vector Feature types. */
 export type OldVectorFeatureType =

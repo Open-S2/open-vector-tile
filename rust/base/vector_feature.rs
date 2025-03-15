@@ -6,9 +6,7 @@ use crate::{
     weave_2d, weave_3d, zigzag, BBox, BBox3D, Point, Point3D, VectorFeatureMethods, VectorGeometry,
     VectorLines3DWithOffset, VectorLinesWithOffset, VectorPoints, VectorPoints3D, BBOX,
 };
-
 use alloc::vec::Vec;
-
 use libm::round;
 
 /// Vector Feature functions that are common to all vector features

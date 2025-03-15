@@ -5,6 +5,8 @@ import { markdownTable } from 'markdown-table';
 import { VectorTile, writeOVTile } from '../src';
 import { brotliCompressSync, gzipSync } from 'zlib';
 
+import '../src/polyfill';
+
 /** Finding the averages for each zoom or all */
 interface AverageTracker {
   sum: number;
@@ -27,8 +29,9 @@ interface CompressionBenchmarks {
 
 /** Finding the averages for each format */
 interface AllSizeBenchmarks {
-  mlt: CompressionBenchmarks;
-  mvt: CompressionBenchmarks;
+  // mlt: CompressionBenchmarks;
+  covt: CompressionBenchmarks;
+  // mvt: CompressionBenchmarks;
   ovt: CompressionBenchmarks;
 }
 
@@ -41,16 +44,21 @@ const RULES = [
 ];
 
 const sizeBenchmarks: AllSizeBenchmarks = {
-  mlt: {
+  // mlt: {
+  //   raw: { all: { sum: 0, total: 0, average: 0 } },
+  //   gzip: { all: { sum: 0, total: 0, average: 0 } },
+  //   brotli: { all: { sum: 0, total: 0, average: 0 } },
+  // },
+  covt: {
     raw: { all: { sum: 0, total: 0, average: 0 } },
     gzip: { all: { sum: 0, total: 0, average: 0 } },
     brotli: { all: { sum: 0, total: 0, average: 0 } },
   },
-  mvt: {
-    raw: { all: { sum: 0, total: 0, average: 0 } },
-    gzip: { all: { sum: 0, total: 0, average: 0 } },
-    brotli: { all: { sum: 0, total: 0, average: 0 } },
-  },
+  // mvt: {
+  //   raw: { all: { sum: 0, total: 0, average: 0 } },
+  //   gzip: { all: { sum: 0, total: 0, average: 0 } },
+  //   brotli: { all: { sum: 0, total: 0, average: 0 } },
+  // },
   ovt: {
     raw: { all: { sum: 0, total: 0, average: 0 } },
     gzip: { all: { sum: 0, total: 0, average: 0 } },
@@ -59,11 +67,10 @@ const sizeBenchmarks: AllSizeBenchmarks = {
 };
 
 for (const { folder, fileType } of RULES) {
-  // console.info(`${folder}`);
-  const fileList = getFileList(folder);
+  const fileList = getFileList(folder, fileType);
 
   for (const { fileName, zoom } of fileList) {
-    const sizes = buildFilesizeBenchmarks(folder, fileName, fileType);
+    const sizes = await buildFilesizeBenchmarks(folder, fileName, fileType);
     addBench(sizeBenchmarks, sizes, zoom);
   }
 
@@ -118,12 +125,13 @@ function buildAverages(benchmarks: AllSizeBenchmarks) {
 
 /**
  * @param folder - head dir folder name to parse
+ * @param fileType - pbf or mvt (file ending)
  * @returns list of file names
  */
-function getFileList(folder: string): { fileName: string; zoom: number }[] {
-  const files = fs.readdirSync(`./benchmarks/data/${folder}/mlt`);
+function getFileList(folder: string, fileType: string): { fileName: string; zoom: number }[] {
+  const files = fs.readdirSync(`${__dirname}/data/${folder}/covt`);
   return files
-    .filter((file) => file.endsWith('.pbf'))
+    .filter((file) => file.endsWith(fileType) || file.endsWith('.covt') || file.endsWith('.mlt'))
     .map((file) => {
       const fileName = file.split('.')[0];
       const zoom = fileName.split('_')[0];
@@ -160,14 +168,18 @@ interface AllFileSizes {
  * @param fileType - in the mvt folder sometimes its pbf, sometimes its mvt
  * @returns AllFileSizes and compression formats for each tile format
  */
-function buildFilesizeBenchmarks(folder: string, xyz: string, fileType: string): AllFileSizes {
+async function buildFilesizeBenchmarks(
+  folder: string,
+  xyz: string,
+  fileType: string,
+): Promise<AllFileSizes> {
   const MVT = fs.readFileSync(
-    path.join(__dirname, `../benchmarks/data/${folder}/mvt/${xyz}.${fileType}`),
+    path.join(__dirname, `${__dirname}/data/${folder}/mvt/${xyz}.${fileType}`),
   );
-  const MLT = fs.readFileSync(path.join(__dirname, `../benchmarks/data/${folder}/mlt/${xyz}.mlt`));
+  const MLT = fs.readFileSync(path.join(__dirname, `${__dirname}/data/${folder}/mlt/${xyz}.mlt`));
   const tile = new VectorTile(new Uint8Array(MVT));
 
-  const OVT = writeOVTile(tile);
+  const OVT = await writeOVTile(tile);
 
   return {
     mlt: {

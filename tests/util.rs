@@ -1,18 +1,18 @@
 #[cfg(test)]
 mod tests {
     extern crate alloc;
-
     use core::cmp::Ordering;
-
-    use ovtile::util::{
-        command_decode, command_encode, delta_decode_array, delta_decode_sorted_array,
-        delta_encode_array, delta_encode_sorted_array, dequantize_lat, dequantize_lon,
-        pack24_bit_uint, pack_float, quantize_lat, quantize_lon, unpack24_bit_uint, unpack_float,
-        unweave_2d, unweave_3d, unweave_and_delta_decode_3d_array, unweave_and_delta_decode_array,
-        weave_2d, weave_3d, weave_and_delta_encode_3d_array, weave_and_delta_encode_array, zagzig,
-        zigzag, Command, CustomOrd, CustomOrdWrapper,
+    use ovtile::{
+        util::{
+            command_decode, command_encode, delta_decode_array, delta_decode_sorted_array,
+            delta_encode_array, delta_encode_sorted_array, dequantize_lat, dequantize_lon,
+            pack24_bit_uint, pack_float, quantize_lat, quantize_lon, unpack24_bit_uint,
+            unpack_float, unweave_2d, unweave_3d, unweave_and_delta_decode_3d_array,
+            unweave_and_delta_decode_array, weave_2d, weave_3d, weave_and_delta_encode_3d_array,
+            weave_and_delta_encode_array, zagzig, zigzag, Command, CustomOrd, CustomOrdWrapper,
+        },
+        BBox, BBox3D, Point, Point3D, BBOX,
     };
-    use ovtile::{BBox, BBox3D, Point, Point3D, BBOX};
 
     /// Utility function to wrap and compare values.
     fn compare<T: CustomOrd + Copy>(a: T, b: T) -> Ordering {

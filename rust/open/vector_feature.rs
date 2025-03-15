@@ -1,5 +1,3 @@
-use pbf::{BitCast, Protobuf};
-
 use crate::{
     base::{decode_offset, BaseVectorFeature, TesselationWrapper},
     mapbox::FeatureType as MapboxFeatureType,
@@ -8,12 +6,9 @@ use crate::{
     VectorLine3DWithOffset, VectorLineWithOffset, VectorLines3DWithOffset, VectorLinesWithOffset,
     VectorPoints, VectorPoints3D, BBOX,
 };
-
+use alloc::{rc::Rc, vec, vec::Vec};
 use core::cell::RefCell;
-
-use alloc::rc::Rc;
-use alloc::vec;
-use alloc::vec::Vec;
+use pbf::{BitCast, Protobuf};
 
 use super::decode_value;
 

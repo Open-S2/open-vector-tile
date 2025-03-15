@@ -23,7 +23,7 @@ const data = fs.readFileSync(
 );
 const tile = new VectorTile(new Uint8Array(data));
 
-const result = writeOVTile(tile);
+const result = await writeOVTile(tile);
 
 console.info(`Default:\nMVT: ${data.byteLength} bytes -> OVT: ${result.byteLength} bytes`);
 console.info(
