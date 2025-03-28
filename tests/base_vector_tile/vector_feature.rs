@@ -1,17 +1,17 @@
 #[cfg(test)]
 mod tests {
     extern crate alloc;
-    use alloc::{collections::BTreeMap, vec};
+    use alloc::vec;
     use ovtile::{
         base::{
             decode_offset, encode_offset, BaseVectorFeature, BaseVectorLines3DFeature,
             BaseVectorLinesFeature, BaseVectorPoints3DFeature, BaseVectorPointsFeature,
             BaseVectorPolys3DFeature, BaseVectorPolysFeature, TesselationWrapper, VectorFeature,
         },
-        open::{ColumnCacheWriter, FeatureType, Properties, Shape, Value},
-        BBox, BBox3D, Point, Point3D, VectorGeometry, VectorLine3DWithOffset, VectorLineWithOffset,
-        BBOX,
+        open::{ColumnCacheWriter, FeatureType},
+        Point, Point3D, VectorGeometry, VectorLine3DWithOffset, VectorLineWithOffset,
     };
+    use s2json::{BBox, BBox3D, Properties, Shape, Value, BBOX};
 
     #[test]
     fn test_base_vector_points_feature() {
@@ -73,7 +73,7 @@ mod tests {
 
         // m_values
         assert!(feature.m_values().is_none());
-        assert_eq!(feature2.m_values(), Some(vec![example_value.clone(), Value(BTreeMap::new())]));
+        assert_eq!(feature2.m_values(), Some(vec![example_value.clone(), Value::new()]));
 
         let mut col = ColumnCacheWriter::default();
         feature.encode_to_cache(&mut col, None);
@@ -97,10 +97,7 @@ mod tests {
 
         // m_values
         assert_eq!(feature_base.m_values(), None);
-        assert_eq!(
-            feature_base_2.m_values(),
-            Some(vec![example_value.clone(), Value(BTreeMap::new())])
-        );
+        assert_eq!(feature_base_2.m_values(), Some(vec![example_value.clone(), Value::new()]));
 
         // get_type
         assert_eq!(feature_base.get_type(), FeatureType::Points);
@@ -204,7 +201,7 @@ mod tests {
 
         // m_values
         assert!(feature.m_values().is_none());
-        assert_eq!(feature2.m_values(), Some(vec![example_value.clone(), Value(BTreeMap::new())]));
+        assert_eq!(feature2.m_values(), Some(vec![example_value.clone(), Value::new()]));
 
         let mut col = ColumnCacheWriter::default();
         feature.encode_to_cache(&mut col, None);
@@ -228,10 +225,7 @@ mod tests {
 
         // m_values
         assert_eq!(feature_base.m_values(), None);
-        assert_eq!(
-            feature_base_2.m_values(),
-            Some(vec![example_value.clone(), Value(BTreeMap::new())])
-        );
+        assert_eq!(feature_base_2.m_values(), Some(vec![example_value.clone(), Value::new()]));
 
         // get_type
         assert_eq!(feature_base.get_type(), FeatureType::Points3D);
@@ -359,12 +353,7 @@ mod tests {
         assert!(feature.m_values().is_none());
         assert_eq!(
             feature2.m_values(),
-            Some(vec![
-                example_value.clone(),
-                Value(BTreeMap::new()),
-                Value(BTreeMap::new()),
-                example_value.clone(),
-            ])
+            Some(vec![example_value.clone(), Value::new(), Value::new(), example_value.clone(),])
         );
 
         let mut col = ColumnCacheWriter::default();
@@ -391,12 +380,7 @@ mod tests {
         assert_eq!(feature_base.m_values(), None);
         assert_eq!(
             feature_base_2.m_values(),
-            Some(vec![
-                example_value.clone(),
-                Value(BTreeMap::new()),
-                Value(BTreeMap::new()),
-                example_value.clone(),
-            ])
+            Some(vec![example_value.clone(), Value::new(), Value::new(), example_value.clone(),])
         );
 
         // get_type
@@ -536,12 +520,7 @@ mod tests {
         assert!(feature.m_values().is_none());
         assert_eq!(
             feature2.m_values(),
-            Some(vec![
-                example_value.clone(),
-                Value(BTreeMap::new()),
-                Value(BTreeMap::new()),
-                example_value.clone(),
-            ])
+            Some(vec![example_value.clone(), Value::new(), Value::new(), example_value.clone(),])
         );
 
         let mut col = ColumnCacheWriter::default();
@@ -568,12 +547,7 @@ mod tests {
         assert_eq!(feature_base.m_values(), None);
         assert_eq!(
             feature_base_2.m_values(),
-            Some(vec![
-                example_value.clone(),
-                Value(BTreeMap::new()),
-                Value(BTreeMap::new()),
-                example_value.clone(),
-            ])
+            Some(vec![example_value.clone(), Value::new(), Value::new(), example_value.clone(),])
         );
 
         // get_type
@@ -723,12 +697,7 @@ mod tests {
         assert!(feature.m_values().is_none());
         assert_eq!(
             feature2.m_values(),
-            Some(vec![
-                example_value.clone(),
-                Value(BTreeMap::new()),
-                Value(BTreeMap::new()),
-                example_value.clone(),
-            ])
+            Some(vec![example_value.clone(), Value::new(), Value::new(), example_value.clone(),])
         );
 
         let mut col = ColumnCacheWriter::default();
@@ -755,12 +724,7 @@ mod tests {
         assert_eq!(feature_base.m_values(), None);
         assert_eq!(
             feature_base_2.m_values(),
-            Some(vec![
-                example_value.clone(),
-                Value(BTreeMap::new()),
-                Value(BTreeMap::new()),
-                example_value.clone(),
-            ])
+            Some(vec![example_value.clone(), Value::new(), Value::new(), example_value.clone(),])
         );
 
         // get_type
@@ -961,12 +925,7 @@ mod tests {
         assert!(feature.m_values().is_none());
         assert_eq!(
             feature2.m_values(),
-            Some(vec![
-                example_value.clone(),
-                Value(BTreeMap::new()),
-                Value(BTreeMap::new()),
-                example_value.clone(),
-            ])
+            Some(vec![example_value.clone(), Value::new(), Value::new(), example_value.clone(),])
         );
 
         let mut col = ColumnCacheWriter::default();
@@ -993,12 +952,7 @@ mod tests {
         assert_eq!(feature_base.m_values(), None);
         assert_eq!(
             feature_base_2.m_values(),
-            Some(vec![
-                example_value.clone(),
-                Value(BTreeMap::new()),
-                Value(BTreeMap::new()),
-                example_value.clone(),
-            ])
+            Some(vec![example_value.clone(), Value::new(), Value::new(), example_value.clone(),])
         );
 
         // get_type

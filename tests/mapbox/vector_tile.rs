@@ -7,9 +7,10 @@ mod tests {
             BaseVectorPolysFeature, BaseVectorTile, VectorFeature,
         },
         mapbox::vector_tile::{write_tile, MapboxVectorTile},
-        open::{Extent, FeatureType, Value},
+        open::{Extent, FeatureType},
         Point, VectorGeometry, VectorLayerMethods, VectorLineWithOffset, VectorTile,
     };
+    use s2json::Value;
     use std::{
         fs,
         panic::{self, AssertUnwindSafe},

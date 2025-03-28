@@ -299,6 +299,9 @@ const shape: Shape = {
 validate(shape); // true
 ```
 
+> [!NOTE]  
+> Safety Unsafe code is forbidden by a #![forbid(unsafe_code)] attribute in the root of the rust library.
+
 ---
 
 ## Development

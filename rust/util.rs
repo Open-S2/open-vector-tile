@@ -1,7 +1,8 @@
-use crate::{BBox, BBox3D, Point, Point3D, BBOX};
+use crate::{Point, Point3D};
 use alloc::{vec, vec::Vec};
 use core::cmp::Ordering;
 use libm::round;
+use s2json::{BBox, BBox3D, BBOX};
 
 /// Manager for float based comparisons
 pub trait CustomOrd {
@@ -361,27 +362,34 @@ pub fn unpack_float(buffer: &[u8], offset: usize) -> f32 {
     f32::from_le_bytes(buffer[offset..offset + 4].try_into().unwrap()) // Converts little-endian bytes back to a float
 }
 
-// | Decimal Places | Approximate Accuracy in Distance       |
-// |----------------|----------------------------------------|
-// | 0              | 111 km (69 miles)                      |
-// | 1              | 11.1 km (6.9 miles)                    |
-// | 2              | 1.11 km (0.69 miles)                   |
-// | 3              | 111 meters (364 feet)                  |
-// | 4              | 11.1 meters (36.4 feet)                |
-// | 5              | 1.11 meters (3.64 feet)                |
-// | 6              | 0.111 meters (11.1 cm or 4.39 inches)  |
-// | 7              | 1.11 cm (0.44 inches)                  |
-// | 8              | 1.11 mm (0.044 inches)                 |
-// 24-bit quantization for longitude and latitude
-// LONGITUDE:
-// - ~0.000021457672119140625 degrees precision
-// - ~2.388 meters precision
-// LATITUDE:
-// - ~0.000010728836059570312 degrees precision
-// - ~1.194 meters precision
-impl BBox {
+/// | Decimal Places | Approximate Accuracy in Distance       |
+/// |----------------|----------------------------------------|
+/// | 0              | 111 km (69 miles)                      |
+/// | 1              | 11.1 km (6.9 miles)                    |
+/// | 2              | 1.11 km (0.69 miles)                   |
+/// | 3              | 111 meters (364 feet)                  |
+/// | 4              | 11.1 meters (36.4 feet)                |
+/// | 5              | 1.11 meters (3.64 feet)                |
+/// | 6              | 0.111 meters (11.1 cm or 4.39 inches)  |
+/// | 7              | 1.11 cm (0.44 inches)                  |
+/// | 8              | 1.11 mm (0.044 inches)                 |
+/// 24-bit quantization for longitude and latitude
+///
+/// LONGITUDE:
+/// - ~0.000021457672119140625 degrees precision
+/// - ~2.388 meters precision
+///
+/// LATITUDE:
+/// - ~0.000010728836059570312 degrees precision
+/// - ~1.194 meters precision
+pub trait BBoxQuantization {
     /// Returns a quantized version of the BBox
-    pub fn quantize(&self) -> Vec<u8> {
+    fn quantize(&self) -> Vec<u8>;
+    /// Dequantize the BBox
+    fn dequantize(buf: &[u8]) -> Self;
+}
+impl BBoxQuantization for BBox {
+    fn quantize(&self) -> Vec<u8> {
         let mut buffer = vec![0u8; 12];
 
         let q_lon1 = quantize_lon(self.left);
@@ -396,9 +404,7 @@ impl BBox {
 
         buffer
     }
-
-    /// Dequantize the BBox
-    pub fn dequantize(buf: &[u8]) -> BBox {
+    fn dequantize(buf: &[u8]) -> BBox {
         let q_lon1 = unpack24_bit_uint(buf, 0);
         let q_lat1 = unpack24_bit_uint(buf, 3);
         let q_lon2 = unpack24_bit_uint(buf, 6);
@@ -412,9 +418,8 @@ impl BBox {
         }
     }
 }
-impl BBox3D {
-    /// Quantize the BBox3D
-    pub fn quantize(&self) -> Vec<u8> {
+impl BBoxQuantization for BBox3D {
+    fn quantize(&self) -> Vec<u8> {
         let mut buffer = vec![0u8; 20];
 
         let q_lon1 = quantize_lon(self.left);
@@ -432,9 +437,7 @@ impl BBox3D {
 
         buffer
     }
-
-    /// Dequantize the BBox3D
-    pub fn dequantize(buf: &[u8]) -> BBox3D {
+    fn dequantize(buf: &[u8]) -> Self {
         let q_lon1 = unpack24_bit_uint(buf, 0);
         let q_lat1 = unpack24_bit_uint(buf, 3);
         let q_lon2 = unpack24_bit_uint(buf, 6);
@@ -454,23 +457,14 @@ impl BBox3D {
     }
 }
 
-impl BBOX {
-    /// Quantize the BBOX
-    pub fn quantize(&self) -> Vec<u8> {
+impl BBoxQuantization for BBOX {
+    fn quantize(&self) -> Vec<u8> {
         match self {
             BBOX::BBox(bbox) => bbox.quantize(),
             BBOX::BBox3D(bbox) => bbox.quantize(),
         }
     }
-
-    /// Dequantize the BBOX
-    pub fn dequantize(buf: &[u8]) -> BBOX {
-        buf.into()
-    }
-}
-
-impl From<&[u8]> for BBOX {
-    fn from(buf: &[u8]) -> Self {
+    fn dequantize(buf: &[u8]) -> Self {
         if buf.len() == 12 {
             BBOX::BBox(BBox::dequantize(buf))
         } else {

@@ -1,14 +1,15 @@
 use crate::{
     base::{decode_offset, BaseVectorFeature, TesselationWrapper},
     mapbox::FeatureType as MapboxFeatureType,
-    open::{encode_value, ColumnCacheReader, ColumnCacheWriter, Properties, Shape},
+    open::{encode_value, ColumnCacheReader, ColumnCacheWriter},
     unweave_2d, unweave_3d, zagzig, Point, Point3D, VectorFeatureMethods, VectorGeometry,
     VectorLine3DWithOffset, VectorLineWithOffset, VectorLines3DWithOffset, VectorLinesWithOffset,
-    VectorPoints, VectorPoints3D, BBOX,
+    VectorPoints, VectorPoints3D,
 };
 use alloc::{rc::Rc, vec, vec::Vec};
 use core::cell::RefCell;
 use pbf::{BitCast, Protobuf};
+use s2json::{Properties, Shape, BBOX};
 
 use super::decode_value;
 
@@ -585,7 +586,7 @@ pub fn read_feature(
     shape: &Shape,
     m_shape: Shape,
 ) -> OpenVectorFeature {
-    let mut pbf = Protobuf::from_input(RefCell::new(data));
+    let mut pbf = Protobuf::from_input(data);
     // pull in the type
     let r#type: FeatureType = pbf.read_varint();
     // next the flags

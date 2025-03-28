@@ -3,14 +3,14 @@ use crate::{
     mapbox::MapboxVectorLayer,
     open::{
         write_layer, ColumnCacheReader, ColumnCacheWriter, FeatureType, GridData, ImageData,
-        OpenVectorLayer, Properties,
+        OpenVectorLayer,
     },
     VectorGeometry, VectorLines3DWithOffset, VectorLinesWithOffset, VectorPoints, VectorPoints3D,
-    BBOX,
 };
 use alloc::{collections::BTreeMap, rc::Rc, string::String, vec::Vec};
 use core::cell::RefCell;
 use pbf::{ProtoRead, Protobuf};
+use s2json::{Properties, BBOX};
 
 /// Methods that all vector features should have
 pub trait VectorFeatureMethods {

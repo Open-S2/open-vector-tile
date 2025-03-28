@@ -2,12 +2,9 @@
 mod tests {
     extern crate alloc;
 
-    use alloc::collections::BTreeMap;
     use core::cmp::Ordering;
-    use ovtile::{
-        geometry::{BBox, BBox3D, Point, Point3D, VectorLineWithOffset, BBOX},
-        open::Value,
-    };
+    use ovtile::geometry::{Point, Point3D, VectorLineWithOffset};
+    use s2json::{BBox, BBox3D, Value, BBOX};
 
     #[test]
     fn test_bounding_box() {
@@ -44,7 +41,7 @@ mod tests {
     fn test_points() {
         let point_a = Point { x: 0, y: 0, m: None };
         let point_b = Point::new(0, 0);
-        let point_c = Point::new_with_m(1, 1, Value(BTreeMap::new()));
+        let point_c = Point::new_with_m(1, 1, Value::new());
 
         assert_eq!(point_a.cmp(&point_b), Ordering::Equal);
         assert_eq!(point_a.partial_cmp(&point_b), Some(Ordering::Equal));
@@ -54,7 +51,7 @@ mod tests {
         // 3D (repeat the 2D with 3D values)
         let point_3d_a = Point3D { x: 0, y: 0, z: 0, m: None };
         let point_3d_b = Point3D::new(0, 0, 0);
-        let point_3d_c = Point3D::new_with_m(1, 1, 1, Value(BTreeMap::new()));
+        let point_3d_c = Point3D::new_with_m(1, 1, 1, Value::new());
 
         assert_eq!(point_3d_a.cmp(&point_3d_b), Ordering::Equal);
         assert_eq!(point_3d_a.partial_cmp(&point_3d_b), Some(Ordering::Equal));

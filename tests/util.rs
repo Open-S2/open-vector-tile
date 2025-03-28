@@ -11,8 +11,9 @@ mod tests {
             unweave_and_delta_decode_array, weave_2d, weave_3d, weave_and_delta_encode_3d_array,
             weave_and_delta_encode_array, zagzig, zigzag, Command, CustomOrd, CustomOrdWrapper,
         },
-        BBox, BBox3D, Point, Point3D, BBOX,
+        BBoxQuantization, Point, Point3D,
     };
+    use s2json::{BBox, BBox3D, BBOX};
 
     /// Utility function to wrap and compare values.
     fn compare<T: CustomOrd + Copy>(a: T, b: T) -> Ordering {

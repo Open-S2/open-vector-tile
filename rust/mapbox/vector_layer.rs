@@ -1,6 +1,6 @@
 use crate::{
     base::BaseVectorLayer,
-    mapbox::{write_feature, MapboxVectorFeature, Value},
+    mapbox::{write_feature, MapboxVectorFeature},
     VectorFeatureMethods, VectorLayerMethods,
 };
 use alloc::{
@@ -11,6 +11,7 @@ use alloc::{
 };
 use core::cell::RefCell;
 use pbf::{ProtoRead, Protobuf};
+use s2json::PrimitiveValue;
 
 /// Mapbox specification for a Layer
 #[derive(Debug)]
@@ -33,7 +34,7 @@ pub struct MapboxVectorLayer {
     /// key store used by features
     keys: Rc<RefCell<Vec<String>>>,
     /// value store used by features
-    values: Rc<RefCell<Vec<Value>>>,
+    values: Rc<RefCell<Vec<PrimitiveValue>>>,
 }
 impl MapboxVectorLayer {
     /// Create a new MapboxVectorLayer
@@ -109,7 +110,7 @@ impl ProtoRead for MapboxVectorLayer {
                 self.keys.borrow_mut().push(pb.read_string());
             }
             4 => {
-                let mut value = Value::Null;
+                let mut value = PrimitiveValue::Null;
                 pb.read_message(&mut value);
                 self.values.borrow_mut().push(value);
             }
@@ -124,7 +125,7 @@ impl ProtoRead for MapboxVectorLayer {
 pub fn write_layer(layer: &BaseVectorLayer, mapbox_support: bool) -> Vec<u8> {
     let mut pbf = Protobuf::new();
     let mut keys: BTreeMap<String, usize> = BTreeMap::new();
-    let mut values: BTreeMap<Value, usize> = BTreeMap::new();
+    let mut values: BTreeMap<PrimitiveValue, usize> = BTreeMap::new();
 
     pbf.write_varint_field(15, if mapbox_support { 1 } else { 5 });
     pbf.write_string_field(1, &layer.name);
@@ -137,7 +138,7 @@ pub fn write_layer(layer: &BaseVectorLayer, mapbox_support: bool) -> Vec<u8> {
     for (key, _) in keys.iter() {
         pbf.write_string_field(3, key);
     }
-    let mut values: Vec<(Value, usize)> = values.into_iter().collect();
+    let mut values: Vec<(PrimitiveValue, usize)> = values.into_iter().collect();
     values.sort_by(|a, b| a.1.cmp(&b.1));
     for (value, _) in values.iter() {
         pbf.write_message(4, value);

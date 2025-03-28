@@ -1,11 +1,12 @@
 use crate::{
     delta_decode_array, delta_encode_array, unweave_and_delta_decode_3d_array,
     unweave_and_delta_decode_array, weave_and_delta_encode_3d_array, weave_and_delta_encode_array,
-    CustomOrdWrapper, Point, Point3D, VectorPoints, VectorPoints3D, BBOX,
+    BBoxQuantization, CustomOrdWrapper, Point, Point3D, VectorPoints, VectorPoints3D,
 };
 use alloc::{collections::BTreeMap, string::String, vec::Vec};
 use core::cell::RefCell;
 use pbf::{ProtoRead, ProtoWrite, Protobuf};
+use s2json::BBOX;
 
 /// Column Types take up 3 bits.
 /// ColumnNames define various common data structures to be stored in a column fashion
@@ -179,7 +180,7 @@ impl ProtoRead for ColumnCacheReader {
             6 => self.points_3d.push(unweave_and_delta_decode_3d_array(&pb.read_packed::<u64>())),
             7 => self.indices.push(delta_decode_array(&pb.read_packed::<u32>())),
             8 => self.shapes.push(pb.read_packed::<usize>()),
-            9 => self.bbox.push((&pb.read_packed::<u8>()[..]).into()),
+            9 => self.bbox.push(BBOX::dequantize(&pb.read_packed::<u8>()[..])),
             #[tarpaulin::skip]
             _ => panic!("Unknown column type"),
         }

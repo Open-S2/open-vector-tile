@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod tests {
     extern crate alloc;
-    use std::collections::BTreeMap;
 
     use ovtile::{
         base::{
@@ -9,13 +8,11 @@ mod tests {
             BaseVectorPoints3DFeature, BaseVectorPointsFeature, BaseVectorPolys3DFeature,
             BaseVectorPolysFeature, BaseVectorTile,
         },
-        open::{
-            Extent, FeatureType, GridData, ImageData, ImageType, PrimitiveValue, Value,
-            ValuePrimitiveType, ValueType,
-        },
-        write_tile, BBox, BBox3D, Point, Point3D, VectorGeometry, VectorLayerMethods,
-        VectorLine3DWithOffset, VectorLineWithOffset, VectorTile, BBOX,
+        open::{Extent, FeatureType, GridData, ImageData, ImageType},
+        write_tile, Point, Point3D, VectorGeometry, VectorLayerMethods, VectorLine3DWithOffset,
+        VectorLineWithOffset, VectorTile,
     };
+    use s2json::{BBox, BBox3D, PrimitiveValue, Value, ValuePrimitiveType, ValueType, BBOX};
     use std::panic::{self, AssertUnwindSafe};
 
     #[test]
@@ -35,11 +32,11 @@ mod tests {
         }"#;
         let example_value2 = serde_json::from_str::<Value>(example_value_str_2).unwrap();
 
-        let empty_value = Value(BTreeMap::from([
+        let empty_value = Value::from([
             ("a".to_string(), ValueType::Primitive(PrimitiveValue::I64(0))),
             ("b".to_string(), ValueType::Primitive(PrimitiveValue::U64(0))),
             ("c".to_string(), ValueType::Primitive(PrimitiveValue::F32(0.0))),
-        ]));
+        ]);
 
         // POINTS //-//-//-//-//-//-//-//-//-//-//
 
@@ -745,11 +742,11 @@ mod tests {
         }"#;
         let example_value2 = serde_json::from_str::<Value>(example_value_str_2).unwrap();
 
-        let empty_value = Value(BTreeMap::from([
+        let empty_value = Value::from([
             ("a".to_string(), ValueType::Primitive(PrimitiveValue::I64(0))),
             ("b".to_string(), ValueType::Primitive(PrimitiveValue::U64(0))),
             ("c".to_string(), ValueType::Primitive(PrimitiveValue::F32(0.0))),
-        ]));
+        ]);
 
         // POINTS //-//-//-//-//-//-//-//-//-//-//
 
@@ -1443,7 +1440,7 @@ mod tests {
     fn test_vector_tile_to_base_vector_tile() {
         let mut tile = BaseVectorTile::default();
 
-        let example_value = Value(BTreeMap::from([
+        let example_value = Value::from([
             ("a".to_string(), ValueType::Primitive(PrimitiveValue::I64(-5))),
             ("b".to_string(), ValueType::Primitive(PrimitiveValue::U64(1_000))),
             ("c".to_string(), ValueType::Primitive(PrimitiveValue::F32(-2.2))),
@@ -1460,14 +1457,14 @@ mod tests {
             ),
             (
                 "i".to_string(),
-                ValueType::Nested(Value(BTreeMap::from([
+                ValueType::Nested(Value::from([
                     ("j".to_string(), ValueType::Primitive(PrimitiveValue::F64(2.200000047683716))),
                     ("k".to_string(), ValueType::Primitive(PrimitiveValue::Bool(true))),
                     ("l".to_string(), ValueType::Primitive(PrimitiveValue::Null)),
                     ("m".to_string(), ValueType::Primitive(PrimitiveValue::F32(4.5))),
-                ]))),
+                ])),
             ),
-        ]));
+        ]);
 
         let feature = BaseVectorPointsFeature::new(
             Some(1),

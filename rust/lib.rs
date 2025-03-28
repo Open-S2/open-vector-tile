@@ -1,4 +1,5 @@
 #![no_std]
+#![forbid(unsafe_code)]
 #![deny(missing_docs)]
 #![feature(stmt_expr_attributes)]
 #![feature(register_tool)]
@@ -58,7 +59,6 @@
 //! ```rust
 //! // NOTE: Be sure to include the `serde_json` crate
 //! extern crate alloc;
-//! use std::collections::BTreeMap;
 //! use ovtile::{
 //! base::{
 //!     BaseVectorFeature, BaseVectorLayer, BaseVectorLines3DFeature, BaseVectorLinesFeature,
@@ -66,12 +66,12 @@
 //!     BaseVectorPolysFeature, BaseVectorTile,
 //! },
 //! open::{
-//!     Extent, FeatureType, GridData, ImageData, ImageType, PrimitiveValue, Value,
-//!     ValuePrimitiveType, ValueType,
+//!     Extent, FeatureType, GridData, ImageData, ImageType,
 //! },
-//! write_tile, BBox, BBox3D, Point, Point3D, VectorGeometry, VectorLayerMethods,
-//! VectorLine3DWithOffset, VectorLineWithOffset, VectorTile, BBOX,
+//! write_tile, Point, Point3D, VectorGeometry, VectorLayerMethods,
+//! VectorLine3DWithOffset, VectorLineWithOffset, VectorTile,
 //! };
+//! use s2json::{BBox, BBox3D, BBOX, ValuePrimitiveType, ValueType, PrimitiveValue, Value};
 //!
 //!
 //! // WRITE VECTOR DATA //-//-//-//-//-//-//-//-//-//-//
@@ -93,11 +93,11 @@
 //! }"#;
 //! let example_value2 = serde_json::from_str::<Value>(example_value_str_2).unwrap();
 //!
-//! let empty_value = Value(BTreeMap::from([
+//! let empty_value = Value::from([
 //!     ("a".to_string(), ValueType::Primitive(PrimitiveValue::I64(0))),
 //!     ("b".to_string(), ValueType::Primitive(PrimitiveValue::U64(0))),
 //!     ("c".to_string(), ValueType::Primitive(PrimitiveValue::F32(0.0))),
-//! ]));
+//! ]);
 //!
 //! // WRITE THE POINTS
 //!

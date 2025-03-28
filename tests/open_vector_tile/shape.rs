@@ -2,18 +2,15 @@
 mod tests {
     extern crate alloc;
 
-    use alloc::{collections::BTreeMap, rc::Rc};
-    use core::cell::RefCell;
-    use ovtile::{
-        mapbox::Value as MapboxValue,
-        open::{
-            validate_types, ColumnCacheReader, ColumnCacheWriter, ColumnValue, PrimitiveShape,
-            PrimitiveValue, Shape, ShapeDefinition, ShapePair, ShapePrimitiveType, ShapeType,
-            Value, ValuePrimitiveType, ValueType,
-        },
-        CustomOrdWrapper,
+    use ovtile::open::{
+        ColumnCacheReader, ColumnCacheWriter, ColumnValue, ShapeDefinition, ShapePair,
+        ShapeToStore, ValueToStore,
     };
     use pbf::Protobuf;
+    use s2json::{
+        impls::shape::validate_types, PrimitiveShape, PrimitiveShapeType, PrimitiveValue, Shape,
+        ShapePrimitive, ShapeType, Value, ValuePrimitive, ValuePrimitiveType, ValueType,
+    };
     use std::panic::{self, AssertUnwindSafe};
 
     #[test]
@@ -38,34 +35,36 @@ mod tests {
 
         let shape = serde_json::from_str::<Shape>(json_shape).unwrap();
         assert_eq!(
-            shape.0,
-            BTreeMap::from([
+            shape,
+            Shape::from([
                 ("a".to_string(), ShapeType::Primitive(PrimitiveShape::I64)),
                 (
                     "b".to_string(),
-                    ShapeType::Array(vec![ShapePrimitiveType::Primitive(PrimitiveShape::String)])
+                    ShapeType::Array(vec![PrimitiveShapeType::Primitive(PrimitiveShape::String)])
                 ),
                 (
                     "c".to_string(),
-                    ShapeType::Nested(Shape(BTreeMap::from([
+                    ShapeType::Nested(Shape::from([
                         ("d".to_string(), ShapeType::Primitive(PrimitiveShape::F64)),
                         ("e".to_string(), ShapeType::Primitive(PrimitiveShape::Bool)),
                         ("f".to_string(), ShapeType::Primitive(PrimitiveShape::Null)),
                         (
                             "g".to_string(),
-                            ShapeType::Nested(Shape(BTreeMap::from([
+                            ShapeType::Nested(Shape::from([
                                 ("h".to_string(), ShapeType::Primitive(PrimitiveShape::I64)),
                                 ("i".to_string(), ShapeType::Primitive(PrimitiveShape::String)),
-                            ])))
+                            ]))
                         )
-                    ])))
+                    ]))
                 ),
                 (
                     "d".to_string(),
-                    ShapeType::Array(vec![ShapePrimitiveType::NestedPrimitive(BTreeMap::from([
-                        ("j".to_string(), PrimitiveShape::F64),
-                        ("k".to_string(), PrimitiveShape::Bool),
-                    ]))])
+                    ShapeType::Array(vec![PrimitiveShapeType::NestedPrimitive(
+                        ShapePrimitive::from([
+                            ("j".to_string(), PrimitiveShape::F64),
+                            ("k".to_string(), PrimitiveShape::Bool),
+                        ])
+                    )])
                 )
             ])
         );
@@ -118,10 +117,10 @@ mod tests {
         let data = pbf.take();
 
         // decode:
-        let pbf_read: Rc<RefCell<Protobuf>> = Rc::new(RefCell::new(data.into()));
-        let _field = pbf_read.borrow_mut().read_field();
+        let mut pbf_read: Protobuf = data.into();
+        let _field = pbf_read.read_field();
         let mut reader = ColumnCacheReader::new();
-        pbf_read.borrow_mut().read_message(&mut reader);
+        pbf_read.read_message(&mut reader);
 
         let mut shape_read = reader.get_shapes(shape_index);
         assert_eq!(
@@ -227,33 +226,33 @@ mod tests {
         let raw_data = pbf.take();
 
         // Now we decode the column
-        let pbf_read: Rc<RefCell<Protobuf>> = Rc::new(RefCell::new(raw_data.into()));
-        let _field = pbf_read.borrow_mut().read_field();
+        let mut pbf_read: Protobuf = raw_data.into();
+        let _field = pbf_read.read_field();
         let mut reader = ColumnCacheReader::new();
-        pbf_read.borrow_mut().read_message(&mut reader);
+        pbf_read.read_message(&mut reader);
         let mut value_data = reader.get_shapes(encoded_value_index);
 
         let decoded_value = Value::decode(&example_shape, &mut value_data, &mut reader);
         assert_eq!(
             decoded_value,
-            Value(BTreeMap::from([
+            Value::from([
                 ("a".to_string(), ValueType::Primitive(PrimitiveValue::I64(3))),
                 ("b".to_string(), ValueType::Primitive(PrimitiveValue::U64(1))),
                 ("c".to_string(), ValueType::Primitive(PrimitiveValue::F64(2.200000047683716))),
-            ]))
+            ])
         );
     }
 
     #[test]
     fn validate_types_none() {
-        assert_eq!(validate_types(&[]), ShapePrimitiveType::Primitive(PrimitiveShape::Null));
+        assert_eq!(validate_types(&[]), PrimitiveShapeType::Primitive(PrimitiveShape::Null));
 
         assert_eq!(
             validate_types(&[
                 ValuePrimitiveType::Primitive(PrimitiveValue::I64(3)),
                 ValuePrimitiveType::Primitive(PrimitiveValue::I64(22)),
             ]),
-            ShapePrimitiveType::Primitive(PrimitiveShape::I64)
+            PrimitiveShapeType::Primitive(PrimitiveShape::I64)
         );
 
         assert_eq!(
@@ -261,7 +260,7 @@ mod tests {
                 ValuePrimitiveType::Primitive(PrimitiveValue::I64(3)),
                 ValuePrimitiveType::Primitive(PrimitiveValue::U64(22)),
             ]),
-            ShapePrimitiveType::Primitive(PrimitiveShape::I64)
+            PrimitiveShapeType::Primitive(PrimitiveShape::I64)
         );
 
         assert_eq!(
@@ -269,21 +268,21 @@ mod tests {
                 ValuePrimitiveType::Primitive(PrimitiveValue::I64(3)),
                 ValuePrimitiveType::Primitive(PrimitiveValue::F64(-22.2)),
             ]),
-            ShapePrimitiveType::Primitive(PrimitiveShape::F64)
+            PrimitiveShapeType::Primitive(PrimitiveShape::F64)
         );
 
         assert_eq!(
             validate_types(&[
-                ValuePrimitiveType::NestedPrimitive(BTreeMap::from([
+                ValuePrimitiveType::NestedPrimitive(ValuePrimitive::from([
                     ("a".to_string(), PrimitiveValue::I64(3)),
                     ("b".to_string(), PrimitiveValue::String("hello".to_string())),
                 ])),
-                ValuePrimitiveType::NestedPrimitive(BTreeMap::from([
+                ValuePrimitiveType::NestedPrimitive(ValuePrimitive::from([
                     ("a".to_string(), PrimitiveValue::I64(22)),
                     ("b".to_string(), PrimitiveValue::String("world".to_string())),
                 ])),
             ]),
-            ShapePrimitiveType::NestedPrimitive(BTreeMap::from([
+            PrimitiveShapeType::NestedPrimitive(ShapePrimitive::from([
                 ("a".to_string(), PrimitiveShape::I64),
                 ("b".to_string(), PrimitiveShape::String),
             ]))
@@ -291,11 +290,11 @@ mod tests {
 
         let error_case_one = panic::catch_unwind(AssertUnwindSafe(|| {
             validate_types(&[
-                ValuePrimitiveType::NestedPrimitive(BTreeMap::from([
+                ValuePrimitiveType::NestedPrimitive(ValuePrimitive::from([
                     ("a".to_string(), PrimitiveValue::I64(3)),
                     ("b".to_string(), PrimitiveValue::String("hello".to_string())),
                 ])),
-                ValuePrimitiveType::NestedPrimitive(BTreeMap::from([
+                ValuePrimitiveType::NestedPrimitive(ValuePrimitive::from([
                     ("a".to_string(), PrimitiveValue::U64(5)),
                     ("b".to_string(), PrimitiveValue::F32(2.2)),
                 ])),
@@ -305,7 +304,7 @@ mod tests {
 
         let error_case_two = panic::catch_unwind(AssertUnwindSafe(|| {
             validate_types(&[
-                ValuePrimitiveType::NestedPrimitive(BTreeMap::from([
+                ValuePrimitiveType::NestedPrimitive(ValuePrimitive::from([
                     ("a".to_string(), PrimitiveValue::I64(3)),
                     ("b".to_string(), PrimitiveValue::String("hello".to_string())),
                 ])),
@@ -373,17 +372,17 @@ mod tests {
         let raw_data = pbf.take();
 
         // Now we decode the column
-        let pbf_read: Rc<RefCell<Protobuf>> = Rc::new(RefCell::new(raw_data.into()));
-        let _field = pbf_read.borrow_mut().read_field();
+        let mut pbf_read: Protobuf = raw_data.into();
+        let _field = pbf_read.read_field();
         let mut reader = ColumnCacheReader::new();
-        pbf_read.borrow_mut().read_message(&mut reader);
+        pbf_read.read_message(&mut reader);
         let mut value_data = reader.get_shapes(encoded_value_index);
         let mut value_data_2 = reader.get_shapes(encoded_value_index_2);
 
         let decoded_value = Value::decode(&example_shape, &mut value_data, &mut reader);
         assert_eq!(
             decoded_value,
-            Value(BTreeMap::from([
+            Value::from([
                 ("a".to_string(), ValueType::Primitive(PrimitiveValue::I64(3))),
                 (
                     "b".to_string(),
@@ -394,7 +393,7 @@ mod tests {
                 ),
                 (
                     "c".to_string(),
-                    ValueType::Nested(Value(BTreeMap::from([
+                    ValueType::Nested(Value::from([
                         (
                             "d".to_string(),
                             ValueType::Primitive(PrimitiveValue::F64(2.200000047683716))
@@ -404,20 +403,20 @@ mod tests {
                         ("g".to_string(), ValueType::Primitive(PrimitiveValue::F32(4.5))),
                         (
                             "h".to_string(),
-                            ValueType::Nested(Value(BTreeMap::from([(
+                            ValueType::Nested(Value::from([(
                                 "i".to_string(),
                                 ValueType::Primitive(PrimitiveValue::U64(2))
-                            ),])))
+                            )]))
                         ),
-                    ])))
+                    ]))
                 )
-            ]))
+            ])
         );
 
         let decoded_value_2 = Value::decode(&example_shape, &mut value_data_2, &mut reader);
         assert_eq!(
             decoded_value_2,
-            Value(BTreeMap::from([
+            Value::from([
                 ("a".to_string(), ValueType::Primitive(PrimitiveValue::I64(-1))),
                 (
                     "b".to_string(),
@@ -429,96 +428,63 @@ mod tests {
                 ),
                 (
                     "c".to_string(),
-                    ValueType::Nested(Value(BTreeMap::from([
+                    ValueType::Nested(Value::from([
                         ("d".to_string(), ValueType::Primitive(PrimitiveValue::F64(0.0))),
                         ("e".to_string(), ValueType::Primitive(PrimitiveValue::Bool(false))),
                         ("f".to_string(), ValueType::Primitive(PrimitiveValue::Null)),
                         ("g".to_string(), ValueType::Primitive(PrimitiveValue::F32(0.0))),
                         (
                             "h".to_string(),
-                            ValueType::Nested(Value(BTreeMap::from([(
+                            ValueType::Nested(Value::from([(
                                 "i".to_string(),
                                 ValueType::Primitive(PrimitiveValue::U64(0))
-                            ),])))
+                            )]))
                         ),
-                    ])))
+                    ]))
                 )
-            ]))
+            ])
         );
     }
 
-    // ValuePrimitiveType -> ShapePrimitiveType
+    // ValuePrimitiveType -> PrimitiveShapeType
     #[test]
     fn test_value_primitive_type_to_shape_primitive_type() {
         let vpt: ValuePrimitiveType = ValuePrimitiveType::Primitive(PrimitiveValue::I64(1));
-        let spt = ShapePrimitiveType::Primitive(PrimitiveShape::I64);
-        let res = ShapePrimitiveType::from(vpt);
+        let spt = PrimitiveShapeType::Primitive(PrimitiveShape::I64);
+        let res = PrimitiveShapeType::from(&vpt);
         assert_eq!(res, spt);
 
         // NestedPrimitive
-        let vpt: ValuePrimitiveType = ValuePrimitiveType::NestedPrimitive(BTreeMap::from([
+        let vpt: ValuePrimitiveType = ValuePrimitiveType::NestedPrimitive(ValuePrimitive::from([
             ("a".to_string(), PrimitiveValue::I64(1)),
             ("b".to_string(), PrimitiveValue::String("hello".to_string())),
         ]));
-        let spt = ShapePrimitiveType::NestedPrimitive(BTreeMap::from([
+        let spt = PrimitiveShapeType::NestedPrimitive(ShapePrimitive::from([
             ("a".to_string(), PrimitiveShape::I64),
             ("b".to_string(), PrimitiveShape::String),
         ]));
-        let res = ShapePrimitiveType::from(vpt);
+        let res = PrimitiveShapeType::from(&vpt);
         assert_eq!(res, spt);
-    }
-
-    #[test]
-    fn primitive_value_to_mapbox_value() {
-        // string
-        assert_eq!(
-            MapboxValue::from(PrimitiveValue::String("hello".to_string())),
-            MapboxValue::String("hello".to_string())
-        );
-        // U64
-        assert_eq!(MapboxValue::from(PrimitiveValue::U64(1)), MapboxValue::UInt(1));
-        // I64
-        assert_eq!(MapboxValue::from(PrimitiveValue::I64(1)), MapboxValue::SInt(1));
-        // F32
-        assert_eq!(
-            MapboxValue::from(PrimitiveValue::F32(1.1)),
-            MapboxValue::Float(CustomOrdWrapper(1.1))
-        );
-        // F64
-        assert_eq!(
-            MapboxValue::from(PrimitiveValue::F64(1.1)),
-            MapboxValue::Double(CustomOrdWrapper(1.1))
-        );
-        // bool
-        assert_eq!(MapboxValue::from(PrimitiveValue::Bool(true)), MapboxValue::Bool(true));
-        // null
-        assert_eq!(MapboxValue::from(PrimitiveValue::Null), MapboxValue::Null);
     }
 
     #[test]
     fn mapbox_value_to_primitive_value() {
         // string
         assert_eq!(
-            PrimitiveValue::from(&MapboxValue::String("hello".to_string())),
+            PrimitiveValue::from(&PrimitiveValue::String("hello".to_string())),
             PrimitiveValue::String("hello".to_string())
         );
         // U64
-        assert_eq!(PrimitiveValue::from(&MapboxValue::UInt(1)), PrimitiveValue::U64(1));
+        assert_eq!(PrimitiveValue::from(&PrimitiveValue::U64(1)), PrimitiveValue::U64(1));
         // I64
-        assert_eq!(PrimitiveValue::from(&MapboxValue::SInt(1)), PrimitiveValue::I64(1));
+        assert_eq!(PrimitiveValue::from(&PrimitiveValue::I64(1)), PrimitiveValue::I64(1));
         // F32
-        assert_eq!(
-            PrimitiveValue::from(&MapboxValue::Float(CustomOrdWrapper(1.1))),
-            PrimitiveValue::F32(1.1)
-        );
+        assert_eq!(PrimitiveValue::from(&PrimitiveValue::F32(1.1)), PrimitiveValue::F32(1.1));
         // F64
-        assert_eq!(
-            PrimitiveValue::from(&MapboxValue::Double(CustomOrdWrapper(1.1))),
-            PrimitiveValue::F64(1.1)
-        );
+        assert_eq!(PrimitiveValue::from(&PrimitiveValue::F64(1.1)), PrimitiveValue::F64(1.1));
         // bool
-        assert_eq!(PrimitiveValue::from(&MapboxValue::Bool(true)), PrimitiveValue::Bool(true));
+        assert_eq!(PrimitiveValue::from(&PrimitiveValue::Bool(true)), PrimitiveValue::Bool(true));
         // null
-        assert_eq!(PrimitiveValue::from(&MapboxValue::Null), PrimitiveValue::Null);
+        assert_eq!(PrimitiveValue::from(&PrimitiveValue::Null), PrimitiveValue::Null);
     }
 }

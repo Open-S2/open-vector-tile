@@ -5,11 +5,11 @@ mod tests {
     use core::cell::RefCell;
     use ovtile::{
         base::{BaseVectorFeature, BaseVectorPointsFeature},
-        mapbox::{write_feature, MapboxVectorFeature, Value as MapboxValue},
-        open::Value,
-        CustomOrdWrapper, Point,
+        mapbox::{write_feature, MapboxVectorFeature},
+        Point,
     };
     use pbf::Protobuf;
+    use s2json::{PrimitiveValue, Value};
 
     #[test]
     fn test_mapbox_vector_feature_write_read() {
@@ -35,7 +35,7 @@ mod tests {
         let base_feature = BaseVectorFeature::BaseVectorPointsFeature(feature);
 
         let mut keys: BTreeMap<String, usize> = BTreeMap::new();
-        let mut values: BTreeMap<MapboxValue, usize> = BTreeMap::new();
+        let mut values: BTreeMap<PrimitiveValue, usize> = BTreeMap::new();
         let mut pbf_write = Protobuf::new();
         pbf_write
             .write_bytes_field(3, &write_feature(&base_feature, &mut keys, &mut values, false));
@@ -60,19 +60,19 @@ mod tests {
     #[test]
     fn test_value() {
         let mut pb = Protobuf::new();
-        let string_value = MapboxValue::String("test".to_string());
+        let string_value = PrimitiveValue::String("test".to_string());
         pb.write_message(1, &string_value);
-        let uint_value = MapboxValue::UInt(1);
+        let uint_value = PrimitiveValue::U64(1);
         pb.write_message(2, &uint_value);
-        let sint_value = MapboxValue::SInt(-1);
+        let sint_value = PrimitiveValue::I64(-1);
         pb.write_message(3, &sint_value);
-        let float_value = MapboxValue::Float(CustomOrdWrapper(-1.1));
+        let float_value = PrimitiveValue::F32(-1.1);
         pb.write_message(4, &float_value);
-        let double_value = MapboxValue::Double(CustomOrdWrapper(1.1));
+        let double_value = PrimitiveValue::F64(1.1);
         pb.write_message(5, &double_value);
-        let bool_value = MapboxValue::Bool(true);
+        let bool_value = PrimitiveValue::Bool(true);
         pb.write_message(6, &bool_value);
-        let null_value = MapboxValue::Null;
+        let null_value = PrimitiveValue::Null;
         pb.write_message(7, &null_value);
 
         let bytes = pb.take();
@@ -80,37 +80,37 @@ mod tests {
         let mut pb_read = Protobuf::from(bytes);
 
         pb_read.read_field();
-        let mut read_string = MapboxValue::Null;
+        let mut read_string = PrimitiveValue::Null;
         pb_read.read_message(&mut read_string);
         assert_eq!(read_string, string_value);
 
         pb_read.read_field();
-        let mut read_uint = MapboxValue::Null;
+        let mut read_uint = PrimitiveValue::Null;
         pb_read.read_message(&mut read_uint);
         assert_eq!(read_uint, uint_value);
 
         pb_read.read_field();
-        let mut read_sint = MapboxValue::Null;
+        let mut read_sint = PrimitiveValue::Null;
         pb_read.read_message(&mut read_sint);
         assert_eq!(read_sint, sint_value);
 
         pb_read.read_field();
-        let mut read_float = MapboxValue::Null;
+        let mut read_float = PrimitiveValue::Null;
         pb_read.read_message(&mut read_float);
         assert_eq!(read_float, float_value);
 
         pb_read.read_field();
-        let mut read_double = MapboxValue::Null;
+        let mut read_double = PrimitiveValue::Null;
         pb_read.read_message(&mut read_double);
         assert_eq!(read_double, double_value);
 
         pb_read.read_field();
-        let mut read_bool = MapboxValue::Null;
+        let mut read_bool = PrimitiveValue::Null;
         pb_read.read_message(&mut read_bool);
         assert_eq!(read_bool, bool_value);
 
         pb_read.read_field();
-        let mut read_null = MapboxValue::Null;
+        let mut read_null = PrimitiveValue::Null;
         pb_read.read_message(&mut read_null);
         assert_eq!(read_null, null_value);
     }

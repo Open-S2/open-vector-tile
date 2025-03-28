@@ -1,13 +1,14 @@
 use crate::{
     base::{BaseVectorFeature, TesselationWrapper},
     command_encode,
-    open::{FeatureType as OpenFeatureType, Properties as OpenProperties},
-    zigzag, CustomOrdWrapper, Point, VectorFeatureMethods, VectorGeometry, VectorLineWithOffset,
-    VectorLines3DWithOffset, VectorLinesWithOffset, VectorPoints, VectorPoints3D, BBOX,
+    open::FeatureType as OpenFeatureType,
+    zigzag, Point, VectorFeatureMethods, VectorGeometry, VectorLineWithOffset,
+    VectorLines3DWithOffset, VectorLinesWithOffset, VectorPoints, VectorPoints3D,
 };
 use alloc::{collections::BTreeMap, rc::Rc, string::String, vec, vec::Vec};
 use core::cell::RefCell;
-use pbf::{BitCast, ProtoRead, ProtoWrite, Protobuf, Type};
+use pbf::{BitCast, ProtoRead, Protobuf};
+use s2json::{MapboxProperties, PrimitiveValue, Properties, BBOX};
 
 /// Mapbox specification for a Feature
 #[derive(Debug)]
@@ -17,7 +18,7 @@ pub struct MapboxVectorFeature {
     /// the version of the vector tile
     pub version: u16,
     /// the properties
-    pub properties: Properties,
+    pub properties: MapboxProperties,
     /// the extent
     pub extent: usize,
     /// the feature type
@@ -31,7 +32,7 @@ pub struct MapboxVectorFeature {
     geometry: Option<VectorGeometry>,
     tesselation_index: Option<usize>,
     keys: Rc<RefCell<Vec<String>>>,
-    values: Rc<RefCell<Vec<Value>>>,
+    values: Rc<RefCell<Vec<PrimitiveValue>>>,
     pbf: Rc<RefCell<Protobuf>>,
 }
 impl MapboxVectorFeature {
@@ -42,12 +43,12 @@ impl MapboxVectorFeature {
         extent: usize,
         version: u16,
         keys: Rc<RefCell<Vec<String>>>,
-        values: Rc<RefCell<Vec<Value>>>,
+        values: Rc<RefCell<Vec<PrimitiveValue>>>,
     ) -> MapboxVectorFeature {
         MapboxVectorFeature {
             id: None,
             version,
-            properties: Properties::new(),
+            properties: MapboxProperties::new(),
             extent,
             r#type: FeatureType::Point,
             is_s2,
@@ -75,7 +76,7 @@ impl VectorFeatureMethods for MapboxVectorFeature {
     }
 
     /// get the feature properties
-    fn properties(&self) -> OpenProperties {
+    fn properties(&self) -> Properties {
         (&self.properties).into()
     }
 
@@ -464,68 +465,16 @@ impl BitCast for FeatureType {
     }
 }
 
-/// `Value` is the old type used by Mapbox vector tiles. Properties cannot be nested, so we only
-/// support string, number, boolean, and null (None in Rust).
-#[derive(Debug, Clone, PartialEq, Ord, PartialOrd, Eq)]
-pub enum Value {
-    /// String value
-    String(String),
-    /// Unsigned integer value
-    UInt(u64),
-    /// Signed integer 64-bit value
-    SInt(i64),
-    /// 32-bit Floating point value
-    Float(CustomOrdWrapper<f32>),
-    /// 64-bit Floating point value
-    Double(CustomOrdWrapper<f64>),
-    /// Boolean value
-    Bool(bool),
-    /// Null value
-    Null,
-}
-impl ProtoRead for Value {
-    fn read(&mut self, tag: u64, pb: &mut Protobuf) {
-        match tag {
-            0 => *self = Value::Null,
-            1 => *self = Value::String(pb.read_string()),
-            2 => *self = Value::Float(CustomOrdWrapper(pb.read_varint::<f32>())),
-            3 => *self = Value::Double(CustomOrdWrapper(pb.read_varint::<f64>())),
-            5 => *self = Value::UInt(pb.read_varint::<u64>()),
-            4 | 6 => *self = Value::SInt(pb.read_s_varint::<i64>()),
-            7 => *self = Value::Bool(pb.read_varint::<bool>()),
-            #[tarpaulin::skip]
-            _ => *self = Value::Null,
-        }
-    }
-}
-impl ProtoWrite for Value {
-    fn write(&self, pbf: &mut Protobuf) {
-        match self {
-            Value::Null => pbf.write_field(0, Type::None),
-            Value::String(value) => pbf.write_string_field(1, value),
-            Value::Float(value) => pbf.write_varint_field(2, value.0),
-            Value::Double(value) => pbf.write_varint_field(3, value.0),
-            Value::UInt(value) => pbf.write_varint_field(5, *value),
-            Value::SInt(value) => pbf.write_s_varint_field(6, *value),
-            Value::Bool(value) => pbf.write_varint_field(7, *value),
-        }
-    }
-}
-
-/// `Properties` is a storage structure for the vector feature. Keys are strings, values are
-/// any basic type of `Value`.
-pub type Properties = BTreeMap<String, Value>;
-
 /// Write a feature to a protobuffer using the S2 Specification
 pub fn write_feature(
     feature: &BaseVectorFeature,
     keys: &mut BTreeMap<String, usize>,
-    values: &mut BTreeMap<Value, usize>,
+    values: &mut BTreeMap<PrimitiveValue, usize>,
     mapbox_support: bool,
 ) -> Vec<u8> {
     let mut pbf = Protobuf::new();
 
-    let properties: Properties = feature.properties().clone().into();
+    let properties: MapboxProperties = feature.properties().clone().into();
     if let Some(id) = feature.id() {
         pbf.write_varint_field(if mapbox_support { 1 } else { 15 }, id);
     }
@@ -552,13 +501,13 @@ pub fn write_feature(
 
 /// Write a properties to a protobuffer using the S2 Specification
 fn write_properties(
-    properties: &Properties,
+    properties: &MapboxProperties,
     keys: &mut BTreeMap<String, usize>,
-    values: &mut BTreeMap<Value, usize>,
+    values: &mut BTreeMap<PrimitiveValue, usize>,
 ) -> Vec<u8> {
     let mut pbf = Protobuf::new();
 
-    for (key, value) in properties {
+    for (key, value) in properties.iter() {
         let key_length = keys.len();
         let key_index = keys.entry(key.clone()).or_insert(key_length);
         pbf.write_varint(*key_index);

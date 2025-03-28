@@ -1,9 +1,6 @@
-use crate::{
-    base::BaseVectorFeature,
-    mapbox::MapboxVectorLayer,
-    open::{Extent, Shape},
-};
+use crate::{base::BaseVectorFeature, mapbox::MapboxVectorLayer, open::Extent};
 use alloc::{string::String, vec::Vec};
+use s2json::Shape;
 
 /// Base Vector Layer
 /// This is an intermediary for storing layer data in the Open Vector Tile format.
@@ -50,7 +47,7 @@ impl BaseVectorLayer {
     /// Add a new feature to the layer
     pub fn add_feature(&mut self, feature: BaseVectorFeature) {
         if !self.shape_defined {
-            let prop_shape = (feature.properties()).clone().into();
+            let prop_shape: Shape = feature.properties().into();
             self.shape.merge(&prop_shape);
         }
         if !self.m_shape_defined {

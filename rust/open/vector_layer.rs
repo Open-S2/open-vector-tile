@@ -2,13 +2,14 @@ use crate::{
     base::BaseVectorLayer,
     open::{
         decode_shape, encode_shape, read_feature, write_feature, ColumnCacheReader,
-        ColumnCacheWriter, Extent, OpenVectorFeature, Shape,
+        ColumnCacheWriter, Extent, OpenVectorFeature,
     },
     VectorLayerMethods,
 };
 use alloc::{rc::Rc, string::String, vec::Vec};
 use core::cell::RefCell;
 use pbf::{ProtoRead, Protobuf};
+use s2json::Shape;
 
 /// The Open Vector Layer class represents a layer in an Open Vector Tile.
 /// Contains an extent, name, version, and features.

@@ -3,9 +3,9 @@ mod tests {
     extern crate alloc;
     use ovtile::{
         base::{BaseVectorFeature, BaseVectorLayer, BaseVectorPointsFeature},
-        open::{Shape, Value},
         Point,
     };
+    use s2json::{Shape, Value};
 
     #[test]
     fn test_base_vector_layer_feature() {

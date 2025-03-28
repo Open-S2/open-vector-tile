@@ -1,9 +1,9 @@
-use crate::{
-    mapbox::{Properties as MapboxProperties, Value as MapboxValue},
-    open::{ColumnCacheReader, ColumnCacheWriter, ColumnValue},
-    CustomOrdWrapper,
+use crate::open::{ColumnCacheReader, ColumnCacheWriter, ColumnValue};
+use alloc::{vec, vec::Vec};
+use s2json::{
+    PrimitiveShape, PrimitiveShapeType, PrimitiveValue, Shape, ShapePrimitive, ShapeType, Value,
+    ValuePrimitive, ValuePrimitiveType, ValueType,
 };
-use alloc::{collections::BTreeMap, string::String, vec, vec::Vec};
 use serde::{Deserialize, Serialize};
 
 //? Shape
@@ -18,26 +18,11 @@ use serde::{Deserialize, Serialize};
 // - - if the sub type is an array, ensure all elements are of the same type
 // The interfaces below help describe how shapes are built by the user.
 
-/// Primitive types that can be found in a shape
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "lowercase")]
-pub enum PrimitiveShape {
-    /// String type utf8 encoded
-    String,
-    /// unsigned 64 bit integer
-    U64,
-    /// signed 64 bit integer
-    I64,
-    /// floating point number
-    F32,
-    /// double precision floating point number
-    F64,
-    /// boolean
-    Bool,
-    /// null
-    Null,
+trait PrimitiveShapeToStore {
+    fn encode(&self, shape_store: &mut Vec<ColumnValue>, cache: &mut ColumnCacheWriter);
+    fn decode(shape_store: &mut Vec<usize>) -> Self;
 }
-impl PrimitiveShape {
+impl PrimitiveShapeToStore for PrimitiveShape {
     fn encode(&self, shape_store: &mut Vec<ColumnValue>, _cache: &mut ColumnCacheWriter) {
         shape_store.push(ShapePair::encode(ShapeDefinition::Primitive, self.into()).into());
     }
@@ -46,118 +31,19 @@ impl PrimitiveShape {
         let shape_pair = ShapePair::decode(shape_store.remove(0));
         shape_pair.count_or_col.into()
     }
-
-    /// returns true if the shape is a number type
-    pub fn is_number(&self) -> bool {
-        matches!(
-            self,
-            PrimitiveShape::F64 | PrimitiveShape::F32 | PrimitiveShape::I64 | PrimitiveShape::U64
-        )
-    }
-
-    /// returns true if two shapes are the same. Numeric types are considered the same.
-    pub fn matching_shape(&self, other: &PrimitiveShape) -> bool {
-        self == other || self.is_number() == other.is_number()
-    }
-
-    /// returns the highest order number type
-    pub fn get_highest_order_number(
-        type_a: &PrimitiveShape,
-        type_b: &PrimitiveShape,
-    ) -> PrimitiveShape {
-        if *type_a == PrimitiveShape::F64 || *type_b == PrimitiveShape::F64 {
-            PrimitiveShape::F64
-        } else if *type_a == PrimitiveShape::F32 || *type_b == PrimitiveShape::F32 {
-            PrimitiveShape::F32
-        } else if *type_a == PrimitiveShape::I64 || *type_b == PrimitiveShape::I64 {
-            PrimitiveShape::I64
-        } else {
-            PrimitiveShape::U64
-        }
-    }
-
-    fn merge(&mut self, other: &Self) {
-        if self.is_number() && other.is_number() {
-            *self = Self::get_highest_order_number(self, other);
-        } else if !self.matching_shape(other) {
-            #[tarpaulin::skip]
-            panic!("shape mismatch: {:?} vs {:?}", self, other);
-        }
-        // othewrise, do nothing
-    }
-}
-impl From<&PrimitiveShape> for usize {
-    fn from(shape: &PrimitiveShape) -> Self {
-        match shape {
-            PrimitiveShape::String => 0,
-            PrimitiveShape::U64 => 1,
-            PrimitiveShape::I64 => 2,
-            PrimitiveShape::F32 => 3,
-            PrimitiveShape::F64 => 4,
-            PrimitiveShape::Bool => 5,
-            PrimitiveShape::Null => 6,
-        }
-    }
-}
-impl From<PrimitiveValue> for PrimitiveShape {
-    fn from(val: PrimitiveValue) -> Self {
-        match val {
-            PrimitiveValue::String(_) => PrimitiveShape::String,
-            PrimitiveValue::U64(_) => PrimitiveShape::U64,
-            PrimitiveValue::I64(_) => PrimitiveShape::I64,
-            PrimitiveValue::F32(_) => PrimitiveShape::F32,
-            PrimitiveValue::F64(_) => PrimitiveShape::F64,
-            PrimitiveValue::Bool(_) => PrimitiveShape::Bool,
-            PrimitiveValue::Null => PrimitiveShape::Null,
-        }
-    }
-}
-impl From<usize> for PrimitiveShape {
-    fn from(num: usize) -> Self {
-        match num {
-            0 => PrimitiveShape::String,
-            1 => PrimitiveShape::U64,
-            2 => PrimitiveShape::I64,
-            3 => PrimitiveShape::F32,
-            4 => PrimitiveShape::F64,
-            5 => PrimitiveShape::Bool,
-            6 => PrimitiveShape::Null,
-            #[tarpaulin::skip]
-            _ => panic!("unknown value: {}", num),
-        }
-    }
 }
 
-/// Arrays may contain either a primitive or an object whose values are primitives
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-#[serde(untagged)]
-pub enum ShapePrimitiveType {
-    /// Primitive type
-    Primitive(PrimitiveShape),
-    /// Nested shape that can only contain primitives
-    NestedPrimitive(BTreeMap<String, PrimitiveShape>),
+trait ShapePrimitiveTypeToStore {
+    fn encode(&self, shape_store: &mut Vec<ColumnValue>, cache: &mut ColumnCacheWriter);
+    fn decode(store: &mut Vec<usize>, cache: &mut ColumnCacheReader) -> Self;
 }
-impl From<ValuePrimitiveType> for ShapePrimitiveType {
-    fn from(val: ValuePrimitiveType) -> Self {
-        match val {
-            ValuePrimitiveType::Primitive(prim) => ShapePrimitiveType::Primitive(prim.into()),
-            ValuePrimitiveType::NestedPrimitive(nested) => {
-                let mut nested_map = BTreeMap::new();
-                for (key, value) in nested {
-                    nested_map.insert(key, value.into());
-                }
-                ShapePrimitiveType::NestedPrimitive(nested_map)
-            }
-        }
-    }
-}
-impl ShapePrimitiveType {
+impl ShapePrimitiveTypeToStore for PrimitiveShapeType {
     fn encode(&self, shape_store: &mut Vec<ColumnValue>, cache: &mut ColumnCacheWriter) {
         match self {
             Self::Primitive(prim) => prim.encode(shape_store, cache),
             Self::NestedPrimitive(nested) => {
                 shape_store.push(ShapePair::encode(ShapeDefinition::Object, nested.len()).into());
-                for (key, value) in nested {
+                for (key, value) in nested.iter() {
                     shape_store.push(cache.add_string(key.clone()).into());
                     value.encode(shape_store, cache);
                 }
@@ -172,7 +58,7 @@ impl ShapePrimitiveType {
                 Self::Primitive(PrimitiveShape::from(shape_pair.count_or_col))
             }
             ShapeDefinition::Object => {
-                let mut nested = BTreeMap::new();
+                let mut nested = ShapePrimitive::new();
                 for _ in 0..shape_pair.count_or_col {
                     nested.insert(cache.get_string(store.remove(0)), PrimitiveShape::decode(store));
                 }
@@ -182,65 +68,13 @@ impl ShapePrimitiveType {
             _ => panic!("Unknown shape definition: {:?}", shape_pair),
         }
     }
-
-    fn merge(&mut self, other: &Self) {
-        match (self, other) {
-            (
-                ShapePrimitiveType::Primitive(self_prim),
-                ShapePrimitiveType::Primitive(other_prim),
-            ) => {
-                self_prim.merge(other_prim);
-            }
-            (
-                ShapePrimitiveType::NestedPrimitive(self_nested),
-                ShapePrimitiveType::NestedPrimitive(other_nested),
-            ) => {
-                for (key, value) in other_nested {
-                    if self_nested.contains_key(key) {
-                        self_nested.get_mut(key).unwrap().merge(value);
-                    } else {
-                        self_nested.insert(key.clone(), value.clone());
-                    }
-                }
-            }
-            #[tarpaulin::skip]
-            _ => panic!("shape mismatch"),
-        }
-    }
 }
 
-/// Shape types that can be found in a shapes object.
-/// Either a primitive, an array containing any type, or a nested shape.
-/// If the type is an array, all elements must be the same type
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-#[serde(untagged)]
-pub enum ShapeType {
-    /// Primitive type
-    Primitive(PrimitiveShape),
-    /// Nested shape that can only contain primitives
-    Array(Vec<ShapePrimitiveType>),
-    /// Nested shape
-    Nested(Shape),
+trait ShapeTypeToStore {
+    fn encode(&self, shape_store: &mut Vec<ColumnValue>, cache: &mut ColumnCacheWriter);
+    fn decode(store: &mut Vec<usize>, cache: &mut ColumnCacheReader) -> Self;
 }
-impl From<ValueType> for ShapeType {
-    fn from(val: ValueType) -> Self {
-        match val {
-            ValueType::Primitive(prim) => ShapeType::Primitive(prim.into()),
-            ValueType::Nested(nested) => {
-                let mut nested_map: BTreeMap<String, ShapeType> = BTreeMap::new();
-                for (key, value) in nested.0 {
-                    nested_map.insert(key, value.into());
-                }
-                ShapeType::Nested(Shape(nested_map))
-            }
-            ValueType::Array(array) => {
-                let validated = validate_types(&array);
-                ShapeType::Array(vec![validated])
-            }
-        }
-    }
-}
-impl ShapeType {
+impl ShapeTypeToStore for ShapeType {
     fn encode(&self, shape_store: &mut Vec<ColumnValue>, cache: &mut ColumnCacheWriter) {
         match self {
             Self::Primitive(prim) => prim.encode(shape_store, cache),
@@ -261,7 +95,7 @@ impl ShapeType {
             ShapeDefinition::Primitive => {
                 Self::Primitive(PrimitiveShape::from(shape_pair.count_or_col))
             }
-            ShapeDefinition::Array => Self::Array(vec![ShapePrimitiveType::decode(store, cache)]),
+            ShapeDefinition::Array => Self::Array(vec![PrimitiveShapeType::decode(store, cache)]),
             ShapeDefinition::Object => {
                 // reinsert code because shape will check it again
                 store.insert(0, code);
@@ -269,54 +103,25 @@ impl ShapeType {
             }
         }
     }
-
-    fn merge(&mut self, other: &Self) {
-        match (self, other) {
-            (Self::Primitive(a), Self::Primitive(b)) => a.merge(b),
-            (Self::Array(a), Self::Array(b)) => {
-                a.first_mut().unwrap().merge(b.first().unwrap());
-            }
-            (Self::Nested(a), Self::Nested(b)) => a.merge(b),
-            #[tarpaulin::skip]
-            _ => panic!("Can't merge"),
-        };
-    }
 }
 
-/// The Shape Object
-#[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct Shape(pub BTreeMap<String, ShapeType>);
-impl From<Value> for Shape {
-    fn from(val: Value) -> Self {
-        let mut shape = BTreeMap::new();
-        for (key, value) in val.0 {
-            shape.insert(key, value.into());
-        }
-        Shape(shape)
-    }
-}
-impl From<&[Value]> for Shape {
-    fn from(val: &[Value]) -> Self {
-        let mut shape = Shape(BTreeMap::new());
-        for v in val {
-            shape.merge(&v.clone().into());
-        }
-        shape
-    }
-}
-impl Shape {
+/// Encode/Decode a Shape to the column cache
+pub trait ShapeToStore {
     /// Encode the shape
-    pub fn encode(&self, shape_store: &mut Vec<ColumnValue>, cache: &mut ColumnCacheWriter) {
-        shape_store.push(ShapePair::encode(ShapeDefinition::Object, self.0.len()).into());
-        for (key, value) in &self.0 {
+    fn encode(&self, shape_store: &mut Vec<ColumnValue>, cache: &mut ColumnCacheWriter);
+    /// Decode the shape
+    fn decode(store: &mut Vec<usize>, cache: &mut ColumnCacheReader) -> Self;
+}
+impl ShapeToStore for Shape {
+    fn encode(&self, shape_store: &mut Vec<ColumnValue>, cache: &mut ColumnCacheWriter) {
+        shape_store.push(ShapePair::encode(ShapeDefinition::Object, self.len()).into());
+        for (key, value) in self.iter() {
             shape_store.push(cache.add_string(key.clone()).into());
             value.encode(shape_store, cache);
         }
     }
-
-    /// Decode the shape
-    pub fn decode(store: &mut Vec<usize>, cache: &mut ColumnCacheReader) -> Self {
-        let mut map = BTreeMap::<String, ShapeType>::new();
+    fn decode(store: &mut Vec<usize>, cache: &mut ColumnCacheReader) -> Self {
+        let mut map = Shape::new();
         let shape_pair = ShapePair::decode(store.remove(0));
         if shape_pair.p_type != ShapeDefinition::Object {
             panic!("expected object shape")
@@ -326,17 +131,7 @@ impl Shape {
             let shape = ShapeType::decode(store, cache);
             map.insert(key, shape);
         }
-        Shape(map)
-    }
-
-    /// Merge two shapes
-    pub fn merge(&mut self, other: &Self) {
-        for (key, value) in &other.0 {
-            self.0
-                .entry(key.clone())
-                .and_modify(|val| val.merge(value))
-                .or_insert_with(|| value.clone());
-        }
+        map
     }
 }
 
@@ -408,29 +203,20 @@ impl From<usize> for ShapeDefinition {
     }
 }
 
-//? VALUE
-
-/// Primitive types supported by Properties
-#[derive(Serialize, Default, Deserialize, Debug, Clone, PartialEq)]
-#[serde(untagged)]
-pub enum PrimitiveValue {
-    /// String type utf8 encoded
-    String(String),
-    /// unsigned 64 bit integer
-    U64(u64),
-    /// signed 64 bit integer
-    I64(i64),
-    /// floating point number
-    F32(f32),
-    /// double precision floating point number
-    F64(f64),
-    /// boolean
-    Bool(bool),
-    /// null
-    #[default]
-    Null,
+trait PrimitiveValueToStore {
+    fn encode(
+        &self,
+        shape: &PrimitiveShape,
+        store: &mut Vec<ColumnValue>,
+        cache: &mut ColumnCacheWriter,
+    );
+    fn decode(
+        shape: &PrimitiveShape,
+        store: &mut Vec<usize>,
+        cache: &mut ColumnCacheReader,
+    ) -> Self;
 }
-impl PrimitiveValue {
+impl PrimitiveValueToStore for PrimitiveValue {
     fn encode(
         &self,
         shape: &PrimitiveShape,
@@ -499,87 +285,40 @@ impl PrimitiveValue {
             }
         }
     }
-
-    fn default_from_shape(shape: &PrimitiveShape) -> Self {
-        match shape {
-            PrimitiveShape::String => PrimitiveValue::String(String::new()),
-            PrimitiveShape::U64 => PrimitiveValue::U64(0),
-            PrimitiveShape::I64 => PrimitiveValue::I64(0),
-            PrimitiveShape::F32 => PrimitiveValue::F32(0.0),
-            PrimitiveShape::F64 => PrimitiveValue::F64(0.0),
-            PrimitiveShape::Bool => PrimitiveValue::Bool(false),
-            PrimitiveShape::Null => PrimitiveValue::Null,
-        }
-    }
-
-    fn matching_shape(&self, other: &PrimitiveValue) -> bool {
-        matches!(
-            (self, other),
-            (PrimitiveValue::String(_), PrimitiveValue::String(_))
-                | (PrimitiveValue::U64(_), PrimitiveValue::U64(_))
-                | (PrimitiveValue::I64(_), PrimitiveValue::I64(_))
-                | (PrimitiveValue::F32(_), PrimitiveValue::F32(_))
-                | (PrimitiveValue::F64(_), PrimitiveValue::F64(_))
-                | (PrimitiveValue::Bool(_), PrimitiveValue::Bool(_))
-                | (PrimitiveValue::Null, PrimitiveValue::Null)
-        )
-    }
-}
-impl From<&MapboxValue> for PrimitiveValue {
-    fn from(mval: &MapboxValue) -> Self {
-        match mval {
-            MapboxValue::String(string) => PrimitiveValue::String(string.clone()),
-            MapboxValue::UInt(usigned) => PrimitiveValue::U64(*usigned),
-            MapboxValue::SInt(signed) => PrimitiveValue::I64(*signed),
-            MapboxValue::Float(float) => PrimitiveValue::F32(float.0),
-            MapboxValue::Double(double) => PrimitiveValue::F64(double.0),
-            MapboxValue::Bool(boolean) => PrimitiveValue::Bool(*boolean),
-            MapboxValue::Null => PrimitiveValue::Null,
-        }
-    }
-}
-impl From<PrimitiveValue> for MapboxValue {
-    fn from(val: PrimitiveValue) -> Self {
-        match val {
-            PrimitiveValue::String(string) => MapboxValue::String(string),
-            PrimitiveValue::U64(usigned) => MapboxValue::UInt(usigned),
-            PrimitiveValue::I64(signed) => MapboxValue::SInt(signed),
-            PrimitiveValue::F32(float) => MapboxValue::Float(CustomOrdWrapper(float)),
-            PrimitiveValue::F64(double) => MapboxValue::Double(CustomOrdWrapper(double)),
-            PrimitiveValue::Bool(boolean) => MapboxValue::Bool(boolean),
-            PrimitiveValue::Null => MapboxValue::Null,
-        }
-    }
 }
 
-/// Arrays may contain either a primitive or an object whose values are primitives
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-#[serde(untagged)]
-pub enum ValuePrimitiveType {
-    /// Primitive type
-    Primitive(PrimitiveValue),
-    /// Nested shape that can only contain primitives
-    NestedPrimitive(BTreeMap<String, PrimitiveValue>),
-}
-impl ValuePrimitiveType {
+trait PrimitiveShapeTypeToStore {
     fn encode(
         &self,
-        shape: &ShapePrimitiveType,
+        shape: &PrimitiveShapeType,
+        store: &mut Vec<ColumnValue>,
+        cache: &mut ColumnCacheWriter,
+    );
+    fn decode(
+        shape: &PrimitiveShapeType,
+        store: &mut Vec<usize>,
+        cache: &mut ColumnCacheReader,
+    ) -> Self;
+}
+impl PrimitiveShapeTypeToStore for ValuePrimitiveType {
+    fn encode(
+        &self,
+        shape: &PrimitiveShapeType,
         store: &mut Vec<ColumnValue>,
         cache: &mut ColumnCacheWriter,
     ) {
         match (shape, self) {
             (
-                ShapePrimitiveType::Primitive(shape_prim),
+                PrimitiveShapeType::Primitive(shape_prim),
                 ValuePrimitiveType::Primitive(value_prim),
             ) => {
                 value_prim.encode(shape_prim, store, cache);
             }
             (
-                ShapePrimitiveType::NestedPrimitive(shape_nest),
+                PrimitiveShapeType::NestedPrimitive(shape_nest),
                 ValuePrimitiveType::NestedPrimitive(value_nest),
             ) => {
-                for (key, prim_shape) in shape_nest {
+                for (key, prim_shape) in shape_nest.iter() {
                     let val = value_nest.get(key).unwrap();
                     val.encode(prim_shape, store, cache);
                 }
@@ -588,55 +327,39 @@ impl ValuePrimitiveType {
             _ => panic!("shape and value do not match"),
         }
     }
-
     fn decode(
-        shape: &ShapePrimitiveType,
+        shape: &PrimitiveShapeType,
         store: &mut Vec<usize>,
         cache: &mut ColumnCacheReader,
     ) -> Self {
         match shape {
-            ShapePrimitiveType::Primitive(shape_prim) => {
+            PrimitiveShapeType::Primitive(shape_prim) => {
                 ValuePrimitiveType::Primitive(PrimitiveValue::decode(shape_prim, store, cache))
             }
-            ShapePrimitiveType::NestedPrimitive(shape_nest) => ValuePrimitiveType::NestedPrimitive(
-                shape_nest
-                    .iter()
-                    .map(|(key, shape)| (key.clone(), PrimitiveValue::decode(shape, store, cache)))
-                    .collect(),
-            ),
-        }
-    }
-
-    fn same_nested(&self, nested: &BTreeMap<String, PrimitiveValue>) -> bool {
-        match self {
-            ValuePrimitiveType::Primitive(_) => false,
-            ValuePrimitiveType::NestedPrimitive(val) => {
-                for (key, val) in val {
-                    if !val.matching_shape(nested.get(key).unwrap()) {
-                        return false;
-                    }
+            PrimitiveShapeType::NestedPrimitive(shape_nest) => {
+                let mut map = ValuePrimitive::new();
+                for (key, shape) in shape_nest.iter() {
+                    map.insert(key.clone(), PrimitiveValue::decode(shape, store, cache));
                 }
-                true
+                ValuePrimitiveType::NestedPrimitive(map)
             }
         }
     }
 }
 
-/// Supports primitive types `string`, `number`, `boolean`, `null`
-/// May be an array of those types, or an object of those types
-/// Object keys are always strings, values can be any basic type, an array, or a nested object.
-/// Array values must all be the same type.
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-#[serde(untagged)]
-pub enum ValueType {
-    /// A primitive value
-    Primitive(PrimitiveValue),
-    /// An array of values
-    Array(Vec<ValuePrimitiveType>),
-    /// A nested object
-    Nested(Value),
+/// Encode/Decode a ValueType to the column cache with a Shape describing how to store
+pub trait ValueTypeToStore {
+    /// Encode the value type into the store
+    fn encode(
+        &self,
+        shape: &ShapeType,
+        store: &mut Vec<ColumnValue>,
+        cache: &mut ColumnCacheWriter,
+    );
+    /// Decode the value type from the store
+    fn decode(shape: &ShapeType, store: &mut Vec<usize>, cache: &mut ColumnCacheReader) -> Self;
 }
-impl ValueType {
+impl ValueTypeToStore for ValueType {
     fn encode(
         &self,
         shape: &ShapeType,
@@ -678,89 +401,31 @@ impl ValueType {
             ShapeType::Nested(shape) => ValueType::Nested(Value::decode(shape, store, cache)),
         }
     }
-
-    fn default_from_shape(shape: &ShapeType) -> Self {
-        match shape {
-            ShapeType::Primitive(shape) => {
-                ValueType::Primitive(PrimitiveValue::default_from_shape(shape))
-            }
-            ShapeType::Array(_) => ValueType::Array(vec![]),
-            ShapeType::Nested(shape) => ValueType::Nested(Value::default_from_shape(shape)),
-        }
-    }
-}
-impl From<&MapboxValue> for ValueType {
-    fn from(mval: &MapboxValue) -> Self {
-        ValueType::Primitive(mval.into())
-    }
-}
-impl From<ValueType> for MapboxValue {
-    fn from(val: ValueType) -> Self {
-        match val {
-            ValueType::Primitive(val) => val.into(),
-            #[tarpaulin::skip] // this isn't relevant
-            _ => MapboxValue::Null,
-        }
-    }
 }
 
-/// Value design
-#[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct Value(pub BTreeMap<String, ValueType>);
-impl Value {
+/// Encode/Decode a Value to the column cache with a Shape describing how to store
+pub trait ValueToStore {
     /// Encode the value into the store
-    pub fn encode(
-        &self,
-        shape: &Shape,
-        store: &mut Vec<ColumnValue>,
-        cache: &mut ColumnCacheWriter,
-    ) {
-        for (key, shape_type) in &shape.0 {
-            let val = self.0.get(key).unwrap_or(&ValueType::default_from_shape(shape_type)).clone();
+    fn encode(&self, shape: &Shape, store: &mut Vec<ColumnValue>, cache: &mut ColumnCacheWriter);
+    /// Decode the value from the store
+    fn decode(shape: &Shape, store: &mut Vec<usize>, cache: &mut ColumnCacheReader) -> Self;
+}
+impl ValueToStore for Value {
+    fn encode(&self, shape: &Shape, store: &mut Vec<ColumnValue>, cache: &mut ColumnCacheWriter) {
+        for (key, shape_type) in shape.iter() {
+            let val = self.get(key).unwrap_or(&ValueType::default_from_shape(shape_type)).clone();
             val.encode(shape_type, store, cache);
         }
     }
-
-    /// Decode the value from the store
-    pub fn decode(shape: &Shape, store: &mut Vec<usize>, cache: &mut ColumnCacheReader) -> Self {
-        let mut value = BTreeMap::new();
-        for (key, shape_type) in &shape.0 {
+    fn decode(shape: &Shape, store: &mut Vec<usize>, cache: &mut ColumnCacheReader) -> Self {
+        let mut value = Self::new();
+        for (key, shape_type) in shape.iter() {
             let val = ValueType::decode(shape_type, store, cache);
             value.insert(key.clone(), val);
         }
-        Value(value)
-    }
-
-    fn default_from_shape(shape: &Shape) -> Self {
-        let mut value = BTreeMap::new();
-        for (key, shape_type) in &shape.0 {
-            value.insert(key.clone(), ValueType::default_from_shape(shape_type));
-        }
-        Value(value)
+        value
     }
 }
-impl From<&MapboxProperties> for Value {
-    fn from(mval: &MapboxProperties) -> Self {
-        let mut value = BTreeMap::new();
-        for (key, val) in mval {
-            value.insert(key.clone(), val.into());
-        }
-        Value(value)
-    }
-}
-impl From<Value> for MapboxProperties {
-    fn from(val: Value) -> Self {
-        let mut mval = BTreeMap::new();
-        for (key, val) in val.0 {
-            mval.insert(key, val.into());
-        }
-        mval
-    }
-}
-/// Value of a features properties object
-pub type Properties = Value;
-/// Value of a feature's M-Values object
-pub type MValue = Value;
 
 /// Encode a value to the column cache
 pub fn encode_value(value: &Value, shape: &Shape, cache: &mut ColumnCacheWriter) -> usize {
@@ -773,74 +438,4 @@ pub fn encode_value(value: &Value, shape: &Shape, cache: &mut ColumnCacheWriter)
 pub fn decode_value(value_index: usize, shape: &Shape, cache: &mut ColumnCacheReader) -> Value {
     let value_store = cache.get_shapes(value_index);
     Value::decode(shape, &mut value_store.clone(), cache)
-}
-
-/// LineString Properties Value
-pub type LineStringMValues = Vec<MValue>;
-/// MultiLineString MValues Value
-pub type MultiLineStringMValues = Vec<LineStringMValues>;
-/// Polygon MValues Value
-pub type PolygonMValues = Vec<LineStringMValues>;
-/// MultiPolygon MValues Value
-pub type MultiPolygonMValues = Vec<PolygonMValues>;
-
-/// All possible M-Value shapes
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-#[serde(untagged)]
-pub enum MValues {
-    /// Single M-Value
-    MValue(MValue),
-    /// LineString M-Value
-    LineStringMValues(LineStringMValues),
-    /// MultiLineString M-Value
-    MultiLineStringMValues(MultiLineStringMValues),
-    /// Polygon M-Value
-    PolygonMValues(PolygonMValues),
-    /// MultiPolygon M-Value
-    MultiPolygonMValues(MultiPolygonMValues),
-}
-
-//? The Following are utility functions when the user doesn't pre-define the Properties/M-Value
-//? Shapes to store:
-
-/// This is primarily to check if the type is a primitive.
-/// If the primitive is a number, find the "depth", the most complex is f64, then i64, then u64.
-/// Otherwise, if the primitives don't match, throw an error.
-/// If the type is NOT a primitive, ensure that all types in the array match
-/// returns - a single type from the list to validate the correct type to be parsed from values later
-pub fn validate_types(types: &[ValuePrimitiveType]) -> ShapePrimitiveType {
-    match types.first() {
-        Some(ValuePrimitiveType::Primitive(primitive)) => {
-            let mut base: PrimitiveShape = primitive.clone().into();
-            let is_number = base.is_number();
-            for t in types {
-                match t {
-                    ValuePrimitiveType::Primitive(t_prim) => {
-                        let prim_shape = t_prim.clone().into();
-                        if !base.matching_shape(&prim_shape) {
-                            panic!("All types must be the same");
-                        } else if is_number {
-                            base = PrimitiveShape::get_highest_order_number(&base, &prim_shape);
-                        }
-                        // otherwise do nothing
-                    }
-                    #[tarpaulin::skip]
-                    _ => panic!("All types must be the same"),
-                }
-            }
-
-            ShapePrimitiveType::Primitive(base)
-        }
-        Some(ValuePrimitiveType::NestedPrimitive(nested)) => {
-            // iterate and check if each following types match
-            for t in types[1..].iter() {
-                if !t.same_nested(nested) {
-                    panic!("All types must be the same");
-                }
-            }
-
-            ValuePrimitiveType::NestedPrimitive(nested.clone()).into()
-        }
-        None => ShapePrimitiveType::Primitive(PrimitiveShape::Null),
-    }
 }
