@@ -2,7 +2,7 @@
 mod tests {
     extern crate alloc;
     use alloc::vec;
-    use ovtile::{
+    use open_vector_tile::{
         base::{
             decode_offset, encode_offset, BaseVectorFeature, BaseVectorLines3DFeature,
             BaseVectorLinesFeature, BaseVectorPoints3DFeature, BaseVectorPointsFeature,

@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     extern crate alloc;
-    use ovtile::{
+    use open_vector_tile::{
         base::{BaseVectorFeature, BaseVectorLayer, BaseVectorPointsFeature},
         Point,
     };

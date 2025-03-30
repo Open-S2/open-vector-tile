@@ -2,7 +2,7 @@
 mod tests {
     extern crate alloc;
 
-    use ovtile::open::{
+    use open_vector_tile::open::{
         ColumnCacheReader, ColumnCacheWriter, ColumnValue, ShapeDefinition, ShapePair,
         ShapeToStore, ValueToStore,
     };

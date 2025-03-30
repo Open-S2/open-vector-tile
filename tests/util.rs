@@ -2,7 +2,7 @@
 mod tests {
     extern crate alloc;
     use core::cmp::Ordering;
-    use ovtile::{
+    use open_vector_tile::{
         util::{
             command_decode, command_encode, delta_decode_array, delta_decode_sorted_array,
             delta_encode_array, delta_encode_sorted_array, dequantize_lat, dequantize_lon,

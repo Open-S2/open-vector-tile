@@ -19,7 +19,7 @@
 //! ### Reading
 //!
 //! ```rust,ignore
-//! use ovtile::{VectorTile, VectorLayerMethods};
+//! use open_vector_tile::{VectorTile, VectorLayerMethods};
 //!
 //! let data: Vec<u8> = vec![];
 //! let mut tile = VectorTile::new(data, None);
@@ -59,7 +59,7 @@
 //! ```rust
 //! // NOTE: Be sure to include the `serde_json` crate
 //! extern crate alloc;
-//! use ovtile::{
+//! use open_vector_tile::{
 //! base::{
 //!     BaseVectorFeature, BaseVectorLayer, BaseVectorLines3DFeature, BaseVectorLinesFeature,
 //!     BaseVectorPoints3DFeature, BaseVectorPointsFeature, BaseVectorPolys3DFeature,
@@ -165,6 +165,7 @@ pub mod util;
 pub mod vector_tile;
 
 pub use geometry::*;
+pub use open::*;
 pub use util::*;
 pub use vector_tile::*;
 

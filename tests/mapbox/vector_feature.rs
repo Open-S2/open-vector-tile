@@ -3,7 +3,7 @@ mod tests {
     extern crate alloc;
     use alloc::{collections::BTreeMap, rc::Rc, string::String};
     use core::cell::RefCell;
-    use ovtile::{
+    use open_vector_tile::{
         base::{BaseVectorFeature, BaseVectorPointsFeature},
         mapbox::{write_feature, MapboxVectorFeature},
         Point,

@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     extern crate alloc;
-    use ovtile::open::{ImageData, ImageType};
+    use open_vector_tile::open::{ImageData, ImageType};
     use pbf::Protobuf;
     use std::panic::{self, AssertUnwindSafe};
 

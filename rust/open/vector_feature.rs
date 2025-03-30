@@ -10,11 +10,12 @@ use alloc::{rc::Rc, vec, vec::Vec};
 use core::cell::RefCell;
 use pbf::{BitCast, Protobuf};
 use s2json::{Properties, Shape, BBOX};
+use serde::{Deserialize, Serialize};
 
 use super::decode_value;
 
 /// Extent guide for how the geometry data is stored
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Extent {
     /// 512x512
     Extent512 = 512,

@@ -27,7 +27,7 @@ default = []
 wasm = ["lol_alloc"]
 
 [lib]
-name = "ovtile"
+name = "open_vector_tile"
 path = "rust/lib.rs"
 # crate-type = ["cdylib"]
 bench = true

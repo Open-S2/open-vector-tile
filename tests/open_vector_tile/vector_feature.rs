@@ -2,7 +2,7 @@
 mod tests {
     extern crate alloc;
 
-    use ovtile::{
+    use open_vector_tile::{
         mapbox::FeatureType as MapboxFeatureType,
         open::{Extent, FeatureType},
     };

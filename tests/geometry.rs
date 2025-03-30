@@ -3,7 +3,7 @@ mod tests {
     extern crate alloc;
 
     use core::cmp::Ordering;
-    use ovtile::geometry::{Point, Point3D, VectorLineWithOffset};
+    use open_vector_tile::geometry::{Point, Point3D, VectorLineWithOffset};
     use s2json::{BBox, BBox3D, Value, BBOX};
 
     #[test]

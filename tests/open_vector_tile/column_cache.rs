@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     extern crate alloc;
-    use ovtile::open::OColumnName;
+    use open_vector_tile::open::OColumnName;
 
     #[test]
     fn test_column_name() {
