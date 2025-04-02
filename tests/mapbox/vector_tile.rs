@@ -233,12 +233,12 @@ mod tests {
                 panic::catch_unwind(AssertUnwindSafe(|| m_feature.load_geometry_flat()));
             assert!(load_geometry_flat_test.is_err());
 
-            // add_tesselation_3d
-            let add_tesselation_3d_test = panic::catch_unwind(AssertUnwindSafe(|| {
+            // add_tessellation_3d
+            let add_tessellation_3d_test = panic::catch_unwind(AssertUnwindSafe(|| {
                 let mut tmp_vec = vec![];
-                m_feature.add_tesselation_3d(&mut tmp_vec, 1.);
+                m_feature.add_tessellation_3d(&mut tmp_vec, 1.);
             }));
-            assert!(add_tesselation_3d_test.is_err());
+            assert!(add_tessellation_3d_test.is_err());
         }
 
         {
@@ -476,7 +476,7 @@ mod tests {
             assert_eq!(m_feature.read_indices(), Vec::<u32>::new());
             // load tessellations
             let mut tess = vec![];
-            m_feature.add_tesselation(&mut tess, 1.0 / 8_192.0);
+            m_feature.add_tessellation(&mut tess, 1.0 / 8_192.0);
             assert_eq!(tess, Vec::<f64>::new());
 
             // load_geometry_flat
@@ -627,7 +627,7 @@ mod tests {
             assert_eq!(m_feature.read_indices(), vec![0, 1, 2, 1, 5]);
             // load tessellations
             let mut tess = vec![];
-            m_feature.add_tesselation(&mut tess, 1.0);
+            m_feature.add_tessellation(&mut tess, 1.0);
             assert_eq!(tess, vec![10.0, 4.0, 11.0, 5.0, 12.0, 6.0]);
 
             // load_geometry_flat

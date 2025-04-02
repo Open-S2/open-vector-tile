@@ -387,8 +387,8 @@ pub struct BaseVectorPolysFeature {
     pub properties: Properties,
     /// BBox
     pub bbox: Option<BBox>,
-    /// Tesselation
-    pub tesselation: Vec<Point>,
+    /// Tessellation
+    pub tessellation: Vec<Point>,
     /// Indices
     pub indices: Vec<u32>,
 }
@@ -400,9 +400,9 @@ impl BaseVectorPolysFeature {
         properties: Properties,
         bbox: Option<BBox>,
         indices: Vec<u32>,
-        tesselation: Vec<Point>,
+        tessellation: Vec<Point>,
     ) -> Self {
-        Self { id, geometry, properties, bbox, indices, tesselation }
+        Self { id, geometry, properties, bbox, indices, tessellation }
     }
 }
 impl VectorFeature for BaseVectorPolysFeature {
@@ -489,8 +489,8 @@ pub struct BaseVectorPolys3DFeature {
     pub properties: Properties,
     /// BBox
     pub bbox: Option<BBox3D>,
-    /// Tesselation
-    pub tesselation: Vec<Point3D>,
+    /// Tessellation
+    pub tessellation: Vec<Point3D>,
     /// Indices
     pub indices: Vec<u32>,
 }
@@ -502,9 +502,9 @@ impl BaseVectorPolys3DFeature {
         properties: Properties,
         bbox: Option<BBox3D>,
         indices: Vec<u32>,
-        tesselation: Vec<Point3D>,
+        tessellation: Vec<Point3D>,
     ) -> Self {
-        Self { id, geometry, properties, bbox, indices, tesselation }
+        Self { id, geometry, properties, bbox, indices, tessellation }
     }
 }
 impl VectorFeature for BaseVectorPolys3DFeature {
@@ -580,28 +580,28 @@ impl VectorFeature for BaseVectorPolys3DFeature {
     }
 }
 
-/// Tesselation Wrapper to handle both 2D and 3D cases
+/// Tessellation Wrapper to handle both 2D and 3D cases
 #[derive(Debug, Clone, PartialEq)]
-pub enum TesselationWrapper {
-    /// 2D tesselation
-    Tesselation(Vec<Point>),
-    /// 3D tesselation
-    Tesselation3D(Vec<Point3D>),
+pub enum TessellationWrapper {
+    /// 2D tessellation
+    Tessellation(Vec<Point>),
+    /// 3D tessellation
+    Tessellation3D(Vec<Point3D>),
 }
-impl TesselationWrapper {
-    /// check the length of the tesselation
+impl TessellationWrapper {
+    /// check the length of the tessellation
     pub fn len(&self) -> usize {
         match self {
-            TesselationWrapper::Tesselation(points) => points.len(),
-            TesselationWrapper::Tesselation3D(points) => points.len(),
+            TessellationWrapper::Tessellation(points) => points.len(),
+            TessellationWrapper::Tessellation3D(points) => points.len(),
         }
     }
 
-    /// check if the tesselation is empty
+    /// check if the tessellation is empty
     pub fn is_empty(&self) -> bool {
         match self {
-            TesselationWrapper::Tesselation(points) => points.is_empty(),
-            TesselationWrapper::Tesselation3D(points) => points.is_empty(),
+            TessellationWrapper::Tessellation(points) => points.is_empty(),
+            TessellationWrapper::Tessellation3D(points) => points.is_empty(),
         }
     }
 }
@@ -704,14 +704,14 @@ impl BaseVectorFeature {
         }
     }
 
-    /// get the feature tesselation
-    pub fn tesselation(&self) -> Option<TesselationWrapper> {
+    /// get the feature tessellation
+    pub fn tessellation(&self) -> Option<TessellationWrapper> {
         match self {
             BaseVectorFeature::BaseVectorPolysFeature(f) => {
-                Some(TesselationWrapper::Tesselation(f.tesselation.clone()))
+                Some(TessellationWrapper::Tessellation(f.tessellation.clone()))
             }
             BaseVectorFeature::BaseVectorPolys3DFeature(f) => {
-                Some(TesselationWrapper::Tesselation3D(f.tesselation.clone()))
+                Some(TessellationWrapper::Tessellation3D(f.tessellation.clone()))
             }
             _ => None,
         }
@@ -757,13 +757,10 @@ impl From<&mut MapboxVectorFeature> for BaseVectorFeature {
         let id = mvt.id;
         let properties: Properties = (&mvt.properties).into();
         let indices = mvt.read_indices();
-        let mut tesselation_floats: Vec<f64> = Vec::new();
-        mvt.add_tesselation(&mut tesselation_floats, 1.0);
+        let mut tessellation_floats: Vec<f64> = Vec::new();
+        mvt.add_tessellation(&mut tessellation_floats, 1.0);
         // convert an flat array of f64 to groups of 2 making a Point (convert to a Vec<Point>)
-        let tesselation = tesselation_floats
-            .chunks(2)
-            .map(|chunk| Point::new(chunk[0] as i32, chunk[1] as i32))
-            .collect();
+        let tessellation = tess_to_points(tessellation_floats);
 
         match mvt.load_geometry() {
             VectorGeometry::VectorPoints(geo) => BaseVectorFeature::BaseVectorPointsFeature(
@@ -773,12 +770,26 @@ impl From<&mut MapboxVectorFeature> for BaseVectorFeature {
                 BaseVectorLinesFeature::new(id, geo, properties, None),
             ),
             VectorGeometry::VectorPolys(geo) => BaseVectorFeature::BaseVectorPolysFeature(
-                BaseVectorPolysFeature::new(id, geo, properties, None, indices, tesselation),
+                BaseVectorPolysFeature::new(id, geo, properties, None, indices, tessellation),
             ),
             #[tarpaulin::skip]
             _ => panic!("unexpected geometry type"),
         }
     }
+}
+
+/// Taking input tesselation data, migrate it back to a Point
+pub fn tess_to_points(tess: Vec<f64>) -> Vec<Point> {
+    tess.chunks(2).map(|chunk| Point::new(round(chunk[0]) as i32, round(chunk[1]) as i32)).collect()
+}
+
+/// Taking input tesselation 3D data, migrate back to a Point3D
+pub fn tess_to_points_3d(tess: Vec<f64>) -> Vec<Point3D> {
+    tess.chunks(3)
+        .map(|chunk| {
+            Point3D::new(round(chunk[0]) as i32, round(chunk[1]) as i32, round(chunk[2]) as i32)
+        })
+        .collect()
 }
 
 /// Encode offset values into a signed integer to reduce byte cost without too much loss

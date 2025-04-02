@@ -1,5 +1,5 @@
 use crate::{
-    base::{BaseVectorFeature, TesselationWrapper},
+    base::{BaseVectorFeature, TessellationWrapper},
     command_encode,
     open::FeatureType as OpenFeatureType,
     zigzag, Point, VectorFeatureMethods, VectorGeometry, VectorLineWithOffset,
@@ -30,7 +30,7 @@ pub struct MapboxVectorFeature {
     indices: Option<Vec<u32>>,
     geometry_index: usize,
     geometry: Option<VectorGeometry>,
-    tesselation_index: Option<usize>,
+    tessellation_index: Option<usize>,
     keys: Rc<RefCell<Vec<String>>>,
     values: Rc<RefCell<Vec<PrimitiveValue>>>,
     pbf: Rc<RefCell<Protobuf>>,
@@ -57,7 +57,7 @@ impl MapboxVectorFeature {
             indices: None,
             geometry_index: 0,
             geometry: None,
-            tesselation_index: None,
+            tessellation_index: None,
             keys,
             values,
             pbf,
@@ -189,8 +189,8 @@ impl VectorFeatureMethods for MapboxVectorFeature {
         };
         // if a poly, check if we should load indices
         let indices = self.read_indices();
-        // if a poly, check if we should load tesselation
-        self.add_tesselation(&mut geometry, multiplier);
+        // if a poly, check if we should load tessellation
+        self.add_tessellation(&mut geometry, multiplier);
 
         (geometry, indices)
     }
@@ -302,14 +302,14 @@ impl VectorFeatureMethods for MapboxVectorFeature {
         indices
     }
 
-    /// Add tesselation data to the geometry
-    fn add_tesselation(&mut self, geometry: &mut Vec<f64>, multiplier: f64) {
-        if self.tesselation_index.is_none() {
+    /// Add tessellation data to the geometry
+    fn add_tessellation(&mut self, geometry: &mut Vec<f64>, multiplier: f64) {
+        if self.tessellation_index.is_none() {
             return;
         }
 
         let mut pbf = self.pbf.borrow_mut();
-        pbf.set_pos(self.tesselation_index.unwrap());
+        pbf.set_pos(self.tessellation_index.unwrap());
 
         let end = pbf.read_varint::<usize>() + pbf.get_pos();
         let mut x = 0;
@@ -322,9 +322,9 @@ impl VectorFeatureMethods for MapboxVectorFeature {
         }
     }
 
-    /// Add 3D tesselation data to the geometry
+    /// Add 3D tessellation data to the geometry
     #[tarpaulin::skip]
-    fn add_tesselation_3d(&mut self, _geometry: &mut Vec<f64>, _multiplier: f64) {
+    fn add_tessellation_3d(&mut self, _geometry: &mut Vec<f64>, _multiplier: f64) {
         panic!("unexpected geometry type")
     }
 }
@@ -346,7 +346,7 @@ impl ProtoRead for MapboxVectorFeature {
                 2 => self.r#type = pb.read_varint::<FeatureType>(),
                 3 => self.geometry_index = pb.get_pos(),
                 4 => self.indices_index = Some(pb.get_pos()),
-                5 => self.tesselation_index = Some(pb.get_pos()),
+                5 => self.tessellation_index = Some(pb.get_pos()),
                 #[tarpaulin::skip]
                 _ => panic!("unknown tag: {}", tag),
             }
@@ -366,7 +366,7 @@ impl ProtoRead for MapboxVectorFeature {
                 3 => self.r#type = pb.read_varint::<FeatureType>(),
                 4 => self.geometry_index = pb.get_pos(),
                 5 => self.indices_index = Some(pb.get_pos()),
-                6 => self.tesselation_index = Some(pb.get_pos()),
+                6 => self.tessellation_index = Some(pb.get_pos()),
                 #[tarpaulin::skip]
                 _ => panic!("unknown tag: {}", tag),
             }
@@ -491,9 +491,9 @@ pub fn write_feature(
     if let Some(indices) = feature.indices() {
         pbf.write_bytes_field(if mapbox_support { 5 } else { 4 }, &write_indices(&indices));
     }
-    // Tesselation
-    if let Some(TesselationWrapper::Tesselation(tess)) = feature.tesselation() {
-        pbf.write_bytes_field(if mapbox_support { 6 } else { 5 }, &write_tesselation(&tess));
+    // Tessellation
+    if let Some(TessellationWrapper::Tessellation(tess)) = feature.tessellation() {
+        pbf.write_bytes_field(if mapbox_support { 6 } else { 5 }, &write_tessellation(&tess));
     }
 
     pbf.take()
@@ -533,8 +533,8 @@ fn write_indices(indices: &[u32]) -> Vec<u8> {
     pbf.take()
 }
 
-/// write the tesselation to a protobuffer using the S2 Specification
-fn write_tesselation(geometry: &[Point]) -> Vec<u8> {
+/// write the tessellation to a protobuffer using the S2 Specification
+fn write_tessellation(geometry: &[Point]) -> Vec<u8> {
     let mut pbf = Protobuf::new();
     let mut x = 0;
     let mut y = 0;

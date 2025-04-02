@@ -39,12 +39,12 @@ export class GridData {
    * @param pbf - the Protobuf to pull the appropriate data from
    */
   #readGrid(tag: number, grid: GridData, pbf: PbfReader): void {
-    if (tag === 0) grid.extent = pbf.readVarint() as Extents;
-    else if (tag === 1) grid.size = pbf.readVarint();
-    else if (tag === 2) grid.min = pbf.readFloat();
-    else if (tag === 3) grid.max = pbf.readFloat();
-    else if (tag === 4) grid.dataPos = pbf.pos;
-    else if (tag === 5) grid.name = pbf.readString();
+    if (tag === 1) grid.extent = pbf.readVarint() as Extents;
+    else if (tag === 2) grid.size = pbf.readVarint();
+    else if (tag === 3) grid.min = pbf.readFloat();
+    else if (tag === 4) grid.max = pbf.readFloat();
+    else if (tag === 5) grid.dataPos = pbf.pos;
+    else if (tag === 6) grid.name = pbf.readString();
   }
 }
 
@@ -78,12 +78,12 @@ export function writeGridData(input: GridInput): Uint8Array {
   const reMapped = data.map((v) => remapValue(v, min, max, extent));
   const d_coded = deltaEncodeArray(reMapped);
 
-  pbf.writeVarintField(0, extent);
-  pbf.writeVarintField(1, size);
-  pbf.writeFloatField(2, min);
-  pbf.writeFloatField(3, max);
-  pbf.writePackedVarint(4, d_coded);
-  pbf.writeStringField(5, name);
+  pbf.writeVarintField(1, extent);
+  pbf.writeVarintField(2, size);
+  pbf.writeFloatField(3, min);
+  pbf.writeFloatField(4, max);
+  pbf.writePackedVarint(5, d_coded);
+  pbf.writeStringField(6, name);
 
   return pbf.commit();
 }

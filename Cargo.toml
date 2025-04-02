@@ -1,6 +1,6 @@
 [package]
 name = "open-vector-tile"
-version = "1.4.0"
+version = "1.5.0"
 edition = "2021"
 authors = ["Craig O'Connor <oconnorct1@gmail.com>"]
 description = "This library reads/writes The Open Vector Tiles 1.0 Specification"
@@ -35,7 +35,7 @@ bench = true
 [dependencies]
 pbf = "1.20"
 libm = "0.2"
-s2json = "1.27"
+s2json = "1.31"
 serde = { version = "1.0", default-features = false, features = ["alloc", "derive"] }
 serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
 # WASM dependencies

@@ -279,8 +279,8 @@ function shapePrimitiveToColumnName(type: PrimitiveShapes): OColumnName {
   else if (type === 'i64') return OColumnName.signed;
   else if (type === 'f32') return OColumnName.float;
   else if (type === 'f64') return OColumnName.double;
-  else if (type === 'bool') return 5;
-  else return 6;
+  else if (type === 'bool') return 6;
+  else return 7;
 }
 
 /**
@@ -293,7 +293,7 @@ function columnNameToShapePrimitive(columnName: OColumnName): PrimitiveShapes {
   else if (columnName === OColumnName.signed) return 'i64';
   else if (columnName === OColumnName.float) return 'f32';
   else if (columnName === OColumnName.double) return 'f64';
-  else if (columnName === 5) return 'bool';
+  else if (columnName === 6) return 'bool';
   else return 'null';
 }
 

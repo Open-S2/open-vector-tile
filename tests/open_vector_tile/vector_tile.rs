@@ -524,7 +524,7 @@ mod tests {
             assert_eq!(o_feature.read_indices(), Vec::<u32>::new());
             // load tessellations
             let mut tess = vec![];
-            o_feature.add_tesselation(&mut tess, 1.0 / 8_192.0);
+            o_feature.add_tessellation(&mut tess, 1.0 / 8_192.0);
             assert_eq!(tess, Vec::<f64>::new());
 
             // load_geometry_flat
@@ -675,7 +675,7 @@ mod tests {
             assert_eq!(o_feature.read_indices(), vec![0, 1, 2, 1, 5]);
             // load tessellations
             let mut tess = vec![];
-            o_feature.add_tesselation(&mut tess, 1.0);
+            o_feature.add_tessellation(&mut tess, 1.0);
             assert_eq!(tess, vec![10.0, 4.0, 11.0, 5.0, 12.0, 6.0]);
 
             // load_geometry_flat
@@ -1232,7 +1232,7 @@ mod tests {
             assert_eq!(o_feature.read_indices(), Vec::<u32>::new());
             // load tessellations
             let mut tess = vec![];
-            o_feature.add_tesselation(&mut tess, 1.0 / 8_192.0);
+            o_feature.add_tessellation(&mut tess, 1.0 / 8_192.0);
             assert_eq!(tess, Vec::<f64>::new());
 
             // load_geometry_flat
@@ -1383,7 +1383,7 @@ mod tests {
             assert_eq!(o_feature.read_indices(), vec![0, 1, 2, 1, 5]);
             // load tessellations
             let mut tess = vec![];
-            o_feature.add_tesselation_3d(&mut tess, 1.0);
+            o_feature.add_tessellation_3d(&mut tess, 1.0);
             assert_eq!(tess, vec![10.0, 4.0, 1.0, 11.0, 5.0, 2.0, 12.0, 6.0, 3.0]);
 
             // load_geometry_flat

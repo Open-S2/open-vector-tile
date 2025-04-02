@@ -429,9 +429,9 @@ describe('serialize and parse vector tile polygons', () => {
       ],
     ]);
 
-    // Geomtery with tesselation and indices
+    // Geomtery with tessellation and indices
     const tess: number[] = [];
-    poly2.addTesselation(tess, 1);
+    poly2.addTessellation(tess, 1);
     expect(tess).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
     expect(poly2.readIndices()).toEqual([0, 1, 2]);
   });

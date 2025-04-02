@@ -11,7 +11,7 @@ import {
   decodeOffset,
   encodeOffset,
 } from '../../src/base';
-import { ColumnCacheReader, ColumnCacheWriter } from '../../src/open/columnCache';
+import { ColumnCacheReader, ColumnCacheWriter, OColumnName } from '../../src/open/columnCache';
 import { describe, expect, it } from 'bun:test';
 
 describe('encodeOffset and decodeOffset', () => {
@@ -86,13 +86,13 @@ describe('BaseVectorPointsFeature', () => {
     pbf.writeMessage(5, ColumnCacheWriter.write, cache);
     const rawData = pbf.commit();
     expect(rawData).toEqual(
-      new Uint8Array([42, 17, 42, 8, 176, 205, 133, 71, 247, 198, 133, 71, 58, 3, 0, 0, 0, 66, 0]),
+      new Uint8Array([42, 17, 50, 8, 176, 205, 133, 71, 247, 198, 133, 71, 66, 3, 0, 0, 0, 74, 0]),
     );
 
     const parsePBF = new Pbf(rawData);
     parsePBF.readTag(); // 5
     const cache2 = new ColumnCacheReader(parsePBF, parsePBF.readVarint() + parsePBF.pos);
-    expect(cache2[5]).toEqual([{ pos: 3 }]);
+    expect(cache2[OColumnName.points]).toEqual([{ pos: 3 }]);
   });
 });
 
@@ -159,15 +159,15 @@ describe('BaseVectorPoints3DFeature', () => {
     const rawData = pbf.commit();
     expect(rawData).toEqual(
       new Uint8Array([
-        42, 21, 50, 12, 224, 203, 234, 141, 234, 40, 207, 247, 225, 141, 234, 40, 58, 3, 0, 0, 0,
-        66, 0,
+        42, 21, 58, 12, 224, 203, 234, 141, 234, 40, 207, 247, 225, 141, 234, 40, 66, 3, 0, 0, 0,
+        74, 0,
       ]),
     );
 
     const parsePBF = new Pbf(rawData);
     parsePBF.readTag(); // 5
     const cache2 = new ColumnCacheReader(parsePBF, parsePBF.readVarint() + parsePBF.pos);
-    expect(cache2[6]).toEqual([{ pos: 3 }]);
+    expect(cache2[OColumnName.points3D]).toEqual([{ pos: 3 }]);
   });
 });
 
@@ -263,9 +263,9 @@ describe('BaseVectorLinesFeature', () => {
     const rawData = pbf.commit();
     expect(rawData).toEqual(
       new Uint8Array([
-        42, 55, 8, 2, 8, 3, 8, 4, 8, 5, 42, 8, 253, 128, 133, 68, 184, 206, 148, 3, 42, 8, 176, 205,
-        133, 71, 247, 198, 133, 71, 58, 13, 4, 196, 51, 199, 51, 0, 2, 222, 68, 221, 68, 2, 2, 66,
-        1, 0, 66, 1, 1, 66, 1, 2, 66, 1, 3,
+        42, 55, 16, 2, 16, 3, 16, 4, 16, 5, 50, 8, 253, 128, 133, 68, 184, 206, 148, 3, 50, 8, 176,
+        205, 133, 71, 247, 198, 133, 71, 66, 13, 4, 196, 51, 199, 51, 0, 2, 222, 68, 221, 68, 2, 2,
+        74, 1, 0, 74, 1, 1, 74, 1, 2, 74, 1, 3,
       ]),
     );
 
@@ -377,9 +377,9 @@ describe('BaseVectorLines3DFeature', () => {
     const rawData = pbf.commit();
     expect(rawData).toEqual(
       new Uint8Array([
-        42, 63, 8, 2, 8, 3, 8, 4, 8, 5, 50, 12, 249, 149, 128, 169, 208, 104, 240, 241, 163, 204,
-        168, 1, 50, 12, 192, 203, 170, 173, 248, 105, 239, 245, 161, 173, 248, 105, 58, 13, 4, 196,
-        51, 199, 51, 0, 2, 222, 68, 221, 68, 2, 2, 66, 1, 0, 66, 1, 1, 66, 1, 2, 66, 1, 3,
+        42, 63, 16, 2, 16, 3, 16, 4, 16, 5, 58, 12, 249, 149, 128, 169, 208, 104, 240, 241, 163,
+        204, 168, 1, 58, 12, 192, 203, 170, 173, 248, 105, 239, 245, 161, 173, 248, 105, 66, 13, 4,
+        196, 51, 199, 51, 0, 2, 222, 68, 221, 68, 2, 2, 74, 1, 0, 74, 1, 1, 74, 1, 2, 74, 1, 3,
       ]),
     );
 
@@ -603,9 +603,9 @@ describe('BaseVectorPolysFeature', () => {
     const rawData = pbf.commit();
     expect(rawData).toEqual(
       new Uint8Array([
-        42, 71, 16, 0, 16, 2, 16, 4, 42, 3, 228, 7, 48, 42, 3, 164, 24, 48, 42, 3, 228, 25, 48, 42,
-        3, 164, 30, 48, 42, 3, 228, 31, 48, 42, 3, 164, 96, 48, 58, 21, 4, 2, 5, 0, 2, 0, 2, 0, 0,
-        0, 0, 2, 0, 1, 0, 4, 3, 0, 6, 5, 0, 66, 2, 1, 0, 66, 2, 0, 2, 66, 2, 0, 0,
+        42, 71, 24, 0, 24, 2, 24, 4, 50, 3, 228, 7, 48, 50, 3, 164, 24, 48, 50, 3, 228, 25, 48, 50,
+        3, 164, 30, 48, 50, 3, 228, 31, 48, 50, 3, 164, 96, 48, 66, 21, 4, 2, 5, 0, 2, 0, 2, 0, 0,
+        0, 0, 2, 0, 1, 0, 4, 3, 0, 6, 5, 0, 74, 2, 1, 0, 74, 2, 0, 2, 74, 2, 0, 0,
       ]),
     );
   });
@@ -775,10 +775,10 @@ describe('BaseVectorPolys3DFeature', () => {
     const rawData = pbf.commit();
     expect(rawData).toEqual(
       new Uint8Array([
-        42, 83, 16, 0, 16, 2, 16, 4, 50, 5, 168, 255, 1, 192, 3, 50, 5, 168, 131, 14, 192, 3, 50, 5,
-        168, 159, 14, 192, 3, 50, 5, 168, 227, 15, 192, 3, 50, 5, 168, 255, 15, 192, 3, 50, 5, 168,
-        131, 112, 192, 3, 58, 21, 4, 2, 5, 0, 2, 0, 2, 0, 0, 0, 0, 2, 0, 1, 0, 4, 3, 0, 6, 5, 0, 66,
-        2, 1, 0, 66, 2, 0, 2, 66, 2, 0, 0,
+        42, 83, 24, 0, 24, 2, 24, 4, 58, 5, 168, 255, 1, 192, 3, 58, 5, 168, 131, 14, 192, 3, 58, 5,
+        168, 159, 14, 192, 3, 58, 5, 168, 227, 15, 192, 3, 58, 5, 168, 255, 15, 192, 3, 58, 5, 168,
+        131, 112, 192, 3, 66, 21, 4, 2, 5, 0, 2, 0, 2, 0, 0, 0, 0, 2, 0, 1, 0, 4, 3, 0, 6, 5, 0, 74,
+        2, 1, 0, 74, 2, 0, 2, 74, 2, 0, 0,
       ]),
     );
   });

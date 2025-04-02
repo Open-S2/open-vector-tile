@@ -70,7 +70,7 @@ The `Open Flat Vector Tile` (OFVT) is a modified version of the MVT format that 
 
 1. The `extent` field is now required as it was always intented to be.
 2. Polygons now support a `closePolygon` flag for better compression and decompression without having to rebuild them.
-3. Polygons support indices and tesselation values to remove the need to earclip them before rendering.
+3. Polygons support indices and tessellation values to remove the need to earclip them before rendering.
 
 ### 4.1.2. Open Vector Tile (OVT) Layer
 
@@ -578,7 +578,7 @@ A layer consists of several key components:
 - **geometry**: The geometry of the feature
 - **mValues**: A set of M-Values that coexists with the geometry
 - **indices**: A set of indices that coexists with the geometry
-- **tesselation**: A set of vertices that compliment the geometry for polygons and polygons3D
+- **tessellation**: A set of vertices that compliment the geometry for polygons and polygons3D
 
 A Layer MAY contain a `id` field.
 
@@ -596,7 +596,7 @@ A Layer MAY contain a `m-values` field.
 
 A Layer MAY contain an `indices` field.
 
-A Layer MAY contain a `tesselation` field.
+A Layer MAY contain a `tessellation` field.
 
 **Encoding**:
 
@@ -608,7 +608,7 @@ A feature is encoded as a protobuf's varint encoding using the following structu
 - **feature's value index** (stored in the column cache)
 - **feature's geometry** (stored in the column cache)
 - **feature's indices** (optional and stored in the column cache)
-- **features's tesselation** (optional and stored in the column cache)
+- **features's tessellation** (optional and stored in the column cache)
 - **feature's bbox** (optional and stored in the column cache)
 
 An example of an encoded feature is as follows:
@@ -616,7 +616,7 @@ An example of an encoded feature is as follows:
 ```spec
 Feature: [3 255 122 17 10 14 3 9 ]
           |   |   |  |  |  | | `> The bbox index in the column cache
-          |   |   |  |  |  | `> The tesselation index in the column cache
+          |   |   |  |  |  | `> The tessellation index in the column cache
           |   |   |  |  |  `> The indices index in the column cache
           |   |   |  |  `> The geometry index in the column cache
           |   |   |  `> The properties value index in the column cache to decode
@@ -712,7 +712,7 @@ The flags field describes how to decode components of the feature. The flag is s
 - **has-bbox**: A flag to indicate if the feature has a BBox
 - **has-offsets**: A flag to indicate if the feature has offsets associated with each line in the geometry (relavent for lines[3D] and polygons[3D])
 - **has-indices**: A flag to indicate if the feature has indices. This is relavent for polygons[3D].
-- **has-tesselation**: A flag to indicate if the feature has tesselation. This is relavent for polygons[3D].
+- **has-tessellation**: A flag to indicate if the feature has tessellation. This is relavent for polygons[3D].
 - **has-mValues**: A flag to indicate if the feature has M-Values
 - **is-single**: A flag to indicate if the feature is single valued or multi valued.
 
@@ -857,7 +857,7 @@ If the geometry includes M-Values, the `mvalues` flag MUST be set.
 
 If the geometry was earcut, and indices were created, the `indices` flag MUST be set.
 
-If the geometry was earcut, and tesselation data were created, the `tesselation` flag MUST be set.
+If the geometry was earcut, and tessellation data were created, the `tessellation` flag MUST be set.
 
 **Encoding**:
 
@@ -1011,7 +1011,7 @@ enum ImageType {
   AVIF = 4,
   SVG = 5,
   BMP = 6,
-  UNKNOWN = 7
+  OTHER = 7
 }
 ```
 

@@ -558,7 +558,7 @@ it('should parse a S2JSONTile', () => {
     id: 1,
     indices: [],
     properties: {},
-    tesselation: [],
+    tessellation: [],
     type: 3,
   } as unknown as BaseVectorFeature);
 
@@ -602,7 +602,7 @@ it('should parse a S2JSONTile', () => {
     id: 1,
     indices: [],
     properties: {},
-    tesselation: [],
+    tessellation: [],
     type: 6,
   } as unknown as BaseVectorFeature);
 
@@ -642,7 +642,7 @@ it('should parse a S2JSONTile', () => {
     id: 1,
     indices: [],
     properties: {},
-    tesselation: [],
+    tessellation: [],
     type: 3,
   } as unknown as BaseVectorFeature);
 
@@ -686,7 +686,7 @@ it('should parse a S2JSONTile', () => {
     id: 1,
     indices: [],
     properties: {},
-    tesselation: [],
+    tessellation: [],
     type: 6,
   } as unknown as BaseVectorFeature);
 });

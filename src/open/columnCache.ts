@@ -20,24 +20,24 @@ import type { Point, Point3D, VectorPoints, VectorPoints3D } from '../vectorTile
  */
 export const enum OColumnName {
   /** stores string values */
-  string,
+  string = 1,
   /**
    * Note: IDs are stored in unsigned
    * Number types are sorted prior to storing
    */
-  unsigned,
+  unsigned = 2,
   /** Number types are sorted prior to storing */
-  signed,
+  signed = 3,
   /**
    * Floating precision helps ensure only 32 bit cost
    * Number types are sorted prior to storing
    */
-  float,
+  float = 4,
   /**
    * worst case, no compression
    * Number types are sorted prior to storing
    */
-  double,
+  double = 5,
   /**
    * points is an array of { x: number, y: number }
    * points also stores lines.
@@ -45,7 +45,7 @@ export const enum OColumnName {
    * Polygons are stored as a collection of lines.
    * The points feature type that has more than one will be stored here as well.
    */
-  points,
+  points = 6,
   /**
    * points3D is an array of { x: number, y: number, z: number }
    * points3D also stores lines.
@@ -53,21 +53,21 @@ export const enum OColumnName {
    * Polygons are stored as a collection of lines.
    * The points 3D feature type that has more than one will be stored here as well.
    */
-  points3D,
+  points3D = 7,
   /**
    * store M-Value, Shape, and Value encodings
    * store geometry shapes.
    * store geometry indices.
    */
-  indices,
+  indices = 8,
   /** Shapes describe how to rebuild objects */
-  shapes,
+  shapes = 9,
   /**
    * BBox - specially compressed to reduce byte cost. each value is only 3 bytes worst case
    * BBox3D - specially compressed to reduce byte cost. each value is only 3 bytes worst case.
    * The z values are stored as floats and cost 4 bytes.
    */
-  bbox,
+  bbox = 10,
 }
 
 /** Just the number types in the store */
@@ -219,7 +219,7 @@ export class ColumnCacheReader {
    * @param pbf - the protobuf object to read from
    */
   #read(tag: number, reader: ColumnCacheReader, pbf: PbfReader): void {
-    if (tag < 0 || tag > 10) throw new Error('Unknown column type');
+    if (tag <= 0 || tag > 10) throw new Error('Unknown column type');
     const columnType = tag as OColumnName;
     reader[columnType].push({ pos: pbf.pos });
   }

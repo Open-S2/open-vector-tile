@@ -128,7 +128,7 @@ describe('encodePointFeature and decodePointFeature', () => {
     expect(decodedPointFeatureB.loadLines()).toEqual([]);
     // dead code
     const tess: number[] = [];
-    decodedPointFeatureB.addTesselation(tess, 1);
+    decodedPointFeatureB.addTessellation(tess, 1);
     expect(tess).toEqual([]);
     expect(decodedPointFeatureB.loadGeometryFlat()).toEqual([[], []]);
     expect(decodedPointFeatureB.readIndices()).toEqual([]);
@@ -222,7 +222,7 @@ describe('encodePoint3DFeature and decodePoint3DFeature', () => {
     expect(decodedPointFeatureB.loadLines()).toEqual([]);
     // dead code
     const tess: number[] = [];
-    decodedPointFeatureB.addTesselation(tess, 1);
+    decodedPointFeatureB.addTessellation(tess, 1);
     expect(tess).toEqual([]);
     expect(decodedPointFeatureB.loadGeometryFlat()).toEqual([[], []]);
     expect(decodedPointFeatureB.readIndices()).toEqual([]);

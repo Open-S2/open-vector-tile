@@ -6,7 +6,7 @@ mod tests {
         base::{
             decode_offset, encode_offset, BaseVectorFeature, BaseVectorLines3DFeature,
             BaseVectorLinesFeature, BaseVectorPoints3DFeature, BaseVectorPointsFeature,
-            BaseVectorPolys3DFeature, BaseVectorPolysFeature, TesselationWrapper, VectorFeature,
+            BaseVectorPolys3DFeature, BaseVectorPolysFeature, TessellationWrapper, VectorFeature,
         },
         open::{ColumnCacheWriter, FeatureType},
         Point, Point3D, VectorGeometry, VectorLine3DWithOffset, VectorLineWithOffset,
@@ -111,9 +111,9 @@ mod tests {
         assert_eq!(feature_base.indices(), None);
         assert_eq!(feature_base_2.indices(), None);
 
-        // tesselation
-        assert!(feature_base.tesselation().is_none());
-        assert!(feature_base_2.tesselation().is_none());
+        // tessellation
+        assert!(feature_base.tessellation().is_none());
+        assert!(feature_base_2.tessellation().is_none());
 
         // bbox
         assert_eq!(
@@ -239,9 +239,9 @@ mod tests {
         assert_eq!(feature_base.indices(), None);
         assert_eq!(feature_base_2.indices(), None);
 
-        // tesselation
-        assert!(feature_base.tesselation().is_none());
-        assert!(feature_base_2.tesselation().is_none());
+        // tessellation
+        assert!(feature_base.tessellation().is_none());
+        assert!(feature_base_2.tessellation().is_none());
 
         // bbox
         assert_eq!(
@@ -395,9 +395,9 @@ mod tests {
         assert_eq!(feature_base.indices(), None);
         assert_eq!(feature_base_2.indices(), None);
 
-        // tesselation
-        assert!(feature_base.tesselation().is_none());
-        assert!(feature_base_2.tesselation().is_none());
+        // tessellation
+        assert!(feature_base.tessellation().is_none());
+        assert!(feature_base_2.tessellation().is_none());
 
         // bbox
         assert_eq!(
@@ -562,9 +562,9 @@ mod tests {
         assert_eq!(feature_base.indices(), None);
         assert_eq!(feature_base_2.indices(), None);
 
-        // tesselation
-        assert!(feature_base.tesselation().is_none());
-        assert!(feature_base_2.tesselation().is_none());
+        // tessellation
+        assert!(feature_base.tessellation().is_none());
+        assert!(feature_base_2.tessellation().is_none());
 
         // bbox
         assert_eq!(
@@ -612,7 +612,7 @@ mod tests {
             ]],
             properties: Properties::default(),
             bbox: Some(BBox { left: 0.0, bottom: 0.0, right: 1.0, top: 1.0 }),
-            tesselation: vec![
+            tessellation: vec![
                 Point::new(0, 0),
                 Point::new(1, 1),
                 Point::new(2, 2),
@@ -739,11 +739,11 @@ mod tests {
         assert_eq!(feature_base.indices(), Some(vec![0, 1, 2, 3, 4]));
         assert_eq!(feature_base_2.indices(), Some(vec![]));
 
-        // tesselation
-        let tess = feature_base.tesselation().unwrap();
+        // tessellation
+        let tess = feature_base.tessellation().unwrap();
         assert_eq!(
             tess,
-            TesselationWrapper::Tesselation(vec![
+            TessellationWrapper::Tessellation(vec![
                 Point::new(0, 0),
                 Point::new(1, 1),
                 Point::new(2, 2),
@@ -753,8 +753,8 @@ mod tests {
         );
         assert_eq!(tess.len(), 5);
         assert!(!tess.is_empty());
-        let tess2 = feature_base_2.tesselation().unwrap();
-        assert_eq!(tess2, TesselationWrapper::Tesselation(vec![]));
+        let tess2 = feature_base_2.tessellation().unwrap();
+        assert_eq!(tess2, TessellationWrapper::Tessellation(vec![]));
         assert_eq!(tess2.len(), 0);
         assert!(tess2.is_empty());
 
@@ -810,7 +810,7 @@ mod tests {
                 near: 0.0,
                 far: 1.0,
             }),
-            tesselation: vec![
+            tessellation: vec![
                 Point3D::new(0, 0, 0),
                 Point3D::new(1, 1, 1),
                 Point3D::new(2, 2, 2),
@@ -967,11 +967,11 @@ mod tests {
         assert_eq!(feature_base.indices(), Some(vec![0, 1, 2, 3, 4]));
         assert_eq!(feature_base_2.indices(), Some(vec![]));
 
-        // tesselation
-        let tess = feature_base.tesselation().unwrap();
+        // tessellation
+        let tess = feature_base.tessellation().unwrap();
         assert_eq!(
             tess,
-            TesselationWrapper::Tesselation3D(vec![
+            TessellationWrapper::Tessellation3D(vec![
                 Point3D::new(0, 0, 0),
                 Point3D::new(1, 1, 1),
                 Point3D::new(2, 2, 2),
@@ -981,8 +981,8 @@ mod tests {
         );
         assert_eq!(tess.len(), 5);
         assert!(!tess.is_empty());
-        let tess2 = feature_base_2.tesselation().unwrap();
-        assert_eq!(tess2, TesselationWrapper::Tesselation3D(vec![]));
+        let tess2 = feature_base_2.tessellation().unwrap();
+        assert_eq!(tess2, TessellationWrapper::Tessellation3D(vec![]));
         assert_eq!(tess2.len(), 0);
         assert!(tess2.is_empty());
 

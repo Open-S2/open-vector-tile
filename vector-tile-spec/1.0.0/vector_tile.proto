@@ -67,7 +67,7 @@ message Tile {
     // 
     repeated uint32 indices = 4 [ packed = true ];
     //
-    repeated uint32 tesselation = 5 [ packed = true ];
+    repeated uint32 tessellation = 5 [ packed = true ];
   }
 
   // Layers are described in section 4.1 of the mapbox specification
@@ -131,22 +131,22 @@ message Tile {
   }
 
   message ColumnCache {
-    repeated string string = 0; 
-    repeated uint64 u64 = 1;
-    repeated int64 i64 = 2;
-    repeated float f32 = 3;
+    repeated string string = 1; 
+    repeated uint64 u64 = 2;
+    repeated int64 i64 = 3;
+    repeated float f32 = 4;
     //  64-bit relative numbers
-    repeated double f64 = 4;
+    repeated double f64 = 5;
     // points: encoded Point[]
-    repeated bytes points = 5;
+    repeated bytes points = 6;
     // points3D: encoded Point3D[]
-    repeated bytes points3D = 6;
+    repeated bytes points3D = 7;
     // indices: encoded uint32[]
-    repeated bytes indices = 7;
+    repeated bytes indices = 8;
     // shapes: encoded uint32[]
-    repeated bytes shapes = 8;
+    repeated bytes shapes = 9;
     // bbox: encoded BBOX or BBOX3D
-    repeated bytes bbox = 9;
+    repeated bytes bbox = 10;
     // potential extensions
     extensions 16 to max;
   }
@@ -154,12 +154,12 @@ message Tile {
   // See 4.6 Grid Layer #46-grid-layer in the spec
   message GridLayer {
     // The extent of the layer
-    required uint32 extent = 0;
-    required uint32 size = 1;
-    required float min = 2;
-    required float max = 3;
-    repeated bytes data = 4;
-    required string name = 5;
+    required uint32 extent = 1;
+    required uint32 size = 2;
+    required float min = 3;
+    required float max = 4;
+    repeated bytes data = 5;
+    required string name = 6;
   }
 
   // GeomType is described in section 4.3.4 of the specification
@@ -171,25 +171,26 @@ message Tile {
     AVIF = 4;
     SVG = 5;
     BMP = 6;
-    UNKNOWN = 7;
+    RAW = 7;
+    OTHER = 8;
   }
 
   // See 4.7 Image Layer (#47-image-layer) in the spec
   message ImageLayer {
     // enum representing the image type
-    required ImageType type = 0;
-    required uint32 width = 1;
-    required uint32 height = 2;
-    required bytes image = 3;
-    required string name = 4;
+    required ImageType type = 1;
+    required uint32 width = 2;
+    required uint32 height = 3;
+    required bytes image = 4;
+    required string name = 5;
   }
 
   // The Open S2 Flat Tile Specification
-  repeated OpenFlatLayer layers = 1;
+  repeated OpenFlatLayer open_flat_layers = 1;
   // The Mapbox Vector Tile Specification
-  repeated MapboxLayer layers = 3;
+  repeated MapboxLayer mapbox_layers = 3;
   // The Open Vector Tile Specification
-  repeated OpenLayer layers = 4;
+  repeated OpenLayer open_layers = 4;
   // Note: required if using the Open Vector Tile Specification
   optional ColumnCache column_cache = 5;
   // Grided data

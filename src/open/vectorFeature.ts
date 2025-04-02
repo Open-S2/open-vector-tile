@@ -43,7 +43,7 @@ export class OVectorFeatureBase {
    * @param hasOffsets - if true, the geometryIndices has offsets encoded into it
    * @param hasMValues - if true, the feature has M values
    * @param indicesIndex - if greater than 0, the feature has indices to parse
-   * @param tesselationIndex - if greater than 0, the feature has tesselation
+   * @param tessellationIndex - if greater than 0, the feature has tessellation
    */
   constructor(
     readonly cache: ColumnCacheReader,
@@ -57,7 +57,7 @@ export class OVectorFeatureBase {
     readonly hasOffsets: boolean,
     readonly hasMValues: boolean,
     readonly indicesIndex: number, // -1 if there are no indices
-    readonly tesselationIndex: number, // -1 if there is no tesselation
+    readonly tessellationIndex: number, // -1 if there is no tessellation
   ) {}
 
   /** @returns - true if the type of the feature is points */
@@ -91,13 +91,13 @@ export class OVectorFeatureBase {
   }
 
   /**
-   * adds the tesselation to the geometry
+   * adds the tessellation to the geometry
    * @param geometry - the input geometry to add to
    * @param multiplier - the multiplier to multiply the geometry by
    */
   // we need to disable the eslint rule here so that the docs register the parameters correctly
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  addTesselation(geometry: number[], multiplier: number): void {}
+  addTessellation(geometry: number[], multiplier: number): void {}
 
   /**
    * @returns an empty geometry
@@ -305,7 +305,7 @@ export class OVectorPolysFeature extends OVectorFeatureBase2D {
   }
 
   /**
-   * Automatically adds the tesselation to the geometry if the tesselationIndex exists
+   * Automatically adds the tessellation to the geometry if the tessellationIndex exists
    * @returns the geometry as an array of totally flattend poly geometry with indices
    */
   loadGeometryFlat(): [geometry: number[], indices: number[]] {
@@ -321,7 +321,7 @@ export class OVectorPolysFeature extends OVectorFeatureBase2D {
       }
     }
 
-    this.addTesselation(geometry, multiplier);
+    this.addTessellation(geometry, multiplier);
 
     return [geometry, this.readIndices()];
   }
@@ -333,13 +333,13 @@ export class OVectorPolysFeature extends OVectorFeatureBase2D {
   }
 
   /**
-   * adds the tesselation to the geometry
+   * adds the tessellation to the geometry
    * @param geometry - the geometry of the feature
    * @param multiplier - the multiplier to apply the extent shift
    */
-  addTesselation(geometry: number[], multiplier: number): void {
-    if (this.tesselationIndex === -1) return;
-    const data = this.cache.getColumn<Point[]>(OColumnName.points, this.tesselationIndex);
+  addTessellation(geometry: number[], multiplier: number): void {
+    if (this.tessellationIndex === -1) return;
+    const data = this.cache.getColumn<Point[]>(OColumnName.points, this.tessellationIndex);
     for (const point of data) {
       geometry.push(point.x * multiplier, point.y * multiplier);
     }
@@ -511,7 +511,7 @@ export class OVectorPolys3DFeature extends OVectorFeatureBase3D {
   }
 
   /**
-   * Automatically adds the tesselation to the geometry if the tesselationIndex exists
+   * Automatically adds the tessellation to the geometry if the tessellationIndex exists
    * @returns the geometry as an array of totally flattend poly geometry with indices
    */
   loadGeometryFlat(): [geometry: number[], indices: number[]] {
@@ -527,7 +527,7 @@ export class OVectorPolys3DFeature extends OVectorFeatureBase3D {
       }
     }
 
-    this.addTesselation(geometry, multiplier);
+    this.addTessellation(geometry, multiplier);
 
     return [geometry, this.readIndices()];
   }
@@ -539,13 +539,13 @@ export class OVectorPolys3DFeature extends OVectorFeatureBase3D {
   }
 
   /**
-   * adds the tesselation to the geometry
+   * adds the tessellation to the geometry
    * @param geometry - the geometry of the feature
    * @param multiplier - the multiplier to apply the extent shift
    */
-  addTesselation(geometry: number[], multiplier: number): void {
-    if (this.tesselationIndex === -1) return;
-    const data = this.cache.getColumn<Point3D[]>(OColumnName.points3D, this.tesselationIndex);
+  addTessellation(geometry: number[], multiplier: number): void {
+    if (this.tessellationIndex === -1) return;
+    const data = this.cache.getColumn<Point3D[]>(OColumnName.points3D, this.tessellationIndex);
     for (const point of data) {
       geometry.push(point.x * multiplier, point.y * multiplier, point.z * multiplier);
     }
@@ -587,7 +587,7 @@ type Constructor<T> = new (
   hasOffsets: boolean,
   hasMValues: boolean,
   indicesIndex: number,
-  tesselationIndex: number,
+  tessellationIndex: number,
 ) => T;
 
 /**
@@ -625,7 +625,7 @@ export function readFeature(
   let Constructor: Constructor<OVectorFeature>;
   let geometryIndices: number[];
   let indices = -1;
-  let tesselationIndex = -1;
+  let tessellationIndex = -1;
   if (type === 1 || type === 4) {
     if (single) geometryIndices = [pbf.readVarint()];
     else geometryIndices = cache.getColumn(OColumnName.indices, pbf.readVarint());
@@ -639,10 +639,10 @@ export function readFeature(
     else if (type === 6) Constructor = OVectorPolys3DFeature;
     else throw new Error('Type is not supported.');
   }
-  // read indices and tesselation if they exist
+  // read indices and tessellation if they exist
   if (type === 3 || type === 6) {
     if (hasIndices) indices = pbf.readVarint();
-    if (hasTessellation) tesselationIndex = pbf.readVarint();
+    if (hasTessellation) tessellationIndex = pbf.readVarint();
   }
   const bboxIndex = hashBBOX ? pbf.readVarint() : -1;
 
@@ -658,7 +658,7 @@ export function readFeature(
     hasOffsets,
     hasMValues,
     indices,
-    tesselationIndex,
+    tessellationIndex,
   );
 }
 
@@ -675,14 +675,14 @@ export function writeOVFeature(
   mShape: Shape = {},
   cache: ColumnCacheWriter,
 ): Uint8Array {
-  // write id, type, properties, bbox, geometry, indices, tesselation, mValues
+  // write id, type, properties, bbox, geometry, indices, tessellation, mValues
   const pbf = new Protobuf();
   // type is just stored as a varint
   pbf.writeVarint(feature.type);
   // store flags if each one exists or not into a single byte
   const hasID: boolean = feature.id !== undefined;
   const hasIndices: boolean = 'indices' in feature && feature.indices.length !== 0;
-  const hasTessellation: boolean = 'tesselation' in feature && feature.tesselation.length !== 0;
+  const hasTessellation: boolean = 'tessellation' in feature && feature.tessellation.length !== 0;
   const hasOffsets: boolean = feature.hasOffsets;
   const hasBBox = 'bbox' in feature && feature.hasBBox;
   const hasMValues = feature.hasMValues;
@@ -707,9 +707,9 @@ export function writeOVFeature(
   // indices
   if ('indices' in feature && hasIndices)
     pbf.writeVarint(cache.addColumnData(OColumnName.indices, feature.indices));
-  // tesselation
-  if ('tesselation' in feature && hasTessellation)
-    pbf.writeVarint(cache.addColumnData(OColumnName.points, feature.tesselation));
+  // tessellation
+  if ('tessellation' in feature && hasTessellation)
+    pbf.writeVarint(cache.addColumnData(OColumnName.points, feature.tessellation));
   // bbox is stored in double column.
   if (hasBBox) pbf.writeVarint(cache.addColumnData(OColumnName.bbox, feature.bbox));
 

@@ -14,54 +14,54 @@ use s2json::BBOX;
 pub enum OColumnName {
     /// stores string values
     #[default]
-    String = 0,
+    String = 1,
     /// Note: IDs are stored in unsigned
     /// Number types are sorted prior to storing
-    Unsigned = 1,
+    Unsigned = 2,
     /// Number types are sorted prior to storing
-    Signed = 2,
+    Signed = 3,
     /// Floating precision helps ensure only 32 bit cost
     /// Number types are sorted prior to storing
-    Float = 3,
+    Float = 4,
     /// worst case, no compression
     /// Number types are sorted prior to storing
-    Double = 4,
+    Double = 5,
     /// points is an array of { x: number, y: number }
     /// points also stores lines.
     /// if a line is stored, note that it has an acompanying offset and potentially mValues
     /// Polygons are stored as a collection of lines.
     /// The points feature type that has more than one will be stored here as well.
-    Points = 5,
+    Points = 6,
     /// points3D is an array of { x: number, y: number, z: number }
     /// points3D also stores lines.
     /// if a line is stored, note that it has an acompanying offset and potentially mValues
     /// Polygons are stored as a collection of lines.
     /// The points 3D feature type that has more than one will be stored here as well.
-    Points3D = 6,
+    Points3D = 7,
     /// store M-Value, Shape, and Value encodings
     /// store geometry shapes.
     /// store geometry indices.
-    Indices = 7,
+    Indices = 8,
     /// Shapes describe how to rebuild objects
-    Shapes = 8,
+    Shapes = 9,
     /// BBox - specially compressed to reduce byte cost. each value is only 3 bytes worst case
     /// BBox3D - specially compressed to reduce byte cost. each value is only 3 bytes worst case.
     /// The z values are stored as floats and cost 4 bytes.
-    BBox = 9,
+    BBox = 10,
 }
-impl From<u8> for OColumnName {
-    fn from(value: u8) -> Self {
+impl From<u64> for OColumnName {
+    fn from(value: u64) -> Self {
         match value {
-            0 => OColumnName::String,
-            1 => OColumnName::Unsigned,
-            2 => OColumnName::Signed,
-            3 => OColumnName::Float,
-            4 => OColumnName::Double,
-            5 => OColumnName::Points,
-            6 => OColumnName::Points3D,
-            7 => OColumnName::Indices,
-            8 => OColumnName::Shapes,
-            9 => OColumnName::BBox,
+            1 => OColumnName::String,
+            2 => OColumnName::Unsigned,
+            3 => OColumnName::Signed,
+            4 => OColumnName::Float,
+            5 => OColumnName::Double,
+            6 => OColumnName::Points,
+            7 => OColumnName::Points3D,
+            8 => OColumnName::Indices,
+            9 => OColumnName::Shapes,
+            10 => OColumnName::BBox,
             _ => OColumnName::String,
         }
     }
@@ -170,19 +170,22 @@ impl ColumnCacheReader {
 }
 impl ProtoRead for ColumnCacheReader {
     fn read(&mut self, tag: u64, pb: &mut Protobuf) {
-        match tag {
-            0 => self.string.push(pb.read_string()),
-            1 => self.unsigned.push(pb.read_varint::<u64>()),
-            2 => self.signed.push(pb.read_s_varint::<i64>()),
-            3 => self.float.push(pb.read_varint::<f32>()),
-            4 => self.double.push(pb.read_varint::<f64>()),
-            5 => self.points.push(unweave_and_delta_decode_array(&pb.read_packed::<u64>())),
-            6 => self.points_3d.push(unweave_and_delta_decode_3d_array(&pb.read_packed::<u64>())),
-            7 => self.indices.push(delta_decode_array(&pb.read_packed::<u32>())),
-            8 => self.shapes.push(pb.read_packed::<usize>()),
-            9 => self.bbox.push(BBOX::dequantize(&pb.read_packed::<u8>()[..])),
-            #[tarpaulin::skip]
-            _ => panic!("Unknown column type"),
+        let col: OColumnName = tag.into();
+        match col {
+            OColumnName::String => self.string.push(pb.read_string()),
+            OColumnName::Unsigned => self.unsigned.push(pb.read_varint::<u64>()),
+            OColumnName::Signed => self.signed.push(pb.read_s_varint::<i64>()),
+            OColumnName::Float => self.float.push(pb.read_varint::<f32>()),
+            OColumnName::Double => self.double.push(pb.read_varint::<f64>()),
+            OColumnName::Points => {
+                self.points.push(unweave_and_delta_decode_array(&pb.read_packed::<u64>()))
+            }
+            OColumnName::Points3D => {
+                self.points_3d.push(unweave_and_delta_decode_3d_array(&pb.read_packed::<u64>()))
+            }
+            OColumnName::Indices => self.indices.push(delta_decode_array(&pb.read_packed::<u32>())),
+            OColumnName::Shapes => self.shapes.push(pb.read_packed::<usize>()),
+            OColumnName::BBox => self.bbox.push(BBOX::dequantize(&pb.read_packed::<u8>()[..])),
         }
     }
 }

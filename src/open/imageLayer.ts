@@ -65,11 +65,11 @@ export class ImageData {
    * @param pbf - the Protobuf to pull the appropriate data from
    */
   #readImage(tag: number, imageData: ImageData, pbf: PbfReader): void {
-    if (tag === 0) imageData.type = fromImageType(pbf.readVarint() as ImageType);
-    else if (tag === 1) imageData.width = pbf.readVarint();
-    else if (tag === 2) imageData.height = pbf.readVarint();
-    else if (tag === 3) imageData.imagePos = pbf.pos;
-    else if (tag === 4) imageData.name = pbf.readString();
+    if (tag === 1) imageData.type = fromImageType(pbf.readVarint() as ImageType);
+    else if (tag === 2) imageData.width = pbf.readVarint();
+    else if (tag === 3) imageData.height = pbf.readVarint();
+    else if (tag === 4) imageData.imagePos = pbf.pos;
+    else if (tag === 5) imageData.name = pbf.readString();
   }
 }
 
@@ -94,11 +94,11 @@ export interface ImageDataInput {
 export function writeImageData(input: ImageDataInput): Uint8Array {
   const pbf = new Protobuf();
   const { type, width, height, image } = input;
-  pbf.writeVarintField(0, toImageType(type));
-  pbf.writeVarintField(1, width);
-  pbf.writeVarintField(2, height);
-  pbf.writeBytesField(3, image);
-  pbf.writeStringField(4, input.name);
+  pbf.writeVarintField(1, toImageType(type));
+  pbf.writeVarintField(2, width);
+  pbf.writeVarintField(3, height);
+  pbf.writeBytesField(4, image);
+  pbf.writeStringField(5, input.name);
 
   return pbf.commit();
 }

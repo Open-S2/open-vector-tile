@@ -37,17 +37,17 @@ impl GridData {
 impl ProtoRead for GridData {
     fn read(&mut self, tag: u64, pb: &mut Protobuf) {
         match tag {
-            0 => self.extent = pb.read_varint(),
-            1 => self.size = pb.read_varint(),
-            2 => self.min = pb.read_varint(),
-            3 => self.max = pb.read_varint(),
-            4 => {
+            1 => self.extent = pb.read_varint(),
+            2 => self.size = pb.read_varint(),
+            3 => self.min = pb.read_varint(),
+            4 => self.max = pb.read_varint(),
+            5 => {
                 self.data = delta_decode_array(&pb.read_packed())
                     .into_iter()
                     .map(|v| unmap_value(v as f64, self.min, self.max, self.extent.into()))
                     .collect()
             }
-            5 => self.name = pb.read_string(),
+            6 => self.name = pb.read_string(),
             #[tarpaulin::skip]
             _ => panic!("unknown tag: {}", tag),
         }
@@ -61,12 +61,12 @@ impl ProtoWrite for GridData {
             self.data.iter().map(|v| remap_value(*v, min, max, self.extent.into())).collect();
         let d_coded = delta_encode_array(&re_mapped);
 
-        pb.write_varint_field(0, self.extent);
-        pb.write_varint_field(1, self.size);
-        pb.write_varint_field(2, min);
-        pb.write_varint_field(3, max);
-        pb.write_packed_varint(4, &d_coded);
-        pb.write_string_field(5, &self.name);
+        pb.write_varint_field(1, self.extent);
+        pb.write_varint_field(2, self.size);
+        pb.write_varint_field(3, min);
+        pb.write_varint_field(4, max);
+        pb.write_packed_varint(5, &d_coded);
+        pb.write_string_field(6, &self.name);
     }
 }
 

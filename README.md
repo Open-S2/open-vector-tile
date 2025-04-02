@@ -259,7 +259,7 @@ const line3DFeature: VectorLine3D[] = (feature as OVectorLines3DFeature).loadGeo
 const poly3DFeature: VectorPoly3D[] = (feature as OVectorPolys3DFeature).loadGeometry()
 ```
 
-### If a Polygon type, Pull in the raw geometry with indices and tesselation data
+### If a Polygon type, Pull in the raw geometry with indices and tessellation data
 
 ```ts
 // works for any polygon or polygon3D type.

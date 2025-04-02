@@ -119,8 +119,8 @@ function writeFeature(contextWF: ContextWithFeature, pbf: Protobuf): void {
   if ('indices' in feature && feature.indices.length > 0) {
     pbf.writeMessage(mapbox ? 5 : 4, writeIndices, feature.indices);
   }
-  if ('tesselation' in feature && feature.tesselation.length > 0) {
-    pbf.writeMessage(mapbox ? 6 : 5, writeTesselation, feature.tesselation);
+  if ('tessellation' in feature && feature.tessellation.length > 0) {
+    pbf.writeMessage(mapbox ? 6 : 5, writeTessellation, feature.tessellation);
   }
 }
 
@@ -176,7 +176,7 @@ function writeIndices(indices: number[], pbf: Protobuf): void {
  * @param geometry - the geometry to write
  * @param pbf - the Protobuf object to write to
  */
-function writeTesselation(geometry: Point[], pbf: Protobuf): void {
+function writeTessellation(geometry: Point[], pbf: Protobuf): void {
   let x = 0;
   let y = 0;
   for (const point of geometry) {

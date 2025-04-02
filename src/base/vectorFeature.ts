@@ -235,11 +235,11 @@ export class VectorFeaturePolysBase<
   G = VectorLine | VectorLine3D,
   B = BBOX,
 > extends VectorFeatureBase<BaseVectorLine<G>[][], B> {
-  tesselation: Point[];
+  tessellation: Point[];
   /**
    * @param geometry - the geometry of the feature
    * @param indices - the indices of the geometry
-   * @param tesselation - the tesselation of the geometry
+   * @param tessellation - the tessellation of the geometry
    * @param properties - the properties of the feature
    * @param id - the id of the feature
    * @param bbox - the bbox of the feature
@@ -247,24 +247,24 @@ export class VectorFeaturePolysBase<
   constructor(
     public geometry: BaseVectorLine<G>[][],
     public indices: number[] = [],
-    tesselation: number[] = [],
+    tessellation: number[] = [],
     properties: OProperties = {},
     id?: number,
     public bbox?: B,
   ) {
     super(geometry, properties, id, bbox);
-    this.tesselation = this.#fixTesselation(tesselation);
+    this.tessellation = this.#fixTessellation(tessellation);
   }
 
   /**
-   * @param tesselation - the tesselation of the geometry but flattened
-   * @returns - the tesselation of the geometry as a list of points
+   * @param tessellation - the tessellation of the geometry but flattened
+   * @returns - the tessellation of the geometry as a list of points
    */
-  #fixTesselation(tesselation: number[]): Point[] {
-    if (tesselation.length % 2 !== 0) {
-      throw new Error('The input tesselation must have an even number of elements.');
+  #fixTessellation(tessellation: number[]): Point[] {
+    if (tessellation.length % 2 !== 0) {
+      throw new Error('The input tessellation must have an even number of elements.');
     }
-    return tesselation.reduce((acc, _, index, array) => {
+    return tessellation.reduce((acc, _, index, array) => {
       if (index % 2 === 0) {
         acc.push({ x: array[index], y: array[index + 1] });
       }
@@ -381,8 +381,8 @@ export function fromMapboxVectorFeature(feature: MapboxVectorFeature): BaseVecto
   const { id, properties, extent } = feature;
   const geometry = feature.loadGeometry();
   const indices = feature.readIndices();
-  const tesselation: number[] = [];
-  feature.addTesselation(tesselation, 1 / extent);
+  const tessellation: number[] = [];
+  feature.addTessellation(tessellation, 1 / extent);
   switch (feature.type) {
     case 1:
       return new BaseVectorPointsFeature(geometry as VectorPoints, properties, id);
@@ -405,7 +405,7 @@ export function fromMapboxVectorFeature(feature: MapboxVectorFeature): BaseVecto
         }
         baseMultPoly.push(baseLines);
       }
-      return new BaseVectorPolysFeature(baseMultPoly, indices, tesselation, properties, id);
+      return new BaseVectorPolysFeature(baseMultPoly, indices, tessellation, properties, id);
     }
     default:
       throw new Error(`Unknown feature type: ${feature.type}`);
@@ -503,7 +503,7 @@ export function fromS2JSONFeature(feature: S2JSONFeature, extent: number): BaseV
         bbox as BBox,
       );
   } else if (type === 'Polygon') {
-    const { indices, tesselation } = geometry;
+    const { indices, tessellation } = geometry;
     if (is3D)
       return new BaseVectorPolys3DFeature(
         [
@@ -515,7 +515,7 @@ export function fromS2JSONFeature(feature: S2JSONFeature, extent: number): BaseV
           }),
         ],
         indices,
-        tesselation,
+        tessellation,
         properties,
         id,
         bbox as BBox3D,
@@ -531,13 +531,13 @@ export function fromS2JSONFeature(feature: S2JSONFeature, extent: number): BaseV
           }),
         ],
         indices,
-        tesselation,
+        tessellation,
         properties,
         id,
         bbox as BBox,
       );
   } else if (type === 'MultiPolygon') {
-    const { indices, tesselation } = geometry;
+    const { indices, tessellation } = geometry;
     if (is3D)
       return new BaseVectorPolys3DFeature(
         coordinates.map((poly, i) => {
@@ -549,7 +549,7 @@ export function fromS2JSONFeature(feature: S2JSONFeature, extent: number): BaseV
           });
         }),
         indices,
-        tesselation,
+        tessellation,
         properties,
         id,
         bbox as BBox3D,
@@ -565,7 +565,7 @@ export function fromS2JSONFeature(feature: S2JSONFeature, extent: number): BaseV
           });
         }),
         indices,
-        tesselation,
+        tessellation,
         properties,
         id,
         bbox as BBox,

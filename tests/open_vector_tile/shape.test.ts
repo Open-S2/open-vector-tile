@@ -13,7 +13,7 @@ import {
 } from '../../src/open/shape';
 import { describe, expect, it } from 'bun:test';
 
-import type { OProperties } from '../../src/vectorTile.spec';
+import type { Properties } from 's2json-spec';
 import type { Shape } from '../../src/open/shape';
 
 describe('encodeShape and decodeShape', () => {
@@ -54,7 +54,7 @@ describe('encodeValue and decodeValue', () => {
       b: 'u64',
       c: 'f64',
     };
-    const exampleValue: OProperties = {
+    const exampleValue: Properties = {
       a: 3,
       b: 1,
       c: 2.2,
@@ -89,7 +89,7 @@ describe('encodeValue and decodeValue', () => {
         },
       },
     };
-    const exampleValue: OProperties = {
+    const exampleValue: Properties = {
       a: 3,
       b: ['hello', 'world'],
       c: {
@@ -102,7 +102,7 @@ describe('encodeValue and decodeValue', () => {
         },
       },
     };
-    const exampleValue2: OProperties = {
+    const exampleValue2: Properties = {
       a: -1,
       b: ['word', 'up', 'hello'],
     };
@@ -130,7 +130,7 @@ describe('encodeValue and decodeValue', () => {
 
 describe('createShapeFromData', () => {
   it('createShapeFromData works', () => {
-    const props: OProperties = {
+    const props: Properties = {
       a: 3,
       b: -1,
       c: [1, -1, 2.2, 3],

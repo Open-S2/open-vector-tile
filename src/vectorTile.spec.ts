@@ -135,7 +135,7 @@ export type LinesGeometry = BaseGeometry<2, VectorLineWithOffset[], BBox>;
 /** PolysGeometry is a polygon array container */
 export interface PolysGeometry extends BaseGeometry<3, VectorLineWithOffset[][], BBox> {
   indices: number[];
-  tesselation: number[];
+  tessellation: number[];
 }
 /** Points3DGeometry is a 3D point array container */
 export type Points3DGeometry = BaseGeometry<4, Point3D[], BBox3D>;
@@ -144,7 +144,7 @@ export type Lines3DGeometry = BaseGeometry<5, VectorLine3DWithOffset[], BBox3D>;
 /** Polys3DGeometry is a 3D polygon array container */
 export interface Polys3DGeometry extends BaseGeometry<6, VectorLine3DWithOffset[][], BBox3D> {
   indices: number[];
-  tesselation: number[];
+  tessellation: number[];
 }
 
 /** All possible geometry types used by vector geometry */

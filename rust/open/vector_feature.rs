@@ -1,5 +1,6 @@
+use super::decode_value;
 use crate::{
-    base::{decode_offset, BaseVectorFeature, TesselationWrapper},
+    base::{decode_offset, BaseVectorFeature, TessellationWrapper},
     mapbox::FeatureType as MapboxFeatureType,
     open::{encode_value, ColumnCacheReader, ColumnCacheWriter},
     unweave_2d, unweave_3d, zagzig, Point, Point3D, VectorFeatureMethods, VectorGeometry,
@@ -11,8 +12,6 @@ use core::cell::RefCell;
 use pbf::{BitCast, Protobuf};
 use s2json::{Properties, Shape, BBOX};
 use serde::{Deserialize, Serialize};
-
-use super::decode_value;
 
 /// Extent guide for how the geometry data is stored
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -141,7 +140,7 @@ pub struct OpenVectorFeature {
     has_offsets: bool,
     has_m_values: bool,
     indices_index: Option<usize>,
-    tesselation_index: Option<usize>,
+    tessellation_index: Option<usize>,
 }
 impl OpenVectorFeature {
     fn _load_geometry_points(&mut self) -> VectorPoints {
@@ -485,26 +484,26 @@ impl VectorFeatureMethods for OpenVectorFeature {
         cache.get_indices(self.indices_index.unwrap())
     }
 
-    /// Add tesselation data to the geometry
-    fn add_tesselation(&mut self, geometry: &mut Vec<f64>, multiplier: f64) {
-        let Some(tesselation_index) = self.tesselation_index else {
+    /// Add tessellation data to the geometry
+    fn add_tessellation(&mut self, geometry: &mut Vec<f64>, multiplier: f64) {
+        let Some(tessellation_index) = self.tessellation_index else {
             return;
         };
         let mut cache = self.cache.borrow_mut();
-        let data = cache.get_points(tesselation_index);
+        let data = cache.get_points(tessellation_index);
         for point in data {
             geometry.push(point.x as f64 * multiplier);
             geometry.push(point.y as f64 * multiplier);
         }
     }
 
-    /// Add 3D tesselation data to the geometry
-    fn add_tesselation_3d(&mut self, geometry: &mut Vec<f64>, multiplier: f64) {
-        let Some(tesselation_index) = self.tesselation_index else {
+    /// Add 3D tessellation data to the geometry
+    fn add_tessellation_3d(&mut self, geometry: &mut Vec<f64>, multiplier: f64) {
+        let Some(tessellation_index) = self.tessellation_index else {
             return;
         };
         let mut cache = self.cache.borrow_mut();
-        let data = cache.get_points_3d(tesselation_index);
+        let data = cache.get_points_3d(tessellation_index);
         for point in data {
             geometry.push(point.x as f64 * multiplier);
             geometry.push(point.y as f64 * multiplier);
@@ -529,7 +528,7 @@ impl VectorFeatureMethods for OpenVectorFeature {
                         })
                     })
                     .collect();
-                self.add_tesselation(&mut geo, multiplier);
+                self.add_tessellation(&mut geo, multiplier);
                 geo
             }
             VectorGeometry::VectorPolys3D(polys) => {
@@ -543,7 +542,7 @@ impl VectorFeatureMethods for OpenVectorFeature {
                         })
                     })
                     .collect();
-                self.add_tesselation_3d(&mut geo, multiplier);
+                self.add_tessellation_3d(&mut geo, multiplier);
                 geo
             }
             _ => {
@@ -606,7 +605,7 @@ pub fn read_feature(
     // if type is 1 or 4, read geometry as a single index, otherwise as an array
     let mut geometry_indices: Vec<u32> = vec![];
     let mut indices_index: Option<usize> = None;
-    let mut tesselation_index: Option<usize> = None;
+    let mut tessellation_index: Option<usize> = None;
     if r#type == FeatureType::Points || r#type == FeatureType::Points3D {
         if single {
             geometry_indices.push(pbf.read_varint())
@@ -616,13 +615,13 @@ pub fn read_feature(
     } else {
         geometry_indices = cache.borrow_mut().get_indices(pbf.read_varint());
     }
-    // read indices and tesselation if they exist
+    // read indices and tessellation if they exist
     if r#type == FeatureType::Polygons || r#type == FeatureType::Polygons3D {
         if has_indices {
             indices_index = Some(pbf.read_varint());
         }
         if has_tessellation {
-            tesselation_index = Some(pbf.read_varint());
+            tessellation_index = Some(pbf.read_varint());
         }
     }
     let bbox_index = if has_bbox { Some(pbf.read_varint()) } else { None };
@@ -641,7 +640,7 @@ pub fn read_feature(
         has_offsets,
         has_m_values,
         indices_index,
-        tesselation_index,
+        tessellation_index,
     }
 }
 
@@ -652,7 +651,7 @@ pub fn write_feature(
     m_shape: Option<&Shape>,
     cache: &mut ColumnCacheWriter,
 ) -> Vec<u8> {
-    // write id, type, properties, bbox, geometry, indices, tesselation, mValues
+    // write id, type, properties, bbox, geometry, indices, tessellation, mValues
     let mut pbf = Protobuf::new();
     // type is just stored as a varint
     pbf.write_varint(feature.get_type());
@@ -661,8 +660,8 @@ pub fn write_feature(
     let has_id: bool = id.is_some();
     let indices = feature.indices();
     let has_indices = indices.is_some() && !indices.unwrap().is_empty();
-    let tesselation = feature.tesselation();
-    let has_tessellation = tesselation.is_some() && !tesselation.as_ref().unwrap().is_empty();
+    let tessellation = feature.tessellation();
+    let has_tessellation = tessellation.is_some() && !tessellation.as_ref().unwrap().is_empty();
     let has_offsets = feature.has_offsets();
     let bbox = feature.bbox();
     let has_bbox = bbox.is_some();
@@ -705,11 +704,11 @@ pub fn write_feature(
     if has_indices {
         pbf.write_varint(cache.add_indices(feature.indices().unwrap()));
     }
-    // tesselation
+    // tessellation
     if has_tessellation {
-        match tesselation.unwrap() {
-            TesselationWrapper::Tesselation(t) => pbf.write_varint(cache.add_points(t)),
-            TesselationWrapper::Tesselation3D(t) => pbf.write_varint(cache.add_points_3d(t)),
+        match tessellation.unwrap() {
+            TessellationWrapper::Tessellation(t) => pbf.write_varint(cache.add_points(t)),
+            TessellationWrapper::Tessellation3D(t) => pbf.write_varint(cache.add_points_3d(t)),
         }
     }
     // bbox is stored in double column.

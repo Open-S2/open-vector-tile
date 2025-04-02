@@ -13,7 +13,7 @@ import type {
 /**
  * Mapbox Vector Feature types are all bundled in one class
  * to make it easier to read. Primarily contains an id, properties, and geometry.
- * The now deprecated S2 model extends this class to include indices and tesselation data.
+ * The now deprecated S2 model extends this class to include indices and tessellation data.
  */
 export default class MapboxVectorFeature {
   id?: number;
@@ -25,7 +25,7 @@ export default class MapboxVectorFeature {
   #pbf: PbfReader;
   #indices = -1;
   #geometry = -1;
-  #tesselation = -1;
+  #tessellation = -1;
   #keys: string[];
   #values: Value[];
   /**
@@ -99,14 +99,14 @@ export default class MapboxVectorFeature {
       else if (tag === 2) feature.type = pbf.readVarint() as OldVectorFeatureType;
       else if (tag === 3) feature.#geometry = pbf.pos;
       else if (tag === 4) feature.#indices = pbf.pos;
-      else if (tag === 5) feature.#tesselation = pbf.pos;
+      else if (tag === 5) feature.#tessellation = pbf.pos;
     } else {
       if (tag === 1) feature.id = pbf.readVarint();
       else if (tag === 2) feature.#readTag(pbf, feature);
       else if (tag === 3) feature.type = pbf.readVarint() as OldVectorFeatureType;
       else if (tag === 4) feature.#geometry = pbf.pos;
       else if (tag === 5) feature.#indices = pbf.pos;
-      else if (tag === 6) feature.#tesselation = pbf.pos;
+      else if (tag === 6) feature.#tessellation = pbf.pos;
     }
   }
 
@@ -215,8 +215,8 @@ export default class MapboxVectorFeature {
 
     // if a poly, check if we should load indices
     const indices = this.readIndices();
-    // if a poly, check if we should load tesselation
-    if (this.#tesselation > 0) this.addTesselation(geometry, multiplier);
+    // if a poly, check if we should load tessellation
+    if (this.#tessellation > 0) this.addTessellation(geometry, multiplier);
 
     return [geometry, indices];
   }
@@ -310,13 +310,13 @@ export default class MapboxVectorFeature {
   }
 
   /**
-   * Add tesselation data to the geometry
-   * @param geometry - the geometry to add the tesselation data to
+   * Add tessellation data to the geometry
+   * @param geometry - the geometry to add the tessellation data to
    * @param multiplier - the multiplier to apply the extent shift
    */
-  addTesselation(geometry: number[], multiplier: number): void {
-    if (this.#tesselation <= 0) return;
-    this.#pbf.pos = this.#tesselation;
+  addTessellation(geometry: number[], multiplier: number): void {
+    if (this.#tessellation <= 0) return;
+    this.#pbf.pos = this.#tessellation;
     const end = this.#pbf.readVarint() + this.#pbf.pos;
     let x = 0;
     let y = 0;

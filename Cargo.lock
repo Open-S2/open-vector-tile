@@ -322,7 +322,7 @@ checksum = "945462a4b81e43c4e3ba96bd7b49d834c6f61198356aa858733bc4acf3cbe62e"
 
 [[package]]
 name = "open-vector-tile"
-version = "1.4.0"
+version = "1.5.0"
 dependencies = [
  "libm",
  "lol_alloc",
@@ -417,9 +417,9 @@ checksum = "f3cb5ba0dc43242ce17de99c180e96db90b235b8a9fdc9543c96d2209116bd9f"
 
 [[package]]
 name = "s2json"
-version = "1.27.0"
+version = "1.31.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7453aa5062e6f3f4f7be0c3e1fc4592954a4d5653ad6c47a4440e91f2ca4a231"
+checksum = "2baaa660bcc820cbdfe24b90fe367397dd1776a6480288cb62a1b8f8de7db383"
 dependencies = [
  "s2json-core",
  "s2json-derive",
@@ -427,9 +427,9 @@ dependencies = [
 
 [[package]]
 name = "s2json-core"
-version = "1.21.0"
+version = "1.25.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "55df15870d7aae3082e94b991a1f19d6dbcd6b7da0551f939d8543191db81218"
+checksum = "b07cf0a1f1e39a550d3e06e8b4ba5041c5ee8865edac55bc3b74f42825e5825a"
 dependencies = [
  "libm",
  "pbf",
@@ -439,9 +439,9 @@ dependencies = [
 
 [[package]]
 name = "s2json-derive"
-version = "1.9.0"
+version = "1.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "10482102947d7a739152230a18dc888f34f54cf18a80e09aab8f571d7a873aa2"
+checksum = "182afa5eab906c45aa297f5eb0a1642c6d6a7b69b261617c45086f489220dd10"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",

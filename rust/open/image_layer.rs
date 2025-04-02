@@ -115,11 +115,11 @@ impl ImageData {
 impl ProtoRead for ImageData {
     fn read(&mut self, tag: u64, pb: &mut Protobuf) {
         match tag {
-            0 => self.image_type = pb.read_varint::<ImageType>(),
-            1 => self.width = pb.read_varint(),
-            2 => self.height = pb.read_varint(),
-            3 => self.image = pb.read_bytes(),
-            4 => self.name = pb.read_string(),
+            1 => self.image_type = pb.read_varint::<ImageType>(),
+            2 => self.width = pb.read_varint(),
+            3 => self.height = pb.read_varint(),
+            4 => self.image = pb.read_bytes(),
+            5 => self.name = pb.read_string(),
             #[tarpaulin::skip]
             _ => panic!("unknown tag: {}", tag),
         }
@@ -127,10 +127,10 @@ impl ProtoRead for ImageData {
 }
 impl ProtoWrite for ImageData {
     fn write(&self, pb: &mut Protobuf) {
-        pb.write_varint_field(0, self.image_type);
-        pb.write_varint_field(1, self.width);
-        pb.write_varint_field(2, self.height);
-        pb.write_bytes_field(3, &self.image);
-        pb.write_string_field(4, &self.name);
+        pb.write_varint_field(1, self.image_type);
+        pb.write_varint_field(2, self.width);
+        pb.write_varint_field(3, self.height);
+        pb.write_bytes_field(4, &self.image);
+        pb.write_string_field(5, &self.name);
     }
 }

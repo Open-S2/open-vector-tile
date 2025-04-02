@@ -54,10 +54,10 @@ pub trait VectorFeatureMethods {
     fn load_geometry(&mut self) -> VectorGeometry;
     /// load the indices
     fn read_indices(&mut self) -> Vec<u32>;
-    /// Add tesselation data to the geometry
-    fn add_tesselation(&mut self, geometry: &mut Vec<f64>, multiplier: f64);
-    /// Add 3D tesselation data to the geometry
-    fn add_tesselation_3d(&mut self, geometry: &mut Vec<f64>, multiplier: f64);
+    /// Add tessellation data to the geometry
+    fn add_tessellation(&mut self, geometry: &mut Vec<f64>, multiplier: f64);
+    /// Add 3D tessellation data to the geometry
+    fn add_tessellation_3d(&mut self, geometry: &mut Vec<f64>, multiplier: f64);
 }
 
 /// Methods that all vector layers should have
@@ -286,16 +286,16 @@ pub fn write_tile(
         // now we can write columns
         pbf.write_message(5, &cache);
     }
-    // if an image exists, let's write it
-    if let Some(images) = images {
-        for image in images.iter() {
-            pbf.write_message(7, *image);
-        }
-    }
     // if an gridded data exists, let's write it
     if let Some(grids) = grids {
         for grid in grids.iter() {
             pbf.write_message(6, *grid);
+        }
+    }
+    // if an image exists, let's write it
+    if let Some(images) = images {
+        for image in images.iter() {
+            pbf.write_message(7, *image);
         }
     }
 
