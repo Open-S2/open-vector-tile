@@ -1,5 +1,6 @@
 #![no_std]
-#![forbid(unsafe_code)]
+// this library doesn't use unsafe code, but the wasm bindings do
+// #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 #![feature(stmt_expr_attributes)]
 #![feature(register_tool)]
@@ -170,9 +171,7 @@ pub use util::*;
 pub use vector_tile::*;
 
 #[cfg(any(target_arch = "wasm32", feature = "wasm"))]
-use alloc::{boxed::Box, slice, vec::Vec};
-#[cfg(any(target_arch = "wasm32", feature = "wasm"))]
-use core::mem;
+use alloc::{boxed::Box, slice};
 
 #[cfg(any(target_arch = "wasm32", feature = "wasm"))]
 use lol_alloc::{AssumeSingleThreaded, FreeListAllocator};
@@ -183,15 +182,16 @@ use lol_alloc::{AssumeSingleThreaded, FreeListAllocator};
 static ALLOCATOR: AssumeSingleThreaded<FreeListAllocator> =
     unsafe { AssumeSingleThreaded::new(FreeListAllocator::new()) };
 
-#[cfg(any(target_arch = "wasm32", feature = "wasm"))]
-mod wasm_specific {
-    #[panic_handler]
-    fn panic(_info: &core::panic::PanicInfo) -> ! {
-        loop {}
-    }
-}
+// #[cfg(any(target_arch = "wasm32", feature = "wasm"))]
+// mod wasm_specific {
+//     #[panic_handler]
+//     fn panic(_info: &core::panic::PanicInfo) -> ! {
+//         loop {}
+//     }
+// }
 
-// Expose the function to JavaScript via #[export_name]
+/// Expose the function "create_vector_tile" to JavaScript
+/// Creates a new VectorTile instance given input buffer
 #[cfg(any(target_arch = "wasm32", feature = "wasm"))]
 #[no_mangle]
 pub extern "C" fn create_vector_tile(data_ptr: *const u8, data_len: usize) -> *mut VectorTile {
@@ -208,6 +208,8 @@ pub extern "C" fn create_vector_tile(data_ptr: *const u8, data_len: usize) -> *m
     Box::into_raw(Box::new(vector_tile))
 }
 
+/// Expose the function "free_vector_tile" to JavaScript
+/// Frees the VectorTile instance from memory
 #[cfg(any(target_arch = "wasm32", feature = "wasm"))]
 #[no_mangle]
 pub extern "C" fn free_vector_tile(ptr: *mut VectorTile) {
@@ -218,22 +220,7 @@ pub extern "C" fn free_vector_tile(ptr: *mut VectorTile) {
     }
 }
 
-#[cfg(any(target_arch = "wasm32", feature = "wasm"))]
-#[no_mangle]
-pub unsafe extern "C" fn allocUnicodeArray(size: usize) -> *mut u8 {
-    // Allocate memory
-    let mut buffer: Vec<u8> = Vec::with_capacity(size);
-    buffer.capacity();
-    // Ensure capacity matches size to avoid resizing
-    buffer.set_len(size);
-    // Get a raw pointer to the allocated memory
-    let ptr = buffer.as_mut_ptr();
-    // Prevent the buffer from being deallocated when it goes out of scope
-    mem::forget(buffer);
-
-    ptr
-}
-
+/// Free memory allocated regardless of the type
 #[cfg(any(target_arch = "wasm32", feature = "wasm"))]
 #[no_mangle]
 pub unsafe extern "C" fn free(ptr: *mut u8, size: usize) {

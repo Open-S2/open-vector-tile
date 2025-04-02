@@ -29,7 +29,7 @@ wasm = ["lol_alloc"]
 [lib]
 name = "open_vector_tile"
 path = "rust/lib.rs"
-# crate-type = ["cdylib"]
+crate-type = ["lib", "cdylib"]
 bench = true
 
 [dependencies]
