@@ -8,8 +8,8 @@ mod tests {
     };
     use pbf::Protobuf;
     use s2json::{
-        impls::shape::validate_types, PrimitiveShape, PrimitiveShapeType, PrimitiveValue, Shape,
-        ShapePrimitive, ShapeType, Value, ValuePrimitive, ValuePrimitiveType, ValueType,
+        PrimitiveShape, PrimitiveShapeType, PrimitiveValue, Shape, ShapePrimitive, ShapeType,
+        Value, ValuePrimitive, ValuePrimitiveType, ValueType, impls::shape::validate_types,
     };
     use std::panic::{self, AssertUnwindSafe};
 

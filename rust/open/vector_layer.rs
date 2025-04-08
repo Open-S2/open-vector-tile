@@ -1,10 +1,10 @@
 use crate::{
+    VectorLayerMethods,
     base::BaseVectorLayer,
     open::{
-        decode_shape, encode_shape, read_feature, write_feature, ColumnCacheReader,
-        ColumnCacheWriter, Extent, OpenVectorFeature,
+        ColumnCacheReader, ColumnCacheWriter, Extent, OpenVectorFeature, decode_shape,
+        encode_shape, read_feature, write_feature,
     },
-    VectorLayerMethods,
 };
 use alloc::{rc::Rc, string::String, vec::Vec};
 use core::cell::RefCell;

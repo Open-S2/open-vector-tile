@@ -3,15 +3,16 @@ mod tests {
     extern crate alloc;
     use alloc::vec;
     use open_vector_tile::{
+        Point, Point3D, VectorGeometry, VectorLine3DWithOffset, VectorLineWithOffset,
         base::{
-            decode_offset, encode_offset, BaseVectorFeature, BaseVectorLines3DFeature,
-            BaseVectorLinesFeature, BaseVectorPoints3DFeature, BaseVectorPointsFeature,
-            BaseVectorPolys3DFeature, BaseVectorPolysFeature, TessellationWrapper, VectorFeature,
+            BaseVectorFeature, BaseVectorLines3DFeature, BaseVectorLinesFeature,
+            BaseVectorPoints3DFeature, BaseVectorPointsFeature, BaseVectorPolys3DFeature,
+            BaseVectorPolysFeature, TessellationWrapper, VectorFeature, decode_offset,
+            encode_offset,
         },
         open::{ColumnCacheWriter, FeatureType},
-        Point, Point3D, VectorGeometry, VectorLine3DWithOffset, VectorLineWithOffset,
     };
-    use s2json::{BBox, BBox3D, Properties, Shape, Value, BBOX};
+    use s2json::{BBOX, BBox, BBox3D, Properties, Shape, Value};
 
     #[test]
     fn test_base_vector_points_feature() {

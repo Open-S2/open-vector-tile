@@ -2,13 +2,13 @@
 mod tests {
     extern crate alloc;
     use open_vector_tile::{
+        Point, VectorGeometry, VectorLayerMethods, VectorLineWithOffset, VectorTile,
         base::{
             BaseVectorFeature, BaseVectorLayer, BaseVectorLinesFeature, BaseVectorPointsFeature,
             BaseVectorPolysFeature, BaseVectorTile, VectorFeature,
         },
-        mapbox::vector_tile::{write_tile, MapboxVectorTile},
+        mapbox::vector_tile::{MapboxVectorTile, write_tile},
         open::{Extent, FeatureType},
-        Point, VectorGeometry, VectorLayerMethods, VectorLineWithOffset, VectorTile,
     };
     use s2json::Value;
     use std::{

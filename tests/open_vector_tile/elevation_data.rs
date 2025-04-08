@@ -2,7 +2,7 @@
 mod tests {
     extern crate alloc;
     use open_vector_tile::open::{
-        convert_mapbox_elevation_data, convert_terrarium_elevation_data, Extent, GridData,
+        Extent, GridData, convert_mapbox_elevation_data, convert_terrarium_elevation_data,
     };
     use pbf::Protobuf;
 

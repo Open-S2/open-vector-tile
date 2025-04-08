@@ -4,9 +4,9 @@ mod tests {
     use alloc::{collections::BTreeMap, rc::Rc, string::String};
     use core::cell::RefCell;
     use open_vector_tile::{
-        base::{BaseVectorFeature, BaseVectorPointsFeature},
-        mapbox::{write_feature, MapboxVectorFeature},
         Point,
+        base::{BaseVectorFeature, BaseVectorPointsFeature},
+        mapbox::{MapboxVectorFeature, write_feature},
     };
     use pbf::Protobuf;
     use s2json::{PrimitiveValue, Value};

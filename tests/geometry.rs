@@ -4,7 +4,7 @@ mod tests {
 
     use core::cmp::Ordering;
     use open_vector_tile::geometry::{Point, Point3D, VectorLineWithOffset};
-    use s2json::{BBox, BBox3D, Value, BBOX};
+    use s2json::{BBOX, BBox, BBox3D, Value};
 
     #[test]
     fn test_bounding_box() {

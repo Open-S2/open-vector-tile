@@ -3,16 +3,17 @@ mod tests {
     extern crate alloc;
 
     use open_vector_tile::{
+        Point, Point3D, VectorGeometry, VectorLayerMethods, VectorLine3DWithOffset,
+        VectorLineWithOffset, VectorTile,
         base::{
             BaseVectorFeature, BaseVectorLayer, BaseVectorLines3DFeature, BaseVectorLinesFeature,
             BaseVectorPoints3DFeature, BaseVectorPointsFeature, BaseVectorPolys3DFeature,
             BaseVectorPolysFeature, BaseVectorTile,
         },
         open::{Extent, FeatureType, GridData, ImageData, ImageType},
-        write_tile, Point, Point3D, VectorGeometry, VectorLayerMethods, VectorLine3DWithOffset,
-        VectorLineWithOffset, VectorTile,
+        write_tile,
     };
-    use s2json::{BBox, BBox3D, PrimitiveValue, Value, ValuePrimitiveType, ValueType, BBOX};
+    use s2json::{BBOX, BBox, BBox3D, PrimitiveValue, Value, ValuePrimitiveType, ValueType};
     use std::panic::{self, AssertUnwindSafe};
 
     #[test]

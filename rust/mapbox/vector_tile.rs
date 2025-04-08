@@ -1,6 +1,6 @@
 use crate::{
     base::BaseVectorTile,
-    mapbox::{write_layer, MapboxVectorLayer},
+    mapbox::{MapboxVectorLayer, write_layer},
 };
 use alloc::{collections::BTreeMap, rc::Rc, string::String, vec::Vec};
 use core::cell::RefCell;

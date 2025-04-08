@@ -1,7 +1,7 @@
 use crate::{
+    BBoxQuantization, CustomOrdWrapper, Point, Point3D, VectorPoints, VectorPoints3D,
     delta_decode_array, delta_encode_array, unweave_and_delta_decode_3d_array,
     unweave_and_delta_decode_array, weave_and_delta_encode_3d_array, weave_and_delta_encode_array,
-    BBoxQuantization, CustomOrdWrapper, Point, Point3D, VectorPoints, VectorPoints3D,
 };
 use alloc::{collections::BTreeMap, string::String, vec::Vec};
 use core::cell::RefCell;
@@ -356,11 +356,11 @@ impl ProtoWrite for ColumnCacheWriter {
         }
         // f32
         for f in float {
-            pbf.write_varint_field(OColumnName::Float.into(), f.0 .0);
+            pbf.write_varint_field(OColumnName::Float.into(), f.0.0);
         }
         // f64
         for d in double {
-            pbf.write_varint_field(OColumnName::Double.into(), d.0 .0);
+            pbf.write_varint_field(OColumnName::Double.into(), d.0.0);
         }
         // points
         for p in points {

@@ -1,5 +1,5 @@
 use crate::{
-    base::BaseVectorLayer, mapbox::vector_tile::MapboxVectorTile, VectorLayer, VectorTile,
+    VectorLayer, VectorTile, base::BaseVectorLayer, mapbox::vector_tile::MapboxVectorTile,
 };
 use alloc::{collections::BTreeMap, string::String};
 

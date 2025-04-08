@@ -1,12 +1,13 @@
 use crate::{
+    Point, Point3D, VectorFeatureMethods, VectorGeometry, VectorLines3DWithOffset,
+    VectorLinesWithOffset, VectorPoints, VectorPoints3D,
     mapbox::MapboxVectorFeature,
-    open::{encode_value, ColumnCacheWriter, FeatureType},
-    weave_2d, weave_3d, zigzag, Point, Point3D, VectorFeatureMethods, VectorGeometry,
-    VectorLines3DWithOffset, VectorLinesWithOffset, VectorPoints, VectorPoints3D,
+    open::{ColumnCacheWriter, FeatureType, encode_value},
+    weave_2d, weave_3d, zigzag,
 };
 use alloc::vec::Vec;
 use libm::round;
-use s2json::{BBox, BBox3D, LineStringMValues, Properties, Shape, Value, BBOX};
+use s2json::{BBOX, BBox, BBox3D, LineStringMValues, Properties, Shape, Value};
 
 /// Vector Feature functions that are common to all vector features
 pub trait VectorFeature {

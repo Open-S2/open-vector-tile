@@ -2,7 +2,7 @@ use crate::{Point, Point3D};
 use alloc::{vec, vec::Vec};
 use core::cmp::Ordering;
 use libm::round;
-use s2json::{BBox, BBox3D, BBOX};
+use s2json::{BBOX, BBox, BBox3D};
 
 /// Manager for float based comparisons
 pub trait CustomOrd {
@@ -100,7 +100,7 @@ pub fn weave_2d(a: u16, b: u16) -> u32 {
     for i in 0..16 {
         result |= (a & 1) << (i * 2); // Take ith bit from `a` and put it at position 2*i
         result |= (b & 1) << (i * 2 + 1); // Take ith bit from `b` and put it at position 2*i+1
-                                          // move to next bit
+        // move to next bit
         a >>= 1;
         b >>= 1;
     }
@@ -146,7 +146,7 @@ pub fn weave_3d(a: u16, b: u16, c: u16) -> u64 {
         if c & 1 != 0 {
             result |= 1 << (i * 3 + 2);
         } // Take ith bit from `c` and put it at position 3*i+2
-          // Move to the next bit
+        // Move to the next bit
         a >>= 1;
         b >>= 1;
         c >>= 1;

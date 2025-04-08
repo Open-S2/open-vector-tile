@@ -1,14 +1,15 @@
 use crate::{
+    Point, VectorFeatureMethods, VectorGeometry, VectorLineWithOffset, VectorLines3DWithOffset,
+    VectorLinesWithOffset, VectorPoints, VectorPoints3D,
     base::{BaseVectorFeature, TessellationWrapper},
     command_encode,
     open::FeatureType as OpenFeatureType,
-    zigzag, Point, VectorFeatureMethods, VectorGeometry, VectorLineWithOffset,
-    VectorLines3DWithOffset, VectorLinesWithOffset, VectorPoints, VectorPoints3D,
+    zigzag,
 };
 use alloc::{collections::BTreeMap, rc::Rc, string::String, vec, vec::Vec};
 use core::cell::RefCell;
 use pbf::{BitCast, ProtoRead, Protobuf};
-use s2json::{MapboxProperties, PrimitiveValue, Properties, BBOX};
+use s2json::{BBOX, MapboxProperties, PrimitiveValue, Properties};
 
 /// Mapbox specification for a Feature
 #[derive(Debug)]
@@ -574,7 +575,7 @@ fn write_geometry_points(points: &[Point], pbf: &mut Protobuf) {
     for point in points {
         // move
         pbf.write_varint(command_encode(1, 1)); // moveto
-                                                // store
+        // store
         let dx = point.x - x;
         let dy = point.y - y;
         pbf.write_varint(zigzag(dx));
@@ -593,7 +594,7 @@ fn write_geometry_lines(lines: &[VectorLineWithOffset], pbf: &mut Protobuf) {
     for line in lines {
         let line_geo = &line.geometry;
         pbf.write_varint(command_encode(1, 1)); // moveto
-                                                // do not write polygon closing path as lineto
+        // do not write polygon closing path as lineto
         let line_count = line_geo.len();
         let mut i = 0;
         while i < line_count {

@@ -1,10 +1,10 @@
 use crate::{
-    base::BaseVectorLayer,
-    mapbox::{write_feature, MapboxVectorFeature},
     VectorFeatureMethods, VectorLayerMethods,
+    base::BaseVectorLayer,
+    mapbox::{MapboxVectorFeature, write_feature},
 };
 use alloc::{
-    collections::{btree_map::Entry, BTreeMap},
+    collections::{BTreeMap, btree_map::Entry},
     rc::Rc,
     string::String,
     vec::Vec,

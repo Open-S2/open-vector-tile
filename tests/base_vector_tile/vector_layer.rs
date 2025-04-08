@@ -2,8 +2,8 @@
 mod tests {
     extern crate alloc;
     use open_vector_tile::{
-        base::{BaseVectorFeature, BaseVectorLayer, BaseVectorPointsFeature},
         Point,
+        base::{BaseVectorFeature, BaseVectorLayer, BaseVectorPointsFeature},
     };
     use s2json::{Shape, Value};
 

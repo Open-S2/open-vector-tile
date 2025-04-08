@@ -1,16 +1,17 @@
 use super::decode_value;
 use crate::{
-    base::{decode_offset, BaseVectorFeature, TessellationWrapper},
+    Point, Point3D, VectorFeatureMethods, VectorGeometry, VectorLine3DWithOffset,
+    VectorLineWithOffset, VectorLines3DWithOffset, VectorLinesWithOffset, VectorPoints,
+    VectorPoints3D,
+    base::{BaseVectorFeature, TessellationWrapper, decode_offset},
     mapbox::FeatureType as MapboxFeatureType,
-    open::{encode_value, ColumnCacheReader, ColumnCacheWriter},
-    unweave_2d, unweave_3d, zagzig, Point, Point3D, VectorFeatureMethods, VectorGeometry,
-    VectorLine3DWithOffset, VectorLineWithOffset, VectorLines3DWithOffset, VectorLinesWithOffset,
-    VectorPoints, VectorPoints3D,
+    open::{ColumnCacheReader, ColumnCacheWriter, encode_value},
+    unweave_2d, unweave_3d, zagzig,
 };
 use alloc::{rc::Rc, vec, vec::Vec};
 use core::cell::RefCell;
 use pbf::{BitCast, Protobuf};
-use s2json::{Properties, Shape, BBOX};
+use s2json::{BBOX, Properties, Shape};
 use serde::{Deserialize, Serialize};
 
 /// Extent guide for how the geometry data is stored

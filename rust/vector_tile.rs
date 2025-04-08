@@ -1,16 +1,16 @@
 use crate::{
+    VectorGeometry, VectorLines3DWithOffset, VectorLinesWithOffset, VectorPoints, VectorPoints3D,
     base::BaseVectorTile,
     mapbox::MapboxVectorLayer,
     open::{
-        write_layer, ColumnCacheReader, ColumnCacheWriter, FeatureType, GridData, ImageData,
-        OpenVectorLayer,
+        ColumnCacheReader, ColumnCacheWriter, FeatureType, GridData, ImageData, OpenVectorLayer,
+        write_layer,
     },
-    VectorGeometry, VectorLines3DWithOffset, VectorLinesWithOffset, VectorPoints, VectorPoints3D,
 };
 use alloc::{collections::BTreeMap, rc::Rc, string::String, vec::Vec};
 use core::cell::RefCell;
 use pbf::{ProtoRead, Protobuf};
-use s2json::{Properties, BBOX};
+use s2json::{BBOX, Properties};
 
 /// Methods that all vector features should have
 pub trait VectorFeatureMethods {
