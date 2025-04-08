@@ -35,6 +35,7 @@ describe('parsing vector tiles', async (): Promise<void> => {
   it('shoulnd contain mValues and have an empty bbox', () => {
     const poi_label = tile.layers.poi_label;
     const feature = poi_label.feature(11);
+    expect(feature.geoType()).toEqual('MultiPoint');
     expect(feature.isPoints()).toBeTrue();
     expect(feature.isLines()).toBeFalse();
     expect(feature.isPolygons()).toBeFalse();
@@ -71,6 +72,7 @@ describe('parsing vector tiles', async (): Promise<void> => {
 
     // Check line geometry
     const feature_656 = road.feature(656);
+    expect(feature_656.geoType()).toEqual('MultiLineString');
     expect(feature_656.loadGeometry()).toEqual([
       [
         { x: 1988, y: 306 },
@@ -99,6 +101,7 @@ describe('parsing vector tiles', async (): Promise<void> => {
     const buildingLayer = tile.layers.building;
 
     const building = buildingLayer.feature(0);
+    expect(building.geoType()).toEqual('MultiPolygon');
     expect(building.loadGeometry()).toEqual([
       [
         [

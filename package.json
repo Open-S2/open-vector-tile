@@ -1,6 +1,6 @@
 {
   "name": "open-vector-tile",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "This library reads/writes Open Vector Tiles",
   "keywords": [
     "vector",
@@ -28,8 +28,8 @@
     "format": "bunx prettier:fix && bun run lint:fix",
     "build": "rm -rf dist && mkdir dist && bun build:rust && rm -f -- tsconfig.tsbuildinfo && tsc",
     "build:rust": "bun build:rust:cargo && bun build:rust:optimize && bun build:rust:strip && bun build:rust:ts",
-    "build:rust:cargo": "RUSTFLAGS=\"-Z location-detail=none -Z fmt-debug=none\" cargo build --target wasm32-unknown-unknown --features wasm --release",
-    "build:rust:optimize": "wasm-opt -Oz --vacuum -o target/wasm32-unknown-unknown/release/optimized.wasm target/wasm32-unknown-unknown/release/open_vector_tile.wasm",
+    "build:rust:cargo": "RUSTFLAGS=\"-Z location-detail=none -Z fmt-debug=none -Z wasm-c-abi=spec\" cargo build --target wasm32-unknown-unknown --features wasm --release",
+    "build:rust:optimize": "wasm-opt -Oz --enable-bulk-memory --vacuum -o target/wasm32-unknown-unknown/release/optimized.wasm target/wasm32-unknown-unknown/release/open_vector_tile.wasm",
     "build:rust:snip": "wasm-snip --snip-rust-fmt-code --snip-rust-panicking-code -o target/wasm32-unknown-unknown/release/optimized.wasm target/wasm32-unknown-unknown/release/open_vector_tile.wasm",
     "build:rust:strip": "wasm-strip target/wasm32-unknown-unknown/release/optimized.wasm",
     "build:rust:ts": "bun run build-wasm.ts",

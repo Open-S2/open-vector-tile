@@ -193,7 +193,7 @@ static ALLOCATOR: AssumeSingleThreaded<FreeListAllocator> =
 /// Expose the function "create_vector_tile" to JavaScript
 /// Creates a new VectorTile instance given input buffer
 #[cfg(any(target_arch = "wasm32", feature = "wasm"))]
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn create_vector_tile(data_ptr: *const u8, data_len: usize) -> *mut VectorTile {
     // Convert the pointer and length into a slice
     let data_slice = unsafe { slice::from_raw_parts(data_ptr, data_len) };
@@ -211,7 +211,7 @@ pub extern "C" fn create_vector_tile(data_ptr: *const u8, data_len: usize) -> *m
 /// Expose the function "free_vector_tile" to JavaScript
 /// Frees the VectorTile instance from memory
 #[cfg(any(target_arch = "wasm32", feature = "wasm"))]
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn free_vector_tile(ptr: *mut VectorTile) {
     if !ptr.is_null() {
         unsafe {
@@ -222,11 +222,13 @@ pub extern "C" fn free_vector_tile(ptr: *mut VectorTile) {
 
 /// Free memory allocated regardless of the type
 #[cfg(any(target_arch = "wasm32", feature = "wasm"))]
-#[no_mangle]
-pub unsafe extern "C" fn free(ptr: *mut u8, size: usize) {
-    // Convert the pointer to a slice and then drop it
-    let _ = core::slice::from_raw_parts_mut(ptr, size);
+#[unsafe(no_mangle)]
+pub extern "C" fn free(ptr: *mut u8, size: usize) {
+    unsafe {
+        // Convert the pointer to a slice and then drop it
+        let _ = core::slice::from_raw_parts_mut(ptr, size);
 
-    // Deallocate the memory
-    alloc::alloc::dealloc(ptr as *mut u8, alloc::alloc::Layout::array::<u8>(size).unwrap());
+        // Deallocate the memory
+        alloc::alloc::dealloc(ptr as *mut u8, alloc::alloc::Layout::array::<u8>(size).unwrap());
+    }
 }

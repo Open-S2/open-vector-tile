@@ -1,5 +1,5 @@
 import type { PbfReader } from 'pbf-ts';
-import type { BBox, BBox3D } from 's2json-spec';
+import type { BBox, BBox3D, VectorGeometryType } from 's2json-spec';
 import type {
   OldVectorFeatureType,
   Point,
@@ -8,6 +8,7 @@ import type {
   VectorGeometry,
   VectorLine,
   VectorLinesWithOffset,
+  VectorPoints,
 } from '../vectorTile.spec';
 
 /**
@@ -54,6 +55,14 @@ export default class MapboxVectorFeature {
     this.#values = values;
 
     pbf.readFields(this.#readFeature, this, end);
+  }
+
+  /** @returns - the geometry type of the feature */
+  geoType(): VectorGeometryType {
+    const { type } = this;
+    if (type === 1) return 'MultiPoint';
+    else if (type === 2) return 'MultiLineString';
+    else return 'MultiPolygon'; // 3, 4
   }
 
   /** @returns - true if the type of the feature is points */
@@ -143,8 +152,8 @@ export default class MapboxVectorFeature {
   /**
    * @returns - regardless of the type, we return a flattend point array
    */
-  loadPoints(): Point[] {
-    let res: Point[] = [];
+  loadPoints(): VectorPoints {
+    let res: VectorPoints = [];
     const geometry = this.loadGeometry();
     if (this.type === 1) res = geometry as Point[];
     else if (this.type === 2) res = (geometry as Point[][]).flatMap((p) => p);

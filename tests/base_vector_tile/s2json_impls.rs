@@ -3,12 +3,12 @@ mod tests {
     extern crate alloc;
 
     use open_vector_tile::{
+        Extent, Point, Point3D, VectorLine3DWithOffset, VectorLineWithOffset,
         base::{
             BaseVectorFeature, BaseVectorLines3DFeature, BaseVectorLinesFeature,
             BaseVectorPoints3DFeature, BaseVectorPointsFeature, BaseVectorPolys3DFeature,
-            BaseVectorPolysFeature,
+            BaseVectorPolysFeature, s2json_to_base,
         },
-        Point, Point3D, VectorLine3DWithOffset, VectorLineWithOffset,
     };
     use s2json::{
         BBox, BBox3D, MValue, Properties, VectorFeature, VectorGeometry, VectorLineStringGeometry,
@@ -28,13 +28,17 @@ mod tests {
             ..Default::default()
         };
 
-        let bvf: BaseVectorFeature = (&vf).into();
+        let bvf: BaseVectorFeature = s2json_to_base(&vf, Extent::Extent1024);
 
         assert_eq!(
             bvf,
             BaseVectorFeature::BaseVectorPointsFeature(BaseVectorPointsFeature {
                 id: Some(3),
-                geometry: vec![Point::new_with_m(1, 2, MValue::from([("a".into(), 1_u32.into())]))],
+                geometry: vec![Point::new_with_m(
+                    1126,
+                    1946,
+                    MValue::from([("a".into(), 1_u32.into())])
+                )],
                 properties: Properties::from([("foo".into(), "bar".into())]),
                 bbox: Some(BBox::new(0.0, 1.0, 2.0, 3.0)),
             })
@@ -55,16 +59,16 @@ mod tests {
             ..Default::default()
         };
 
-        let bvf: BaseVectorFeature = (&vf).into();
+        let bvf: BaseVectorFeature = s2json_to_base(&vf, Extent::Extent1024);
 
         assert_eq!(
             bvf,
             BaseVectorFeature::BaseVectorPoints3DFeature(BaseVectorPoints3DFeature {
                 id: Some(2),
                 geometry: vec![Point3D::new_with_m(
-                    1,
-                    2,
-                    22,
+                    1126,
+                    1946,
+                    22733,
                     MValue::from([("a".into(), 1_u32.into())])
                 )],
                 properties: Properties::from([("foo".into(), "bar".into())]),
@@ -92,15 +96,15 @@ mod tests {
             ..Default::default()
         };
 
-        let bvf: BaseVectorFeature = (&vf).into();
+        let bvf: BaseVectorFeature = s2json_to_base(&vf, Extent::Extent1024);
 
         assert_eq!(
             bvf,
             BaseVectorFeature::BaseVectorPointsFeature(BaseVectorPointsFeature {
                 id: Some(3),
                 geometry: vec![
-                    Point::new_with_m(1, 2, MValue::from([("a".into(), 1_u32.into())])),
-                    Point::new_with_m(-1, -2, MValue::from([("a".into(), 12_u32.into())]))
+                    Point::new_with_m(1126, 1946, MValue::from([("a".into(), 1_u32.into())])),
+                    Point::new_with_m(-1126, -1946, MValue::from([("a".into(), 12_u32.into())]))
                 ],
                 properties: Properties::from([("foo".into(), "bar".into())]),
                 bbox: Some(BBox::new(0.0, 1.0, 2.0, 3.0)),
@@ -130,15 +134,25 @@ mod tests {
             ..Default::default()
         };
 
-        let bvf: BaseVectorFeature = (&vf).into();
+        let bvf: BaseVectorFeature = s2json_to_base(&vf, Extent::Extent1024);
 
         assert_eq!(
             bvf,
             BaseVectorFeature::BaseVectorPoints3DFeature(BaseVectorPoints3DFeature {
                 id: Some(3),
                 geometry: vec![
-                    Point3D::new_with_m(1, 2, 3, MValue::from([("a".into(), 1_u32.into())])),
-                    Point3D::new_with_m(-1, -2, -3, MValue::from([("a".into(), 12_u32.into())]))
+                    Point3D::new_with_m(
+                        1126,
+                        1946,
+                        3379,
+                        MValue::from([("a".into(), 1_u32.into())])
+                    ),
+                    Point3D::new_with_m(
+                        -1126,
+                        -1946,
+                        -3379,
+                        MValue::from([("a".into(), 12_u32.into())])
+                    )
                 ],
                 properties: Properties::from([("foo".into(), "bar".into())]),
                 bbox: Some(BBox3D::new(0.0, 1.0, 2.0, 3.0, 0.0, 0.0)),
@@ -167,7 +181,7 @@ mod tests {
             ..Default::default()
         };
 
-        let bvf: BaseVectorFeature = (&vf).into();
+        let bvf: BaseVectorFeature = s2json_to_base(&vf, Extent::Extent1024);
 
         assert_eq!(
             bvf,
@@ -176,8 +190,12 @@ mod tests {
                 geometry: vec![VectorLineWithOffset::new(
                     2.2,
                     vec![
-                        Point::new_with_m(1, 2, MValue::from([("a".into(), 1_u32.into())])),
-                        Point::new_with_m(-1, -2, MValue::from([("a".into(), 12_u32.into())]))
+                        Point::new_with_m(1126, 1946, MValue::from([("a".into(), 1_u32.into())])),
+                        Point::new_with_m(
+                            -1126,
+                            -1946,
+                            MValue::from([("a".into(), 12_u32.into())])
+                        )
                     ]
                 ),],
                 properties: Properties::from([("foo".into(), "bar".into())]),
@@ -211,7 +229,7 @@ mod tests {
             ..Default::default()
         };
 
-        let bvf: BaseVectorFeature = (&vf).into();
+        let bvf: BaseVectorFeature = s2json_to_base(&vf, Extent::Extent1024);
 
         assert_eq!(
             bvf,
@@ -220,11 +238,16 @@ mod tests {
                 geometry: vec![VectorLine3DWithOffset::new(
                     2.2,
                     vec![
-                        Point3D::new_with_m(1, 2, 3, MValue::from([("a".into(), 1_u32.into())])),
                         Point3D::new_with_m(
-                            -1,
-                            -2,
-                            -3,
+                            1126,
+                            1946,
+                            3379,
+                            MValue::from([("a".into(), 1_u32.into())])
+                        ),
+                        Point3D::new_with_m(
+                            -1126,
+                            -1946,
+                            -3379,
                             MValue::from([("a".into(), 12_u32.into())])
                         )
                     ]
@@ -274,7 +297,7 @@ mod tests {
             ..Default::default()
         };
 
-        let bvf: BaseVectorFeature = (&vf).into();
+        let bvf: BaseVectorFeature = s2json_to_base(&vf, Extent::Extent1024);
 
         assert_eq!(
             bvf,
@@ -284,15 +307,31 @@ mod tests {
                     VectorLineWithOffset::new(
                         2.2,
                         vec![
-                            Point::new_with_m(1, 2, MValue::from([("a".into(), 1_u32.into())])),
-                            Point::new_with_m(-1, -2, MValue::from([("a".into(), 12_u32.into())]))
+                            Point::new_with_m(
+                                1126,
+                                1946,
+                                MValue::from([("a".into(), 1_u32.into())])
+                            ),
+                            Point::new_with_m(
+                                -1126,
+                                -1946,
+                                MValue::from([("a".into(), 12_u32.into())])
+                            )
                         ]
                     ),
                     VectorLineWithOffset::new(
                         7.2,
                         vec![
-                            Point::new_with_m(2, 3, MValue::from([("a".into(), 7_u32.into())])),
-                            Point::new_with_m(-2, -3, MValue::from([("a".into(), 8_u32.into())]))
+                            Point::new_with_m(
+                                2150,
+                                2970,
+                                MValue::from([("a".into(), 7_u32.into())])
+                            ),
+                            Point::new_with_m(
+                                -2150,
+                                -2970,
+                                MValue::from([("a".into(), 8_u32.into())])
+                            )
                         ]
                     )
                 ],
@@ -343,7 +382,7 @@ mod tests {
             ..Default::default()
         };
 
-        let bvf: BaseVectorFeature = (&vf).into();
+        let bvf: BaseVectorFeature = s2json_to_base(&vf, Extent::Extent1024);
 
         assert_eq!(
             bvf,
@@ -354,15 +393,15 @@ mod tests {
                         2.2,
                         vec![
                             Point3D::new_with_m(
-                                1,
-                                2,
-                                3,
+                                1126,
+                                1946,
+                                3174,
                                 MValue::from([("a".into(), 1_u32.into())])
                             ),
                             Point3D::new_with_m(
-                                -1,
-                                -2,
-                                -3,
+                                -1126,
+                                -1946,
+                                -3174,
                                 MValue::from([("a".into(), 12_u32.into())])
                             )
                         ]
@@ -371,15 +410,15 @@ mod tests {
                         7.2,
                         vec![
                             Point3D::new_with_m(
-                                2,
-                                3,
-                                4,
+                                2150,
+                                2970,
+                                4198,
                                 MValue::from([("a".into(), 7_u32.into())])
                             ),
                             Point3D::new_with_m(
-                                -2,
-                                -3,
-                                -4,
+                                -2150,
+                                -2970,
+                                -4198,
                                 MValue::from([("a".into(), 8_u32.into())])
                             )
                         ]
@@ -432,7 +471,7 @@ mod tests {
             ..Default::default()
         };
 
-        let bvf: BaseVectorFeature = (&vf).into();
+        let bvf: BaseVectorFeature = s2json_to_base(&vf, Extent::Extent1024);
 
         assert_eq!(
             bvf,
@@ -442,15 +481,31 @@ mod tests {
                     VectorLineWithOffset::new(
                         2.2,
                         vec![
-                            Point::new_with_m(1, 2, MValue::from([("a".into(), 1_u32.into())])),
-                            Point::new_with_m(-1, -2, MValue::from([("a".into(), 12_u32.into())]))
+                            Point::new_with_m(
+                                1126,
+                                1946,
+                                MValue::from([("a".into(), 1_u32.into())])
+                            ),
+                            Point::new_with_m(
+                                -1126,
+                                -1946,
+                                MValue::from([("a".into(), 12_u32.into())])
+                            )
                         ]
                     ),
                     VectorLineWithOffset::new(
                         7.2,
                         vec![
-                            Point::new_with_m(2, 3, MValue::from([("a".into(), 7_u32.into())])),
-                            Point::new_with_m(-2, -3, MValue::from([("a".into(), 8_u32.into())]))
+                            Point::new_with_m(
+                                2150,
+                                2970,
+                                MValue::from([("a".into(), 7_u32.into())])
+                            ),
+                            Point::new_with_m(
+                                -2150,
+                                -2970,
+                                MValue::from([("a".into(), 8_u32.into())])
+                            )
                         ]
                     )
                 ]],
@@ -505,7 +560,7 @@ mod tests {
             ..Default::default()
         };
 
-        let bvf: BaseVectorFeature = (&vf).into();
+        let bvf: BaseVectorFeature = s2json_to_base(&vf, Extent::Extent1024);
 
         assert_eq!(
             bvf,
@@ -516,15 +571,15 @@ mod tests {
                         2.2,
                         vec![
                             Point3D::new_with_m(
-                                1,
-                                2,
-                                3,
+                                1126,
+                                1946,
+                                3379,
                                 MValue::from([("a".into(), 1_u32.into())])
                             ),
                             Point3D::new_with_m(
-                                -1,
-                                -2,
-                                -3,
+                                -1126,
+                                -1946,
+                                -3379,
                                 MValue::from([("a".into(), 12_u32.into())])
                             )
                         ]
@@ -533,15 +588,15 @@ mod tests {
                         7.2,
                         vec![
                             Point3D::new_with_m(
-                                2,
-                                3,
-                                4,
+                                2150,
+                                2970,
+                                4506,
                                 MValue::from([("a".into(), 7_u32.into())])
                             ),
                             Point3D::new_with_m(
-                                -2,
-                                -3,
-                                -4,
+                                -2150,
+                                -2970,
+                                -4506,
                                 MValue::from([("a".into(), 8_u32.into())])
                             )
                         ]
@@ -596,7 +651,7 @@ mod tests {
             ..Default::default()
         };
 
-        let bvf: BaseVectorFeature = (&vf).into();
+        let bvf: BaseVectorFeature = s2json_to_base(&vf, Extent::Extent1024);
 
         assert_eq!(
             bvf,
@@ -606,15 +661,31 @@ mod tests {
                     VectorLineWithOffset::new(
                         2.2,
                         vec![
-                            Point::new_with_m(1, 2, MValue::from([("a".into(), 1_u32.into())])),
-                            Point::new_with_m(-1, -2, MValue::from([("a".into(), 12_u32.into())]))
+                            Point::new_with_m(
+                                1126,
+                                1946,
+                                MValue::from([("a".into(), 1_u32.into())])
+                            ),
+                            Point::new_with_m(
+                                -1126,
+                                -1946,
+                                MValue::from([("a".into(), 12_u32.into())])
+                            )
                         ]
                     ),
                     VectorLineWithOffset::new(
                         7.2,
                         vec![
-                            Point::new_with_m(2, 3, MValue::from([("a".into(), 7_u32.into())])),
-                            Point::new_with_m(-2, -3, MValue::from([("a".into(), 8_u32.into())]))
+                            Point::new_with_m(
+                                2150,
+                                2970,
+                                MValue::from([("a".into(), 7_u32.into())])
+                            ),
+                            Point::new_with_m(
+                                -2150,
+                                -2970,
+                                MValue::from([("a".into(), 8_u32.into())])
+                            )
                         ]
                     )
                 ]],
@@ -669,7 +740,7 @@ mod tests {
             ..Default::default()
         };
 
-        let bvf: BaseVectorFeature = (&vf).into();
+        let bvf: BaseVectorFeature = s2json_to_base(&vf, Extent::Extent1024);
 
         assert_eq!(
             bvf,
@@ -680,15 +751,15 @@ mod tests {
                         2.2,
                         vec![
                             Point3D::new_with_m(
-                                1,
-                                2,
-                                3,
+                                1126,
+                                1946,
+                                3379,
                                 MValue::from([("a".into(), 1_u32.into())])
                             ),
                             Point3D::new_with_m(
-                                -1,
-                                -2,
-                                -3,
+                                -1126,
+                                -1946,
+                                -3379,
                                 MValue::from([("a".into(), 12_u32.into())])
                             )
                         ]
@@ -697,15 +768,15 @@ mod tests {
                         7.2,
                         vec![
                             Point3D::new_with_m(
-                                2,
-                                3,
-                                4,
+                                2150,
+                                2970,
+                                4506,
                                 MValue::from([("a".into(), 7_u32.into())])
                             ),
                             Point3D::new_with_m(
-                                -2,
-                                -3,
-                                -4,
+                                -2150,
+                                -2970,
+                                -4506,
                                 MValue::from([("a".into(), 8_u32.into())])
                             )
                         ]

@@ -7,6 +7,7 @@ pub mod vector_layer;
 /// A Tile container for all base vector layers
 pub mod vector_tile;
 
+pub use s2json_impl::*;
 pub use vector_feature::*;
 pub use vector_layer::*;
 pub use vector_tile::*;

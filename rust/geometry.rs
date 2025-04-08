@@ -1,7 +1,6 @@
 use alloc::vec::Vec;
 use core::cmp::Ordering;
-use libm::round;
-use s2json::{LineStringMValues, MValue, MValueCompatible, VectorPoint};
+use s2json::{LineStringMValues, MValue};
 
 /// Open Vector Spec can be an x,y but also may contain an MValue if the
 /// geometry is a line or polygon
@@ -23,11 +22,6 @@ impl Point {
     /// Create a new point with an MValue
     pub fn new_with_m(x: i32, y: i32, m: MValue) -> Point {
         Point { x, y, m: Some(m) }
-    }
-}
-impl<D: MValueCompatible> From<&VectorPoint<D>> for Point {
-    fn from(vp: &VectorPoint<D>) -> Self {
-        Point { x: round(vp.x) as i32, y: round(vp.y) as i32, m: vp.m.clone().map(|m| m.into()) }
     }
 }
 impl PartialOrd for Point {
@@ -65,16 +59,6 @@ impl Point3D {
     /// Create a new point with an MValue
     pub fn new_with_m(x: i32, y: i32, z: i32, m: MValue) -> Point3D {
         Point3D { x, y, z, m: Some(m) }
-    }
-}
-impl<D: MValueCompatible> From<&VectorPoint<D>> for Point3D {
-    fn from(vp: &VectorPoint<D>) -> Self {
-        Point3D {
-            x: round(vp.x) as i32,
-            y: round(vp.y) as i32,
-            z: round(vp.z.unwrap_or_default()) as i32,
-            m: vp.m.clone().map(|m| m.into()),
-        }
     }
 }
 impl PartialOrd for Point3D {

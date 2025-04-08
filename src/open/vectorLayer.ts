@@ -18,7 +18,7 @@ export type Extents = 16_384 | 8_192 | 4_096 | 2_048 | 1_024 | 512;
 export class OVectorLayer {
   version: number = 1;
   name: string = '';
-  extent: Extents = 4096;
+  extent: Extents = 4_096;
   #shapeIndex: number = -1;
   #mShapeIndex: number = -1;
   #features = new Map<number, OVectorFeature>();
@@ -105,10 +105,10 @@ export function encodeExtent(extent: Extents): number {
  */
 export function decodeExtent(encExtent: number): Extents {
   if (encExtent === 5) return 16_384;
-  else if (encExtent === 4) return 8192;
-  else if (encExtent === 3) return 4096;
-  else if (encExtent === 2) return 2048;
-  else if (encExtent === 1) return 1024;
+  else if (encExtent === 4) return 8_192;
+  else if (encExtent === 3) return 4_096;
+  else if (encExtent === 2) return 2_048;
+  else if (encExtent === 1) return 1_024;
   else if (encExtent === 0) return 512;
   else throw new Error('invalid encoded extent, must be 0, 1, 2, 3, 4, or 5');
 }

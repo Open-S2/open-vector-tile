@@ -198,6 +198,7 @@ describe('encodePoint3DFeature and decodePoint3DFeature', () => {
     expect(decodedPointFeatureA.extent).toBe(4_096);
     expect(decodedPointFeatureA.type).toBe(4);
     expect(decodedPointFeatureA.loadGeometry()).toEqual([{ x: 3_805, y: 5_645, z: 3_212 }]);
+    expect(decodedPointFeatureA.geoType()).toEqual('MultiPoint');
     expect(decodedPointFeatureA.isPoints()).toBeFalse();
     expect(decodedPointFeatureA.isLines()).toBeFalse();
     expect(decodedPointFeatureA.isPolygons()).toBeFalse();
@@ -454,6 +455,7 @@ describe('encodeLine3DFeature and decodeLine3DFeature', () => {
         { x: 1, y: 0, z: 2 },
       ],
     ]);
+    expect(decodedPointFeatureA.geoType()).toEqual('MultiLineString');
     expect(decodedPointFeatureA.isPoints()).toBeFalse();
     expect(decodedPointFeatureA.isLines()).toBeFalse();
     expect(decodedPointFeatureA.isPolygons()).toBeFalse();
@@ -647,6 +649,7 @@ describe('encodePolysFeature and decodePolysFeature', () => {
         ],
       ],
     ]);
+    expect(decodedPolyFeatureA.geoType()).toEqual('MultiPolygon');
     expect(decodedPolyFeatureA.isPoints()).toBeFalse();
     expect(decodedPolyFeatureA.isLines()).toBeFalse();
     expect(decodedPolyFeatureA.isPolygons()).toBeTrue();
@@ -923,6 +926,7 @@ describe('encodePolys3DFeature and decodePolys3DFeature', () => {
         ],
       ],
     ]);
+    expect(decodedPolyFeatureA.geoType()).toEqual('MultiPolygon');
     expect(decodedPolyFeatureA.isPoints()).toBeFalse();
     expect(decodedPolyFeatureA.isLines()).toBeFalse();
     expect(decodedPolyFeatureA.isPolygons()).toBeFalse();

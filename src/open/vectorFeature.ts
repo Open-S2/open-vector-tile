@@ -7,7 +7,7 @@ import { unweave2D, unweave3D, zagzig } from '../util';
 import type { BaseVectorFeature } from '../base';
 import type { Extents } from './vectorLayer';
 import type { Shape } from './shape';
-import type { BBox, BBox3D, Properties as OProperties } from 's2json-spec';
+import type { BBox, BBox3D, Properties as OProperties, VectorGeometryType } from 's2json-spec';
 import type { ColumnCacheReader, ColumnCacheWriter } from './columnCache';
 import type {
   Point,
@@ -59,6 +59,14 @@ export class OVectorFeatureBase {
     readonly indicesIndex: number, // -1 if there are no indices
     readonly tessellationIndex: number, // -1 if there is no tessellation
   ) {}
+
+  /** @returns - the geometry type of the feature */
+  geoType(): VectorGeometryType {
+    const { type } = this;
+    if (type === 1 || type === 4) return 'MultiPoint';
+    else if (type === 2 || type === 5) return 'MultiLineString';
+    else return 'MultiPolygon'; // 3, 6
+  }
 
   /** @returns - true if the type of the feature is points */
   isPoints(): boolean {
@@ -149,7 +157,7 @@ export class OVectorPointsFeature extends OVectorFeatureBase2D {
   geometry?: VectorPoints;
 
   /** @returns the geometry as an array of points */
-  loadPoints(): Point[] {
+  loadPoints(): VectorPoints {
     return this.loadGeometry();
   }
 
