@@ -476,6 +476,26 @@ impl VectorFeatureMethods for OpenVectorFeature {
         }
     }
 
+    /// an array of polys
+    fn load_polys(&mut self) -> Vec<VectorLinesWithOffset> {
+        match self.load_geometry() {
+            VectorGeometry::VectorPolys(polys) => polys,
+            _ => {
+                panic!("unexpected geometry type")
+            }
+        }
+    }
+
+    /// an array of 3d polys
+    fn load_polys_3d(&mut self) -> Vec<VectorLines3DWithOffset> {
+        match self.load_geometry() {
+            VectorGeometry::VectorPolys3D(polys) => polys,
+            _ => {
+                panic!("unexpected geometry type")
+            }
+        }
+    }
+
     /// returns the indices of the geometry
     fn read_indices(&mut self) -> Vec<u32> {
         if self.indices_index.is_none() {

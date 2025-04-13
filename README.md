@@ -96,6 +96,15 @@ cargo install open-vector-tile
 const fs = from 'fs';
 import { VectorTile } from 'open-vector-tile';
 
+import type {
+  VectorGeometryType,
+  VectorMultiLineOffset,
+  VectorMultiLineString,
+  VectorMultiPoint,
+  VectorMultiPolygon,
+  VectorMultiPolygonOffset,
+} from 's2json-spec';
+
 // assume you can read (.pbf | .mvt | .ovt)
 const fixture = fs.readFileSync('./x-y-z.vector.pbf');
 // Or load with bun:
@@ -112,15 +121,17 @@ const { landuse } = tile.layers;
 const firstFeature = landuse.feature(0);
 // grab the geometry
 const geometry = firstFeature.loadGeometry();
+// get the geometry type
+const geoType: VectorGeometryType = firstFeature.geoType();
 
 // OR specifically ask for a geometry type
-const points = firstFeature.loadPoints();
-const lines = firstFeature.loadLines();
-const polys = firstFeature.loadPolys();
+const points: VectorMultiPoint = firstFeature.loadPoints();
+const lines: [VectorMultiLineString, VectorMultiLineOffset] = firstFeature.loadLines();
+const polys: [VectorMultiPolygon, VectorMultiPolygonOffset] = firstFeature.loadPolys();
 
 // If you want to take advantage of the pre-tessellated and indexed geometries
 // and you're loading the data for a renderer, you can grab the pre-tessellated geometry
-const [flatGeometry, indices] = firstFeature.loadGeometryFlat();
+const [vertices, indices] = firstFeature.loadGeometryFlat();
 
 // IMAGE API
 

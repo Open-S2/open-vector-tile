@@ -1,11 +1,4 @@
-import type {
-  BBOX,
-  BBox,
-  BBox3D,
-  Face,
-  Properties as OProperties,
-  VectorFeatures,
-} from 's2json-spec';
+import type { BBOX, BBox, BBox3D, Face, Properties, VectorFeatures } from 's2json-spec';
 
 // NOTE: A lot of this exists for the concept of being more precise.
 // most of this is redundant to s2json-spec, but it's easier to explain 2D and 3D concepts this way
@@ -18,16 +11,15 @@ import type {
  * Value is the old type used by Mapbox vector tiles. Properties can not be nested, so we only
  * support string, number, boolean, and null
  */
-export type Value = string | number | boolean | null;
-
+export type MapboxValue = string | number | boolean | null;
 /**
  * A Mapbox Properties is a storage structure for the vector feature. keys are strings, values are
  * any basic type of Value
  */
-export type Properties = Record<string, Value>;
+export type MapboxProperties = Record<string, MapboxValue>;
 
 /** Mapbox Vector Feature types. */
-export type OldVectorFeatureType =
+export type MapboxVectorFeatureType =
   | 1 // point[]
   | 2 // line[]
   | 3 // polygon
@@ -49,7 +41,7 @@ export type VectorFeatureType =
 export interface Point {
   x: number;
   y: number;
-  m?: OProperties;
+  m?: Properties;
 }
 /**
  * Open Vector Spec can be an x,y,z but also may contain an MValue if the geometry
@@ -59,7 +51,7 @@ export interface Point3D {
   x: number;
   y: number;
   z: number;
-  m?: OProperties;
+  m?: Properties;
 }
 
 /** Built array line data with associated offset to help render dashed lines across tiles. */

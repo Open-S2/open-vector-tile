@@ -125,7 +125,8 @@ describe('encodePointFeature and decodePointFeature', () => {
       { x: 1, y: 0, m: { size: 1 } },
       { x: 2, y: -1, m: { size: 0 } },
     ]);
-    expect(decodedPointFeatureB.loadLines()).toEqual([]);
+    expect(decodedPointFeatureB.loadLines()).toBeUndefined();
+    expect(decodedPointFeatureB.loadPolys()).toBeUndefined();
     // dead code
     const tess: number[] = [];
     decodedPointFeatureB.addTessellation(tess, 1);
@@ -220,7 +221,8 @@ describe('encodePoint3DFeature and decodePoint3DFeature', () => {
       { x: 1, y: 0, z: 5, m: { size: 1 } },
       { x: 2, y: -1, z: 6, m: { size: 0 } },
     ]);
-    expect(decodedPointFeatureB.loadLines()).toEqual([]);
+    expect(decodedPointFeatureB.loadLines()).toBeUndefined();
+    expect(decodedPointFeatureB.loadPolys()).toBeUndefined();
     // dead code
     const tess: number[] = [];
     decodedPointFeatureB.addTessellation(tess, 1);
@@ -347,20 +349,17 @@ describe('encodeLineFeature and decodeLineFeature', () => {
       ],
     ]);
     expect(decodedPointFeatureB.loadLines()).toEqual([
-      {
-        geometry: [
+      [
+        [
           { m: { width: 2 }, x: 1, y: 0 },
           { m: { width: -3 }, x: 2, y: -1 },
         ],
-        offset: 2.2,
-      },
-      {
-        geometry: [
+        [
           { m: { width: 0 }, x: 0, y: -2 },
           { m: { width: 0 }, x: 300, y: 500 },
         ],
-        offset: 102.2,
-      },
+      ],
+      [2.2, 102.2],
     ]);
     expect(decodedPointFeatureB.bbox()).toEqual([
       -120.2199947965142, -2, 102.1110059089068, 50.49999597668625,
@@ -485,20 +484,17 @@ describe('encodeLine3DFeature and decodeLine3DFeature', () => {
       { x: 300, y: 500, z: 502, m: { width: 0 } },
     ]);
     expect(decodedPointFeatureB.loadLines()).toEqual([
-      {
-        geometry: [
+      [
+        [
           { m: { width: 2 }, x: 1, y: 0, z: 2 },
           { m: { width: -3 }, x: 2, y: -1, z: -3 },
         ],
-        offset: 2.2,
-      },
-      {
-        geometry: [
+        [
           { m: { width: 0 }, x: 0, y: -2, z: 200 },
           { m: { width: 0 }, x: 300, y: 500, z: 502 },
         ],
-        offset: 102.2,
-      },
+      ],
+      [2.2, 102.2],
     ]);
     // 0.11, -2, 165.5, 45.5, -102.2, 30.667
     expect(decodedPointFeatureB.bbox()).toEqual([
@@ -715,55 +711,80 @@ describe('encodePolysFeature and decodePolysFeature', () => {
       { x: 300, y: 500, m: { width: 0 } },
     ]);
     expect(decodedPolyFeatureB.loadLines()).toEqual([
-      {
-        geometry: [
+      [
+        [
           { x: 1, y: 0, m: { width: 2 } },
           { x: 2, y: -1, m: { width: -3 } },
         ],
-        offset: 4.4,
-      },
-      {
-        geometry: [
+        [
           { x: 2, y: -1, m: { width: 0 } },
           { x: 0, y: -2, m: { width: 0 } },
         ],
-        offset: 1004,
-      },
-      {
-        geometry: [
+        [
           { x: 0, y: -2, m: { width: 0 } },
           { x: 300, y: 500, m: { width: 55 } },
         ],
-        offset: 102.2,
-      },
-      {
-        geometry: [
+        [
           { x: 300, y: 500, m: { width: 0 } },
           { x: 0, y: 0, m: { width: 0 } },
         ],
-        offset: 2.2,
-      },
-      {
-        geometry: [
+        [
           { x: 0, y: 0, m: { width: 0 } },
           { x: 300, y: 500, m: { width: 0 } },
         ],
-        offset: 5.5,
-      },
-      {
-        geometry: [
+        [
           { x: 300, y: 500, m: { width: -1_222 } },
           { x: 0, y: -2, m: { width: 0 } },
         ],
-        offset: 0,
-      },
-      {
-        geometry: [
+        [
           { x: 0, y: -2, m: { width: 0 } },
           { x: 300, y: 500, m: { width: 0 } },
         ],
-        offset: 0,
-      },
+      ],
+      [4.4, 1004, 102.2, 2.2, 5.5, 0, 0],
+    ]);
+    expect(decodedPolyFeatureB.loadPolys()).toEqual([
+      [
+        [
+          [
+            { x: 1, y: 0, m: { width: 2 } },
+            { x: 2, y: -1, m: { width: -3 } },
+          ],
+          [
+            { x: 2, y: -1, m: { width: 0 } },
+            { x: 0, y: -2, m: { width: 0 } },
+          ],
+        ],
+        [
+          [
+            { x: 0, y: -2, m: { width: 0 } },
+            { x: 300, y: 500, m: { width: 55 } },
+          ],
+          [
+            { x: 300, y: 500, m: { width: 0 } },
+            { x: 0, y: 0, m: { width: 0 } },
+          ],
+        ],
+        [
+          [
+            { x: 0, y: 0, m: { width: 0 } },
+            { x: 300, y: 500, m: { width: 0 } },
+          ],
+          [
+            { x: 300, y: 500, m: { width: -1_222 } },
+            { x: 0, y: -2, m: { width: 0 } },
+          ],
+          [
+            { x: 0, y: -2, m: { width: 0 } },
+            { x: 300, y: 500, m: { width: 0 } },
+          ],
+        ],
+      ],
+      [
+        [4.4, 1004],
+        [102.2, 2.2],
+        [5.5, 0, 0],
+      ],
     ]);
     const [geoWithTess, indices] = decodedPolyFeatureB.loadGeometryFlat();
     expect(geoWithTess).toEqual([
@@ -992,63 +1013,90 @@ describe('encodePolys3DFeature and decodePolys3DFeature', () => {
       { x: 300, y: 500, z: 200, m: { width: 0 } },
     ]);
     expect(decodedPolyFeatureB.loadLines()).toEqual([
-      {
-        geometry: [
+      [
+        [
           { x: 1, y: 0, z: 3, m: { width: 55 } },
           { x: 2, y: -1, z: -9, m: { width: 0 } },
         ],
-        offset: 4.4,
-      },
-      {
-        geometry: [
+        [
           { x: 2, y: -1, z: -3, m: { width: 0 } },
           { x: 0, y: -2, z: 22, m: { width: 0 } },
         ],
-        offset: 1004,
-      },
-      {
-        geometry: [
+        [
           { x: 0, y: -2, z: 0, m: { width: 0 } },
           { x: 300, y: 500, z: 300, m: { width: 0 } },
         ],
-        offset: 102.2,
-      },
-      {
-        geometry: [
+        [
           { x: 300, y: 500, z: 100, m: { width: 0 } },
           { x: 0, y: 0, z: 0, m: { width: 0 } },
         ],
-        offset: 2.2,
-      },
-      {
-        geometry: [
+        [
           { x: 0, y: 0, z: 0, m: { width: 0 } },
           { x: 300, y: 500, z: 300, m: { width: 0 } },
         ],
-        offset: 5.5,
-      },
-      {
-        geometry: [
+        [
           { x: 300, y: 500, z: 300, m: { width: 0 } },
           { x: 0, y: -2, z: 0, m: { width: 0 } },
         ],
-        offset: 0,
-      },
-      {
-        geometry: [
+        [
           { x: 0, y: -2, z: 0, m: { width: 0 } },
           { x: 300, y: 500, z: 200, m: { width: 0 } },
         ],
-        offset: 0,
-      },
+      ],
+      [4.4, 1004, 102.2, 2.2, 5.5, 0, 0],
+    ]);
+    expect(decodedPolyFeatureB.loadPolys()).toEqual([
+      [
+        [
+          [
+            { x: 1, y: 0, z: 3, m: { width: 55 } },
+            { x: 2, y: -1, z: -9, m: { width: 0 } },
+          ],
+          [
+            { x: 2, y: -1, z: -3, m: { width: 0 } },
+            { x: 0, y: -2, z: 22, m: { width: 0 } },
+          ],
+        ],
+        [
+          [
+            { x: 0, y: -2, z: 0, m: { width: 0 } },
+            { x: 300, y: 500, z: 300, m: { width: 0 } },
+          ],
+          [
+            { x: 300, y: 500, z: 100, m: { width: 0 } },
+            { x: 0, y: 0, z: 0, m: { width: 0 } },
+          ],
+        ],
+        [
+          [
+            { x: 0, y: 0, z: 0, m: { width: 0 } },
+            { x: 300, y: 500, z: 300, m: { width: 0 } },
+          ],
+          [
+            { x: 300, y: 500, z: 300, m: { width: 0 } },
+            { x: 0, y: -2, z: 0, m: { width: 0 } },
+          ],
+          [
+            { x: 0, y: -2, z: 0, m: { width: 0 } },
+            { x: 300, y: 500, z: 200, m: { width: 0 } },
+          ],
+        ],
+      ],
+      [
+        [4.4, 1004],
+        [102.2, 2.2],
+        [5.5, 0, 0],
+      ],
     ]);
     const [geoWithTess, indices] = decodedPolyFeatureB.loadGeometryFlat();
     expect(geoWithTess).toEqual([
-      0.000244140625, 0, 0.00048828125, -0.000244140625, 0.00048828125, -0.000244140625, 0,
-      -0.00048828125, 0, -0.00048828125, 0.0732421875, 0.1220703125, 0.0732421875, 0.1220703125, 0,
-      0, 0, 0, 0.0732421875, 0.1220703125, 0.0732421875, 0.1220703125, 0, -0.00048828125, 0,
-      -0.00048828125, 0.0732421875, 0.1220703125, 0.928955078125, 1.378173828125, 0.976806640625,
-      0.000244140625, 0, 0.000732421875,
+      0.000244140625, 0, 0.000732421875, 0.00048828125, -0.000244140625, -0.002197265625,
+      0.00048828125, -0.000244140625, -0.000732421875, 0, -0.00048828125, 0.00537109375, 0,
+      -0.00048828125, 0, 0.0732421875, 0.1220703125, 0.0732421875, 0.0732421875, 0.1220703125,
+      0.0244140625, 0, 0, 0, 0, 0, 0, 0.0732421875, 0.1220703125, 0.0732421875, 0.0732421875,
+      0.1220703125, 0.0732421875, 0, -0.00048828125, 0, 0, -0.00048828125, 0, 0.0732421875,
+      0.1220703125, 0.048828125, 0.928955078125, 1.378173828125, 0.976806640625, 0.000244140625, 0,
+      0.000732421875,
     ]);
     expect(indices).toEqual([0, 1, 5, 2]);
     expect(decodedPolyFeatureB.bbox()).toEqual([

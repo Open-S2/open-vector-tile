@@ -7,7 +7,18 @@ import { unweave2D, unweave3D, zagzig } from '../util';
 import type { BaseVectorFeature } from '../base';
 import type { Extents } from './vectorLayer';
 import type { Shape } from './shape';
-import type { BBox, BBox3D, Properties as OProperties, VectorGeometryType } from 's2json-spec';
+import type {
+  BBox,
+  BBox3D,
+  Properties as OProperties,
+  VectorGeometryType,
+  VectorMultiLineOffset,
+  VectorMultiLineString,
+  VectorMultiPoint,
+  VectorMultiPolygon,
+  VectorMultiPolygonOffset,
+  VectorPolygonOffset,
+} from 's2json-spec';
 import type { ColumnCacheReader, ColumnCacheWriter } from './columnCache';
 import type {
   Point,
@@ -17,12 +28,12 @@ import type {
   VectorLine3D,
   VectorLines,
   VectorLines3D,
-  VectorLines3DWithOffset,
-  VectorLinesWithOffset,
   VectorMultiPoly,
   VectorMultiPoly3D,
   VectorPoints,
   VectorPoints3D,
+  VectorPoly,
+  VectorPoly3D,
 } from '../vectorTile.spec';
 
 /**
@@ -107,16 +118,22 @@ export class OVectorFeatureBase {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   addTessellation(geometry: number[], multiplier: number): void {}
 
-  /**
-   * @returns an empty geometry
-   */
+  /** @returns the geometry as an array of lines */
+  loadLines(): [VectorMultiLineString, VectorMultiLineOffset] | undefined {
+    return undefined;
+  }
+
+  /** @returns the geometry as an array of lines objects that include offsets */
+  loadPolys(): [VectorMultiPolygon, VectorMultiPolygonOffset] | undefined {
+    return undefined;
+  }
+
+  /** @returns an empty geometry */
   loadGeometryFlat(): [geometry: number[], indices: number[]] {
     return [[], []];
   }
 
-  /**
-   * @returns the indices for the feature
-   */
+  /** @returns the indices for the feature */
   readIndices(): number[] {
     return [];
   }
@@ -157,13 +174,8 @@ export class OVectorPointsFeature extends OVectorFeatureBase2D {
   geometry?: VectorPoints;
 
   /** @returns the geometry as an array of points */
-  loadPoints(): VectorPoints {
+  loadPoints(): VectorMultiPoint {
     return this.loadGeometry();
-  }
-
-  /** @returns the geometry as an array of lines */
-  loadLines(): VectorLinesWithOffset {
-    return [];
   }
 
   /** @returns the geometry as an array of points */
@@ -200,19 +212,20 @@ export class OVectorPointsFeature extends OVectorFeatureBase2D {
  */
 export class OVectorLinesFeature extends OVectorFeatureBase2D {
   type: VectorFeatureType = 2;
-  geometry?: VectorLinesWithOffset;
+  geometry?: [VectorLines, VectorMultiLineOffset];
 
   /** @returns the geometry as a flattened array of points */
-  loadPoints(): Point[] {
-    return this.loadGeometry().flatMap((line) => line);
+  loadPoints(): VectorMultiPoint {
+    return this.loadGeometry().flat();
   }
 
   /** @returns the geometry as an array of lines objects that include offsets */
-  loadLines(): VectorLinesWithOffset {
+  loadLines(): [VectorLines, VectorMultiLineOffset] {
     if (this.geometry !== undefined) return this.geometry;
     // prepare variables
     const { hasOffsets, hasMValues, geometryIndices: indices, cache, single } = this;
-    const lines: VectorLinesWithOffset = [];
+    const lines: VectorLines = [];
+    const offsets: VectorMultiLineOffset = [];
     let indexPos = 0;
     const lineCount = single ? 1 : indices[indexPos++];
     for (let i = 0; i < lineCount; i++) {
@@ -228,16 +241,17 @@ export class OVectorLinesFeature extends OVectorFeatureBase2D {
           geometry[j].m = decodeValue(valueIndex, this.mShape, cache);
         }
       }
-      lines.push({ offset, geometry });
+      lines.push(geometry);
+      offsets.push(offset);
     }
 
-    this.geometry = lines;
-    return lines;
+    this.geometry = [lines, offsets];
+    return [lines, offsets];
   }
 
   /** @returns the geometry as an array of flattened line geometry */
   loadGeometry(): VectorLines {
-    return this.loadLines().map((line) => line.geometry);
+    return this.loadLines()[0];
   }
 }
 
@@ -250,23 +264,25 @@ export class OVectorLinesFeature extends OVectorFeatureBase2D {
  */
 export class OVectorPolysFeature extends OVectorFeatureBase2D {
   type: VectorFeatureType = 3;
-  geometry?: VectorLinesWithOffset[];
+  geometry?: [VectorMultiPoly, VectorMultiPolygonOffset];
 
   /**
    * Stores the geometry incase it's used again
    * @returns the geometry as an array of lines objects that include offsets
    */
-  #loadLinesWithOffsets(): VectorLinesWithOffset[] {
+  #loadLinesWithOffsets(): [VectorMultiPoly, VectorMultiPolygonOffset] {
     if (this.geometry !== undefined) return this.geometry;
 
     // prepare variables
     const { hasOffsets, hasMValues, geometryIndices: indices, cache, single } = this;
-    const polys: VectorLinesWithOffset[] = [];
+    const polys: VectorMultiPoly = [];
+    const offsets: VectorMultiPolygonOffset = [];
     let indexPos = 0;
     const polyCount = single ? 1 : indices[indexPos++];
     for (let i = 0; i < polyCount; i++) {
       const lineCount = indices[indexPos++];
-      const lines: VectorLinesWithOffset = [];
+      const poly: VectorPoly = [];
+      const polyOffsets: VectorPolygonOffset = [];
       for (let j = 0; j < lineCount; j++) {
         // get offset if it exists
         const offset = hasOffsets ? decodeOffset(indices[indexPos++]) : 0;
@@ -280,36 +296,36 @@ export class OVectorPolysFeature extends OVectorFeatureBase2D {
             geometry[j].m = decodeValue(valueIndex, this.mShape, cache);
           }
         }
-        lines.push({ offset, geometry });
+        poly.push(geometry);
+        polyOffsets.push(offset);
       }
-      polys.push(lines);
+      polys.push(poly);
+      offsets.push(polyOffsets);
     }
 
-    this.geometry = polys;
-    return polys;
+    this.geometry = [polys, offsets];
+    return [polys, offsets];
   }
 
   /** @returns the geometry as a flattened array of points */
-  loadPoints(): Point[] {
-    return this.loadGeometry().flatMap((poly) => {
-      return poly.flatMap((line) => line);
-    });
+  loadPoints(): VectorMultiPoint {
+    return this.loadGeometry().flat(2);
   }
 
   /** @returns the geometry flattened into an array with offsets */
-  loadLines(): VectorLinesWithOffset {
-    const lines = this.#loadLinesWithOffsets();
-    // flatten
-    return lines.flatMap((line) => line);
+  loadLines(): [VectorLines, VectorMultiLineOffset] {
+    const [lines, offsets] = this.#loadLinesWithOffsets();
+    return [lines.flat(), offsets.flat()];
   }
 
-  /**
-   * @returns the geometry as an array of raw poly geometry
-   */
+  /** @returns the geometry as an array of lines objects that include offsets */
+  loadPolys(): [VectorMultiPolygon, VectorMultiPolygonOffset] {
+    return this.#loadLinesWithOffsets();
+  }
+
+  /** @returns the geometry as an array of raw poly geometry */
   loadGeometry(): VectorMultiPoly {
-    return this.#loadLinesWithOffsets().map((poly) => {
-      return poly.map((line) => line.geometry);
-    });
+    return this.#loadLinesWithOffsets()[0];
   }
 
   /**
@@ -317,13 +333,13 @@ export class OVectorPolysFeature extends OVectorFeatureBase2D {
    * @returns the geometry as an array of totally flattend poly geometry with indices
    */
   loadGeometryFlat(): [geometry: number[], indices: number[]] {
-    const geo = this.#loadLinesWithOffsets();
+    const [geo] = this.#loadLinesWithOffsets();
     const multiplier = 1 / this.extent;
     const geometry: number[] = [];
 
     for (const poly of geo) {
       for (const line of poly) {
-        for (const point of line.geometry) {
+        for (const point of line) {
           geometry.push(point.x * multiplier, point.y * multiplier);
         }
       }
@@ -365,13 +381,8 @@ export class OVectorPoints3DFeature extends OVectorFeatureBase3D {
   geometry?: VectorPoints3D;
 
   /** @returns the geometry as a flattened array of points */
-  loadPoints(): Point3D[] {
+  loadPoints(): VectorPoints3D {
     return this.loadGeometry();
-  }
-
-  /** @returns the geometry as an array of lines */
-  loadLines(): VectorLines3DWithOffset {
-    return [];
   }
 
   /**
@@ -410,19 +421,20 @@ export class OVectorPoints3DFeature extends OVectorFeatureBase3D {
  */
 export class OVectorLines3DFeature extends OVectorFeatureBase3D {
   type: VectorFeatureType = 5;
-  geometry?: VectorLines3DWithOffset;
+  geometry?: [VectorLines3D, VectorMultiLineOffset];
 
   /** @returns the geometry as a flattened array of points */
-  loadPoints(): Point3D[] {
-    return this.loadGeometry().flatMap((line) => line);
+  loadPoints(): VectorPoints3D {
+    return this.loadGeometry().flat();
   }
 
   /** @returns the geometry as an array of lines objects that include offsets */
-  loadLines(): VectorLines3DWithOffset {
+  loadLines(): [VectorLines3D, VectorMultiLineOffset] {
     if (this.geometry !== undefined) return this.geometry;
     // prepare variables
     const { hasOffsets, hasMValues, geometryIndices: indices, cache, single } = this;
-    const lines: VectorLines3DWithOffset = [];
+    const lines: VectorLines3D = [];
+    const offsets: VectorMultiLineOffset = [];
     let indexPos = 0;
     const lineCount = single ? 1 : indices[indexPos++];
     for (let i = 0; i < lineCount; i++) {
@@ -438,16 +450,17 @@ export class OVectorLines3DFeature extends OVectorFeatureBase3D {
           geometry[j].m = decodeValue(valueIndex, this.mShape, cache);
         }
       }
-      lines.push({ offset, geometry });
+      lines.push(geometry);
+      offsets.push(offset);
     }
 
-    this.geometry = lines;
-    return lines;
+    this.geometry = [lines, offsets];
+    return [lines, offsets];
   }
 
   /** @returns the geometry as an array of flattened line geometry */
   loadGeometry(): VectorLines3D {
-    return this.loadLines().map((line) => line.geometry);
+    return this.loadLines()[0];
   }
 }
 /**
@@ -458,23 +471,25 @@ export class OVectorLines3DFeature extends OVectorFeatureBase3D {
  */
 export class OVectorPolys3DFeature extends OVectorFeatureBase3D {
   type: VectorFeatureType = 6;
-  geometry?: VectorLines3DWithOffset[];
+  geometry?: [VectorMultiPoly3D, VectorMultiPolygonOffset];
 
   /**
    * Stores the geometry incase it's used again
    * @returns the geometry as an array of lines objects that include offsets
    */
-  #loadLinesWithOffsets(): VectorLines3DWithOffset[] {
+  #loadLinesWithOffsets(): [VectorMultiPoly3D, VectorMultiPolygonOffset] {
     if (this.geometry !== undefined) return this.geometry;
 
     // prepare variables
     const { hasOffsets, hasMValues, geometryIndices: indices, cache, single } = this;
-    const polys: VectorLines3DWithOffset[] = [];
+    const polys: VectorMultiPoly3D = [];
+    const offsets: VectorMultiPolygonOffset = [];
     let indexPos = 0;
     const polyCount = single ? 1 : indices[indexPos++];
     for (let i = 0; i < polyCount; i++) {
       const lineCount = indices[indexPos++];
-      const lines: VectorLines3DWithOffset = [];
+      const poly: VectorPoly3D = [];
+      const polyOffsets: VectorPolygonOffset = [];
       for (let j = 0; j < lineCount; j++) {
         // get offset if it exists
         const offset = hasOffsets ? decodeOffset(indices[indexPos++]) : 0;
@@ -488,34 +503,36 @@ export class OVectorPolys3DFeature extends OVectorFeatureBase3D {
             geometry[j].m = decodeValue(valueIndex, this.mShape, cache);
           }
         }
-        lines.push({ offset, geometry });
+        poly.push(geometry);
+        polyOffsets.push(offset);
       }
-      polys.push(lines);
+      polys.push(poly);
+      offsets.push(polyOffsets);
     }
 
-    this.geometry = polys;
-    return polys;
+    this.geometry = [polys, offsets];
+    return [polys, offsets];
   }
 
   /** @returns the geometry as a flattened array of points */
-  loadPoints(): Point3D[] {
-    return this.loadGeometry().flatMap((poly) => {
-      return poly.flatMap((line) => line);
-    });
+  loadPoints(): VectorPoints3D {
+    return this.loadGeometry().flat(2);
   }
 
   /** @returns the geometry flattened into an array with offsets */
-  loadLines(): VectorLines3DWithOffset {
-    const lines = this.#loadLinesWithOffsets();
-    // flatten
-    return lines.flatMap((line) => line);
+  loadLines(): [VectorMultiLineString, VectorMultiLineOffset] {
+    const [lines, offsets] = this.#loadLinesWithOffsets();
+    return [lines.flat(), offsets.flat()];
+  }
+
+  /** @returns the geometry as an array of lines objects that include offsets */
+  loadPolys(): [VectorMultiPolygon, VectorMultiPolygonOffset] {
+    return this.#loadLinesWithOffsets();
   }
 
   /** @returns the geometry as an array of raw poly geometry */
   loadGeometry(): VectorMultiPoly3D {
-    return this.#loadLinesWithOffsets().map((poly) => {
-      return poly.map((line) => line.geometry);
-    });
+    return this.#loadLinesWithOffsets()[0];
   }
 
   /**
@@ -523,14 +540,14 @@ export class OVectorPolys3DFeature extends OVectorFeatureBase3D {
    * @returns the geometry as an array of totally flattend poly geometry with indices
    */
   loadGeometryFlat(): [geometry: number[], indices: number[]] {
-    const geo = this.#loadLinesWithOffsets();
+    const [geo] = this.#loadLinesWithOffsets();
     const multiplier = 1 / this.extent;
     const geometry: number[] = [];
 
     for (const poly of geo) {
       for (const line of poly) {
-        for (const point of line.geometry) {
-          geometry.push(point.x * multiplier, point.y * multiplier);
+        for (const point of line) {
+          geometry.push(point.x * multiplier, point.y * multiplier, point.z * multiplier);
         }
       }
     }

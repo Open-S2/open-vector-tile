@@ -67,7 +67,7 @@ describe('parsing vector tiles', async (): Promise<void> => {
 
     // Check point geometry
     expect(park.loadGeometry()).toEqual([{ x: 3898, y: 1731 }]);
-    expect(park.loadLines()).toEqual([]);
+    expect(park.loadLines()).toBeUndefined();
     expect(park.loadPoints()).toEqual([{ x: 3898, y: 1731 }]);
 
     // Check line geometry
@@ -80,15 +80,16 @@ describe('parsing vector tiles', async (): Promise<void> => {
         { x: 1506, y: 347 },
       ],
     ]);
+    expect(feature_656.loadPolys()).toBeUndefined();
     expect(feature_656.loadLines()).toEqual([
-      {
-        geometry: [
+      [
+        [
           { x: 1988, y: 306 },
           { x: 1808, y: 321 },
           { x: 1506, y: 347 },
         ],
-        offset: 0,
-      },
+      ],
+      [0],
     ]);
     expect(feature_656.loadPoints()).toEqual([
       { x: 1988, y: 306 },
@@ -113,9 +114,38 @@ describe('parsing vector tiles', async (): Promise<void> => {
         ],
       ],
     ]);
+    expect(building.loadPolys()).toEqual([
+      [
+        [
+          [
+            {
+              x: 2039,
+              y: -32,
+            },
+            {
+              x: 2035,
+              y: -31,
+            },
+            {
+              x: 2032,
+              y: -31,
+            },
+            {
+              x: 2032,
+              y: -32,
+            },
+            {
+              x: 2039,
+              y: -32,
+            },
+          ],
+        ],
+      ],
+      [[0]],
+    ]);
     expect(building.loadLines()).toEqual([
-      {
-        geometry: [
+      [
+        [
           {
             x: 2039,
             y: -32,
@@ -137,8 +167,8 @@ describe('parsing vector tiles', async (): Promise<void> => {
             y: -32,
           },
         ],
-        offset: 0,
-      },
+      ],
+      [0],
     ]);
     expect(building.loadPoints()).toEqual([
       {

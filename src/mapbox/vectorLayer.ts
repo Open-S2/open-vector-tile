@@ -1,8 +1,8 @@
 import VectorFeature from './vectorFeature';
 
 import type { Extents } from '../open';
+import type { MapboxValue } from '../vectorTile.spec';
 import type { PbfReader } from 'pbf-ts';
-import type { Value } from '../vectorTile.spec';
 
 /**
  * A MapboxVectorLayer is a storage structure for the vector tile.
@@ -17,7 +17,7 @@ export default class MapboxVectorLayer {
   isS2: boolean;
   #pbf: PbfReader;
   #keys: string[] = [];
-  #values: Value[] = [];
+  #values: MapboxValue[] = [];
   #featuresPos: number[] = [];
   #features = new Map<number, VectorFeature>();
   /**
@@ -76,8 +76,8 @@ export default class MapboxVectorLayer {
    * @param pbf - The Protobuffer object to read from
    * @returns - A parsed Value
    */
-  #readValueMessage(pbf: PbfReader): Value {
-    let value: Value = null;
+  #readValueMessage(pbf: PbfReader): MapboxValue {
+    let value: MapboxValue = null;
 
     const end = pbf.readVarint() + pbf.pos;
 

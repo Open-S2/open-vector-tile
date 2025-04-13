@@ -44,10 +44,14 @@ pub trait VectorFeatureMethods {
     fn load_points(&mut self) -> VectorPoints;
     /// regardless of the type, we return a flattend point3D array
     fn load_points_3d(&mut self) -> VectorPoints3D;
-    /// an array of lines. The offsets will be set to 0
+    /// an array of lines.
     fn load_lines(&mut self) -> VectorLinesWithOffset;
-    /// an array of 3D lines. The offsets will be set to 0
+    /// an array of 3D lines.
     fn load_lines_3d(&mut self) -> VectorLines3DWithOffset;
+    /// an array of polygons.
+    fn load_polys(&mut self) -> Vec<VectorLinesWithOffset>;
+    /// an array of 3D polygons.
+    fn load_polys_3d(&mut self) -> Vec<VectorLines3DWithOffset>;
     /// (flattened geometry & tesslation if applicable, indices)
     fn load_geometry_flat(&mut self) -> (Vec<f64>, Vec<u32>);
     /// load the geometry

@@ -1,14 +1,23 @@
 import type { PbfReader } from 'pbf-ts';
-import type { BBox, BBox3D, VectorGeometryType } from 's2json-spec';
 import type {
-  OldVectorFeatureType,
+  BBox,
+  BBox3D,
+  VectorGeometryType,
+  VectorMultiLineOffset,
+  VectorMultiLineString,
+  VectorMultiPoint,
+  VectorMultiPolygon,
+  VectorMultiPolygonOffset,
+  VectorPolygonOffset,
+} from 's2json-spec';
+import type {
+  MapboxProperties,
+  MapboxValue,
+  MapboxVectorFeatureType,
   Point,
-  Properties,
-  Value,
   VectorGeometry,
   VectorLine,
-  VectorLinesWithOffset,
-  VectorPoints,
+  VectorPoly,
 } from '../vectorTile.spec';
 
 /**
@@ -19,16 +28,16 @@ import type {
 export default class MapboxVectorFeature {
   id?: number;
   version = 5;
-  properties: Properties = {};
+  properties: MapboxProperties = {};
   extent: number;
-  type: OldVectorFeatureType = 1;
+  type: MapboxVectorFeatureType = 1;
   isS2: boolean;
   #pbf: PbfReader;
   #indices = -1;
   #geometry = -1;
   #tessellation = -1;
   #keys: string[];
-  #values: Value[];
+  #values: MapboxValue[];
   /**
    * @param pbf - the pbf protocol we are reading from
    * @param end - the position to stop at
@@ -45,7 +54,7 @@ export default class MapboxVectorFeature {
     extent: number,
     version: number,
     keys: string[],
-    values: Value[],
+    values: MapboxValue[],
   ) {
     this.isS2 = isS2;
     this.extent = extent;
@@ -105,14 +114,14 @@ export default class MapboxVectorFeature {
     if (feature.isS2) {
       if (tag === 15) feature.id = pbf.readVarint();
       else if (tag === 1) feature.#readTag(pbf, feature);
-      else if (tag === 2) feature.type = pbf.readVarint() as OldVectorFeatureType;
+      else if (tag === 2) feature.type = pbf.readVarint() as MapboxVectorFeatureType;
       else if (tag === 3) feature.#geometry = pbf.pos;
       else if (tag === 4) feature.#indices = pbf.pos;
       else if (tag === 5) feature.#tessellation = pbf.pos;
     } else {
       if (tag === 1) feature.id = pbf.readVarint();
       else if (tag === 2) feature.#readTag(pbf, feature);
-      else if (tag === 3) feature.type = pbf.readVarint() as OldVectorFeatureType;
+      else if (tag === 3) feature.type = pbf.readVarint() as MapboxVectorFeatureType;
       else if (tag === 4) feature.#geometry = pbf.pos;
       else if (tag === 5) feature.#indices = pbf.pos;
       else if (tag === 6) feature.#tessellation = pbf.pos;
@@ -134,9 +143,7 @@ export default class MapboxVectorFeature {
     }
   }
 
-  /**
-   * @returns - MapboxVectorTile's do not support m-values so we return false
-   */
+  /** @returns - MapboxVectorTile's do not support m-values so we return false */
   get hasMValues(): boolean {
     return false;
   }
@@ -149,43 +156,53 @@ export default class MapboxVectorFeature {
     return [0, 0, 0, 0] as BBox;
   }
 
-  /**
-   * @returns - regardless of the type, we return a flattend point array
-   */
-  loadPoints(): VectorPoints {
-    let res: VectorPoints = [];
+  /** @returns - regardless of the type, we return a flattend point array */
+  loadPoints(): VectorMultiPoint | undefined {
+    let res: VectorMultiPoint = [];
     const geometry = this.loadGeometry();
     if (this.type === 1) res = geometry as Point[];
-    else if (this.type === 2) res = (geometry as Point[][]).flatMap((p) => p);
-    else if (this.type === 3 || this.type === 4)
-      res = (geometry as Point[][][]).flatMap((p) => {
-        return p.flatMap((p) => p);
-      });
+    else if (this.type === 2) res = (geometry as Point[][]).flat();
+    else if (this.type === 3 || this.type === 4) res = (geometry as Point[][][]).flat(2);
 
     return res;
   }
 
-  /**
-   * @returns - an array of lines. The offsets will be set to 0
-   */
-  loadLines(): VectorLinesWithOffset {
+  /** @returns - an array of lines. The offsets will be set to 0 */
+  loadLines(): [VectorMultiLineString, VectorMultiLineOffset] | undefined {
+    if (this.type === 1) return;
     const geometry = this.loadGeometry();
-    let res: VectorLinesWithOffset = [];
+    const outLines: VectorMultiLineString = [];
+    const offsets: VectorMultiLineOffset = [];
 
-    if (this.type === 2) {
-      res = (geometry as VectorLine[]).map((line) => ({ geometry: line, offset: 0 }));
-    } else if (this.type === 3 || this.type === 4) {
-      res = (geometry as VectorLine[][]).flatMap((poly) => {
-        return poly.map((line) => ({ geometry: line, offset: 0 }));
-      });
+    const lines = this.type === 2 ? (geometry as VectorLine[]) : (geometry as VectorPoly[]).flat();
+    for (const line of lines) {
+      outLines.push(line);
+      offsets.push(0);
     }
 
-    return res;
+    return [outLines, offsets];
   }
 
-  /**
-   * @returns - [flattened geometry & tesslation if applicable, indices]
-   */
+  /** @returns - an array of polys. The offsets will be set to 0 */
+  loadPolys(): [VectorMultiPolygon, VectorMultiPolygonOffset] | undefined {
+    if (this.type === 1 || this.type === 2) return;
+    const geometry = this.loadGeometry();
+    const polys: VectorMultiPolygon = [];
+    const offsets: VectorMultiPolygonOffset = [];
+
+    if (this.type === 3 || this.type === 4) {
+      for (const poly of geometry as VectorPoly[]) {
+        const polyOffset: VectorPolygonOffset = [];
+        for (const _ of poly) polyOffset.push(0);
+        polys.push(poly);
+        offsets.push(polyOffset);
+      }
+    }
+
+    return [polys, offsets];
+  }
+
+  /** @returns - [flattened geometry & tesslation if applicable, indices] */
   loadGeometryFlat(): [geometry: number[], indices: number[]] {
     this.#pbf.pos = this.#geometry;
     const multiplier = 1 / this.extent;
@@ -230,9 +247,7 @@ export default class MapboxVectorFeature {
     return [geometry, indices];
   }
 
-  /**
-   * @returns - vector geometry relative to feature type.
-   */
+  /** @returns - vector geometry relative to feature type. */
   loadGeometry(): VectorGeometry {
     this.#pbf.pos = this.#geometry;
 
@@ -299,9 +314,7 @@ export default class MapboxVectorFeature {
     return lines;
   }
 
-  /**
-   * @returns - an array of indices for the geometry
-   */
+  /** @returns - an array of indices for the geometry */
   readIndices(): number[] {
     if (this.#indices <= 0) return [];
     this.#pbf.pos = this.#indices;

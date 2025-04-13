@@ -168,6 +168,21 @@ impl VectorFeatureMethods for MapboxVectorFeature {
         panic!("unexpected geometry type")
     }
 
+    /// an array of polys
+    fn load_polys(&mut self) -> Vec<VectorLinesWithOffset> {
+        match self.load_geometry() {
+            VectorGeometry::VectorPolys(polys) => polys,
+            #[tarpaulin::skip]
+            _ => panic!("unexpected geometry type"),
+        }
+    }
+
+    /// an array of 3D polys
+    #[tarpaulin::skip]
+    fn load_polys_3d(&mut self) -> Vec<VectorLines3DWithOffset> {
+        panic!("unexpected geometry type")
+    }
+
     /// (flattened geometry & tesslation if applicable, indices)
     fn load_geometry_flat(&mut self) -> (Vec<f64>, Vec<u32>) {
         // build a multiplier

@@ -2,7 +2,6 @@
 // this library doesn't use unsafe code, but the wasm bindings do
 // #![forbid(unsafe_code)]
 #![deny(missing_docs)]
-#![feature(stmt_expr_attributes)]
 #![feature(register_tool)]
 #![register_tool(tarpaulin)]
 //! # Open Vector Tile

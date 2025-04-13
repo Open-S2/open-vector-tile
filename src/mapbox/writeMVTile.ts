@@ -5,20 +5,20 @@ import { commandEncode, zigzag } from '../util';
 
 import type { VectorTile } from '../vectorTile';
 import type { BaseVectorFeature, BaseVectorLayer, BaseVectorTile } from '../base';
-import type { MapboxVectorFeature, MapboxVectorLayer } from '.';
 import type {
+  MapboxValue,
   Point,
-  Value,
   VectorLines,
   VectorMultiPoly,
   VectorPoints,
   VectorPoly,
 } from '../vectorTile.spec';
+import type { MapboxVectorFeature, MapboxVectorLayer } from '.';
 
 /** A storage structure to manage deduplication of keys and values in each layer */
 interface Context {
   keys: string[];
-  values: Value[];
+  values: MapboxValue[];
   keycache: Record<string, number>;
   valuecache: Record<string, number>;
 }
@@ -142,7 +142,7 @@ function writeProperties(contextWF: ContextWithFeature, pbf: Protobuf): void {
     }
     pbf.writeVarint(keyIndex);
 
-    let value = properties[key] as Value;
+    let value = properties[key] as MapboxValue;
     const type = typeof value;
     if (type !== 'string' && type !== 'boolean' && type !== 'number') {
       value = JSON.stringify(value);
@@ -290,7 +290,7 @@ function writeMultiPolyGeometry(geometry: VectorMultiPoly, pbf: Protobuf, mapbox
  * @param value - the value to write (can be string, number, null, or boolean)
  * @param pbf - the Protobuf object to write to
  */
-function writeValue(value: Value, pbf: Protobuf): void {
+function writeValue(value: MapboxValue, pbf: Protobuf): void {
   if (typeof value === 'string') {
     pbf.writeStringField(1, value);
   } else if (typeof value === 'boolean') {
