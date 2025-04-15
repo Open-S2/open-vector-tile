@@ -8,11 +8,11 @@ import {
   unweaveAndDeltaDecodeArray,
   weaveAndDeltaEncode3DArray,
   weaveAndDeltaEncodeArray,
-} from '../util';
+} from '../util.js';
 
 import type { BBox, BBox3D } from 's2json-spec';
 import type { PbfReader, Pbf as Protobuf } from 'pbf-ts';
-import type { Point, Point3D, VectorPoints, VectorPoints3D } from '../vectorTile.spec';
+import type { Point, Point3D, VectorPoints, VectorPoints3D } from '../vectorTile.spec.js';
 
 /**
  * Column Types take up 3 bits.

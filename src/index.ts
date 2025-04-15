@@ -1,10 +1,10 @@
-export * from './base';
-export * from './open';
-export * from './mapbox';
-export * from './util';
-export * from './vectorTile.spec';
-export * from './vectorTile';
-export * from './vectorTileWASM';
+export * from './base/index.js';
+export * from './open/index.js';
+export * from './mapbox/index.js';
+export * from './util.js';
+export * from './vectorTile.spec.js';
+export * from './vectorTile.js';
+export * from './vectorTileWASM.js';
 
-import ShapeSchema from './open/shape.schema.json';
+import ShapeSchema from './open/shape.schema.json' with { type: 'json' };
 export { ShapeSchema };

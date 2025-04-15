@@ -1,5 +1,5 @@
 import type { BBOX, BBox, BBox3D } from 's2json-spec';
-import type { Point, Point3D } from './vectorTile.spec';
+import type { Point, Point3D } from './vectorTile.spec.js';
 
 /**
  * Encode a command with the given length of the data that follows.

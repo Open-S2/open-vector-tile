@@ -1,7 +1,7 @@
-import VectorFeature from './vectorFeature';
+import VectorFeature from './vectorFeature.js';
 
-import type { Extents } from '../open';
-import type { MapboxValue } from '../vectorTile.spec';
+import type { Extents } from '../open/index.js';
+import type { MapboxValue } from '../vectorTile.spec.js';
 import type { PbfReader } from 'pbf-ts';
 
 /**

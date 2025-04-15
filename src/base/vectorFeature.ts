@@ -1,11 +1,11 @@
-import { OColumnName } from '../open/columnCache';
-import { encodeValue } from '../open/shape';
-import { weave2D, weave3D, zigzag } from '../util';
+import { OColumnName } from '../open/columnCache.js';
+import { encodeValue } from '../open/shape.js';
+import { weave2D, weave3D, zigzag } from '../util.js';
 
-import type { ColumnCacheWriter } from '../open/columnCache';
-import type MapboxVectorFeature from '../mapbox/vectorFeature';
+import type { ColumnCacheWriter } from '../open/columnCache.js';
+import type MapboxVectorFeature from '../mapbox/vectorFeature.js';
 import type { VectorFeatures as S2JSONFeature } from 's2json-spec';
-import type { Shape } from '../open/shape';
+import type { Shape } from '../open/shape.js';
 import type { BBOX, BBox, BBox3D, Properties as OProperties } from 's2json-spec';
 import type {
   Point,
@@ -16,7 +16,7 @@ import type {
   VectorMultiPoly,
   VectorPoints,
   VectorPoints3D,
-} from '../vectorTile.spec';
+} from '../vectorTile.spec.js';
 
 /**
  * Base Vector Feature

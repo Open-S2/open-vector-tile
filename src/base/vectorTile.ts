@@ -1,9 +1,9 @@
-import { BaseVectorLayer } from './vectorLayer';
-import MapboxVectorLayer from '../mapbox/vectorLayer';
-import { VectorTile } from '../vectorTile';
+import { BaseVectorLayer } from './vectorLayer.js';
+import MapboxVectorLayer from '../mapbox/vectorLayer.js';
+import { VectorTile } from '../vectorTile.js';
 
-import type { S2JSONLayerMap } from './vectorLayer';
-import type { S2JSONTile } from '../vectorTile.spec';
+import type { S2JSONLayerMap } from './vectorLayer.js';
+import type { S2JSONTile } from '../vectorTile.spec.js';
 
 /**
  * Base Vector Tile

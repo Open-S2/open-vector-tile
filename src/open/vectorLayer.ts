@@ -1,11 +1,11 @@
-import { OColumnName } from './columnCache';
-import { OVectorFeature, readFeature, writeOVFeature } from './vectorFeature';
+import { OColumnName } from './columnCache.js';
+import { OVectorFeature, readFeature, writeOVFeature } from './vectorFeature.js';
 import { PbfReader, Pbf as Protobuf } from 'pbf-ts';
-import { decodeShape, encodeShape } from './shape';
+import { decodeShape, encodeShape } from './shape.js';
 
-import type { BaseVectorLayer } from '../base';
-import type { Shape } from './shape';
-import type { ColumnCacheReader, ColumnCacheWriter } from './columnCache';
+import type { BaseVectorLayer } from '../base/index.js';
+import type { Shape } from './shape.js';
+import type { ColumnCacheReader, ColumnCacheWriter } from './columnCache.js';
 
 /** Extents are the tile size limits of what a user can use to encode a geometry. */
 export type Extents = 16_384 | 8_192 | 4_096 | 2_048 | 1_024 | 512;

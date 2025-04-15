@@ -1,3 +1,3 @@
-export { default as writeMVTile } from './writeMVTile';
-export { default as MapboxVectorFeature } from './vectorFeature';
-export { default as MapboxVectorLayer } from './vectorLayer';
+export { default as writeMVTile } from './writeMVTile.js';
+export { default as MapboxVectorFeature } from './vectorFeature.js';
+export { default as MapboxVectorLayer } from './vectorLayer.js';

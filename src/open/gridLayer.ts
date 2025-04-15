@@ -1,7 +1,7 @@
 import { PbfReader, Pbf as Protobuf } from 'pbf-ts';
-import { deltaDecodeArray, deltaEncodeArray } from '../util';
+import { deltaDecodeArray, deltaEncodeArray } from '../util.js';
 
-import type { Extents } from '.';
+import type { Extents } from './index.js';
 
 /** Grid object to read from */
 export class GridData {

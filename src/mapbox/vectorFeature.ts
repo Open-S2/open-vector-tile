@@ -18,7 +18,7 @@ import type {
   VectorGeometry,
   VectorLine,
   VectorPoly,
-} from '../vectorTile.spec';
+} from '../vectorTile.spec.js';
 
 /**
  * Mapbox Vector Feature types are all bundled in one class

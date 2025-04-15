@@ -1,6 +1,6 @@
-import { OColumnName } from './columnCache';
+import { OColumnName } from './columnCache.js';
 
-import type { ColumnCacheReader, ColumnCacheWriter, ColumnValue } from './columnCache';
+import type { ColumnCacheReader, ColumnCacheWriter, ColumnValue } from './columnCache.js';
 import type {
   Properties as OProperties,
   Value as OValue,

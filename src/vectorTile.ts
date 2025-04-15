@@ -1,5 +1,5 @@
-import { MapboxVectorLayer } from './mapbox';
-import { BaseVectorLayer, BaseVectorTile } from './base';
+import { MapboxVectorLayer } from './mapbox/index.js';
+import { BaseVectorLayer, BaseVectorTile } from './base/index.js';
 import {
   ColumnCacheReader,
   ColumnCacheWriter,
@@ -9,10 +9,10 @@ import {
   writeGridData,
   writeImageData,
   writeOVLayer,
-} from './open';
+} from './open/index.js';
 import { PbfReader, Pbf as Protobuf } from 'pbf-ts';
 
-import type { GridInput, ImageDataInput } from './open';
+import type { GridInput, ImageDataInput } from './open/index.js';
 
 /**
  * Layers are a storage structure for the vector tile.

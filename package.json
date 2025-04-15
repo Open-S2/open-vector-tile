@@ -1,6 +1,6 @@
 {
   "name": "open-vector-tile",
-  "version": "1.11.0",
+  "version": "1.12.0",
   "description": "This library reads/writes Open Vector Tiles",
   "keywords": [
     "vector",
@@ -64,14 +64,14 @@
     "@mapbox/vector-tile": "^2.0.3",
     "@maplibre/maplibre-tile-spec": "^0.0.1-alpha.3",
     "@skypack/package-check": "^0.2.2",
-    "@types/bun": "^1.2.8",
-    "@types/node": "^22.14.0",
+    "@types/bun": "^1.2.9",
+    "@types/node": "^22.14.1",
     "@types/pbf": "^3.0.5",
     "ajv": "^8.17.1",
     "coveralls": "^3.1.1",
     "dependency-cruiser": "^16.10.1",
     "eslint": "^9.24.0",
-    "eslint-config-prettier": "^10.1.1",
+    "eslint-config-prettier": "^10.1.2",
     "eslint-plugin-jsdoc": "^50.6.9",
     "eslint-plugin-prettier": "^5.2.6",
     "eslint-plugin-tsdoc": "^0.4.0",
@@ -79,14 +79,14 @@
     "markdown-table": "^3.0.4",
     "pbf": "^4.0.1",
     "prettier": "^3.5.3",
-    "s2json-spec": "^1.10.0",
+    "s2json-spec": "^1.11.0",
     "sharp": "^0.34.1",
     "typedoc": "^0.28.2",
     "typedoc-plugin-coverage": "^3.4.1",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.29.1"
+    "typescript-eslint": "^8.30.1"
   },
   "dependencies": {
-    "pbf-ts": "^1.1.0"
+    "pbf-ts": "^1.2.0"
   }
 }

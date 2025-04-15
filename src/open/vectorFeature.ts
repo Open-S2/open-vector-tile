@@ -1,12 +1,12 @@
-import { OColumnName } from './columnCache';
-import { decodeOffset } from '../base';
+import { OColumnName } from './columnCache.js';
+import { decodeOffset } from '../base/index.js';
 import { PbfReader, Pbf as Protobuf } from 'pbf-ts';
-import { decodeValue, encodeValue } from './shape';
-import { unweave2D, unweave3D, zagzig } from '../util';
+import { decodeValue, encodeValue } from './shape.js';
+import { unweave2D, unweave3D, zagzig } from '../util.js';
 
-import type { BaseVectorFeature } from '../base';
-import type { Extents } from './vectorLayer';
-import type { Shape } from './shape';
+import type { BaseVectorFeature } from '../base/index.js';
+import type { Extents } from './vectorLayer.js';
+import type { Shape } from './shape.js';
 import type {
   BBox,
   BBox3D,
@@ -19,7 +19,7 @@ import type {
   VectorMultiPolygonOffset,
   VectorPolygonOffset,
 } from 's2json-spec';
-import type { ColumnCacheReader, ColumnCacheWriter } from './columnCache';
+import type { ColumnCacheReader, ColumnCacheWriter } from './columnCache.js';
 import type {
   Point,
   Point3D,
@@ -34,7 +34,7 @@ import type {
   VectorPoints3D,
   VectorPoly,
   VectorPoly3D,
-} from '../vectorTile.spec';
+} from '../vectorTile.spec.js';
 
 /**
  * Vector Feature Base

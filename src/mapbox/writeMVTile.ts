@@ -1,10 +1,10 @@
-import { BaseVectorPolysFeature } from '../base';
-import { OVectorLayer } from '../open/vectorLayer';
+import { BaseVectorPolysFeature } from '../base/index.js';
+import { OVectorLayer } from '../open/vectorLayer.js';
 import { Pbf as Protobuf } from 'pbf-ts';
-import { commandEncode, zigzag } from '../util';
+import { commandEncode, zigzag } from '../util.js';
 
-import type { VectorTile } from '../vectorTile';
-import type { BaseVectorFeature, BaseVectorLayer, BaseVectorTile } from '../base';
+import type { VectorTile } from '../vectorTile.js';
+import type { BaseVectorFeature, BaseVectorLayer, BaseVectorTile } from '../base/index.js';
 import type {
   MapboxValue,
   Point,
@@ -12,8 +12,8 @@ import type {
   VectorMultiPoly,
   VectorPoints,
   VectorPoly,
-} from '../vectorTile.spec';
-import type { MapboxVectorFeature, MapboxVectorLayer } from '.';
+} from '../vectorTile.spec.js';
+import type { MapboxVectorFeature, MapboxVectorLayer } from './index.js';
 
 /** A storage structure to manage deduplication of keys and values in each layer */
 interface Context {

@@ -1,11 +1,11 @@
-import MapboxVectorLayer from '../mapbox/vectorLayer';
-import { updateShapeFromData } from '../open/shape';
-import { fromMapboxVectorFeature, fromS2JSONFeature } from './vectorFeature';
+import MapboxVectorLayer from '../mapbox/vectorLayer.js';
+import { updateShapeFromData } from '../open/shape.js';
+import { fromMapboxVectorFeature, fromS2JSONFeature } from './vectorFeature.js';
 
-import type { BaseVectorFeature } from './vectorFeature';
-import type { Extents } from '../open';
-import type { S2JSONLayer } from '../vectorTile.spec';
-import type { Shape } from '../open/shape';
+import type { BaseVectorFeature } from './vectorFeature.js';
+import type { Extents } from '../open/index.js';
+import type { S2JSONLayer } from '../vectorTile.spec.js';
+import type { Shape } from '../open/shape.js';
 
 /**
  * Base Vector Layer
