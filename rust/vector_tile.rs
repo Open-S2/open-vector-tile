@@ -267,7 +267,6 @@ impl ProtoRead for VectorTile {
                 pb.read_message(&mut image);
                 self.images.insert(image.name.clone(), image);
             }
-            #[tarpaulin::skip]
             _ => panic!("unknown tag: {}", tag),
         }
     }

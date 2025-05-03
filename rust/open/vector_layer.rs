@@ -92,7 +92,6 @@ impl ProtoRead for OpenVectorLayer {
                     Some(decode_shape(pb.read_varint(), &mut cache))
                 }
             }
-            #[tarpaulin::skip]
             _ => panic!("unknown tag: {}", tag),
         }
     }

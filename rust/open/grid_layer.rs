@@ -48,7 +48,6 @@ impl ProtoRead for GridData {
                     .collect()
             }
             6 => self.name = pb.read_string(),
-            #[tarpaulin::skip]
             _ => panic!("unknown tag: {}", tag),
         }
     }

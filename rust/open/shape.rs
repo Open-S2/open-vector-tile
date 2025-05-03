@@ -64,7 +64,6 @@ impl ShapePrimitiveTypeToStore for PrimitiveShapeType {
                 }
                 Self::NestedPrimitive(nested)
             }
-            #[tarpaulin::skip]
             _ => panic!("Unknown shape definition: {:?}", shape_pair),
         }
     }
@@ -260,7 +259,6 @@ impl PrimitiveValueToStore for PrimitiveValue {
             }
             // null
             (PrimitiveValue::Null, PrimitiveShape::Null) => {}
-            #[tarpaulin::skip]
             _ => panic!("shape mismatch"),
         }
     }
@@ -323,7 +321,6 @@ impl PrimitiveShapeTypeToStore for ValuePrimitiveType {
                     val.encode(prim_shape, store, cache);
                 }
             }
-            #[tarpaulin::skip]
             _ => panic!("shape and value do not match"),
         }
     }
@@ -380,7 +377,6 @@ impl ValueTypeToStore for ValueType {
             (ValueType::Nested(val), ShapeType::Nested(shape)) => {
                 val.encode(shape, store, cache);
             }
-            #[tarpaulin::skip]
             _ => panic!("shape and value do not match"),
         }
     }

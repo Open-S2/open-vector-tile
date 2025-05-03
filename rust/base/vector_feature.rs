@@ -773,7 +773,6 @@ impl From<&mut MapboxVectorFeature> for BaseVectorFeature {
             VectorGeometry::VectorPolys(geo) => BaseVectorFeature::BaseVectorPolysFeature(
                 BaseVectorPolysFeature::new(id, geo, properties, None, indices, tessellation),
             ),
-            #[tarpaulin::skip]
             _ => panic!("unexpected geometry type"),
         }
     }

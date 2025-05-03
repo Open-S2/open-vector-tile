@@ -59,7 +59,6 @@ impl FromStr for ImageType {
             "BMP" => Ok(ImageType::BMP),
             "RAW" => Ok(ImageType::RAW),
             "UNKNOWN" => Ok(ImageType::UNKNOWN),
-            #[tarpaulin::skip]
             _ => Err("Unknown image type"),
         }
     }
@@ -120,7 +119,6 @@ impl ProtoRead for ImageData {
             3 => self.height = pb.read_varint(),
             4 => self.image = pb.read_bytes(),
             5 => self.name = pb.read_string(),
-            #[tarpaulin::skip]
             _ => panic!("unknown tag: {}", tag),
         }
     }

@@ -142,12 +142,10 @@ impl VectorFeatureMethods for MapboxVectorFeature {
                 .iter()
                 .flat_map(|p| p.iter().flat_map(|p| p.geometry[..p.geometry.len() - 1].to_vec()))
                 .collect(),
-            #[tarpaulin::skip]
             _ => panic!("unexpected geometry type"),
         }
     }
 
-    #[tarpaulin::skip]
     fn load_points_3d(&mut self) -> VectorPoints3D {
         panic!("unexpected geometry type")
     }
@@ -157,13 +155,11 @@ impl VectorFeatureMethods for MapboxVectorFeature {
         match self.load_geometry() {
             VectorGeometry::VectorLines(lines) => lines,
             VectorGeometry::VectorPolys(polys) => polys.iter().flat_map(|p| p.clone()).collect(),
-            #[tarpaulin::skip]
             _ => panic!("unexpected geometry type"),
         }
     }
 
     /// an array of 3D lines. The offsets will be set to 0
-    #[tarpaulin::skip]
     fn load_lines_3d(&mut self) -> VectorLines3DWithOffset {
         panic!("unexpected geometry type")
     }
@@ -172,13 +168,11 @@ impl VectorFeatureMethods for MapboxVectorFeature {
     fn load_polys(&mut self) -> Vec<VectorLinesWithOffset> {
         match self.load_geometry() {
             VectorGeometry::VectorPolys(polys) => polys,
-            #[tarpaulin::skip]
             _ => panic!("unexpected geometry type"),
         }
     }
 
     /// an array of 3D polys
-    #[tarpaulin::skip]
     fn load_polys_3d(&mut self) -> Vec<VectorLines3DWithOffset> {
         panic!("unexpected geometry type")
     }
@@ -200,7 +194,6 @@ impl VectorFeatureMethods for MapboxVectorFeature {
                     })
                 })
                 .collect(),
-            #[tarpaulin::skip]
             _ => panic!("unexpected geometry type"),
         };
         // if a poly, check if we should load indices
@@ -267,7 +260,6 @@ impl VectorFeatureMethods for MapboxVectorFeature {
                     points = vec![];
                 }
             } else {
-                #[tarpaulin::skip]
                 panic!("unknown cmd: {}", cmd);
             }
         }
@@ -339,7 +331,6 @@ impl VectorFeatureMethods for MapboxVectorFeature {
     }
 
     /// Add 3D tessellation data to the geometry
-    #[tarpaulin::skip]
     fn add_tessellation_3d(&mut self, _geometry: &mut Vec<f64>, _multiplier: f64) {
         panic!("unexpected geometry type")
     }
@@ -363,7 +354,7 @@ impl ProtoRead for MapboxVectorFeature {
                 3 => self.geometry_index = pb.get_pos(),
                 4 => self.indices_index = Some(pb.get_pos()),
                 5 => self.tessellation_index = Some(pb.get_pos()),
-                #[tarpaulin::skip]
+
                 _ => panic!("unknown tag: {}", tag),
             }
         } else {
@@ -383,7 +374,7 @@ impl ProtoRead for MapboxVectorFeature {
                 4 => self.geometry_index = pb.get_pos(),
                 5 => self.indices_index = Some(pb.get_pos()),
                 6 => self.tessellation_index = Some(pb.get_pos()),
-                #[tarpaulin::skip]
+
                 _ => panic!("unknown tag: {}", tag),
             }
         }
@@ -460,7 +451,6 @@ impl From<OpenFeatureType> for FeatureType {
             OpenFeatureType::Points => FeatureType::Point,
             OpenFeatureType::Lines => FeatureType::Line,
             OpenFeatureType::Polygons => FeatureType::MultiPolygon,
-            #[tarpaulin::skip]
             _ => panic!("unknown value: {:?}", value),
         }
     }
@@ -475,7 +465,6 @@ impl BitCast for FeatureType {
             2 => FeatureType::Line,
             3 => FeatureType::Polygon,
             4 => FeatureType::MultiPolygon,
-            #[tarpaulin::skip]
             _ => panic!("unknown value: {}", value),
         }
     }
@@ -576,7 +565,7 @@ fn write_geometry(feature: &BaseVectorFeature, mapbox_support: bool) -> Vec<u8> 
         BaseVectorPolysFeature(polys) => {
             write_geometry_polys(&polys.geometry, &mut pbf, mapbox_support)
         }
-        #[tarpaulin::skip]
+
         _ => panic!("unknown feature type: {:?}", feature.get_type()),
     };
     pbf.take()
