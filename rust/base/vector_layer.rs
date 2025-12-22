@@ -50,13 +50,13 @@ impl BaseVectorLayer {
             let prop_shape: Shape = feature.properties().into();
             self.shape.merge(&prop_shape);
         }
-        if !self.m_shape_defined {
-            if let Some(m_values) = feature.m_values() {
-                let feature_shape: Shape = (&m_values[..]).into();
-                match self.m_shape {
-                    Some(ref mut m_shape) => m_shape.merge(&feature_shape),
-                    None => self.m_shape = Some(feature_shape),
-                }
+        if !self.m_shape_defined
+            && let Some(m_values) = feature.m_values()
+        {
+            let feature_shape: Shape = (&m_values[..]).into();
+            match self.m_shape {
+                Some(ref mut m_shape) => m_shape.merge(&feature_shape),
+                None => self.m_shape = Some(feature_shape),
             }
         }
 
