@@ -325,7 +325,7 @@ impl ProtoWrite for ColumnCacheWriter {
         let mut bbox: Vec<(&BBOX, &RefCell<OColumnBaseChunk>)> = self.bbox.iter().collect();
 
         // sort them
-        // TODO: bring this back
+        // TODO: bring this back (It needs to be an Rc<RefCell<__>>)
         // sort_column(&mut unsigned);
         // sort_column(&mut signed);
         // sort_column(&mut float);

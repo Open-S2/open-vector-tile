@@ -1,13 +1,13 @@
 [package]
 name = "open-vector-tile"
-version = "1.9.0"
-rust-version = "1.86.0"
+version = "1.10.0"
+rust-version = "1.91.0"
 edition = "2024"
 authors = ["Craig O'Connor <oconnorct1@gmail.com>"]
 description = "This library reads/writes The Open Vector Tiles 1.0 Specification"
 documentation = "https://docs.rs/open-vector-tile"
-homepage = "https://github.com/OpenS2/open-vector-tile"
-repository = "https://github.com/OpenS2/open-vector-tile"
+homepage = "https://github.com/Open-S2/open-vector-tile"
+repository = "https://github.com/Open-S2/open-vector-tile"
 readme = "README.md"
 categories = ["encoding", "wasm", "embedded", "no-std"]
 keywords = ["open", "vector", "tile", "gis", "low-cost-code"]
