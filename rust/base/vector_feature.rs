@@ -10,7 +10,7 @@ use libm::round;
 use s2json::{BBOX, BBox, BBox3D, LineStringMValues, Properties, Shape, Value};
 
 /// Vector Feature functions that are common to all vector features
-pub trait VectorFeature {
+pub trait BaseVectorFeatureMethods {
     /// Get the type of the vector feature
     fn get_type(&self) -> FeatureType;
     /// Get the properties of the vector feature
@@ -54,7 +54,7 @@ impl BaseVectorPointsFeature {
         Self { id, geometry, properties, bbox }
     }
 }
-impl VectorFeature for BaseVectorPointsFeature {
+impl BaseVectorFeatureMethods for BaseVectorPointsFeature {
     /// Get the type of the feature
     fn get_type(&self) -> FeatureType {
         FeatureType::Points
@@ -140,7 +140,7 @@ impl BaseVectorPoints3DFeature {
         Self { id, geometry, properties, bbox }
     }
 }
-impl VectorFeature for BaseVectorPoints3DFeature {
+impl BaseVectorFeatureMethods for BaseVectorPoints3DFeature {
     /// Get the type of the feature
     fn get_type(&self) -> FeatureType {
         FeatureType::Points3D
@@ -222,7 +222,7 @@ impl BaseVectorLinesFeature {
         Self { id, geometry, properties, bbox }
     }
 }
-impl VectorFeature for BaseVectorLinesFeature {
+impl BaseVectorFeatureMethods for BaseVectorLinesFeature {
     /// Get the type of the feature
     fn get_type(&self) -> FeatureType {
         FeatureType::Lines
@@ -310,7 +310,7 @@ impl BaseVectorLines3DFeature {
         Self { id, geometry, properties, bbox }
     }
 }
-impl VectorFeature for BaseVectorLines3DFeature {
+impl BaseVectorFeatureMethods for BaseVectorLines3DFeature {
     /// Get the type of the feature
     fn get_type(&self) -> FeatureType {
         FeatureType::Lines3D
@@ -406,7 +406,7 @@ impl BaseVectorPolysFeature {
         Self { id, geometry, properties, bbox, indices, tessellation }
     }
 }
-impl VectorFeature for BaseVectorPolysFeature {
+impl BaseVectorFeatureMethods for BaseVectorPolysFeature {
     /// Get the type of the feature
     fn get_type(&self) -> FeatureType {
         FeatureType::Polygons
@@ -508,7 +508,7 @@ impl BaseVectorPolys3DFeature {
         Self { id, geometry, properties, bbox, indices, tessellation }
     }
 }
-impl VectorFeature for BaseVectorPolys3DFeature {
+impl BaseVectorFeatureMethods for BaseVectorPolys3DFeature {
     /// Get the type of the feature
     fn get_type(&self) -> FeatureType {
         FeatureType::Polygons3D

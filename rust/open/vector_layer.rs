@@ -1,5 +1,5 @@
 use crate::{
-    VectorLayerMethods,
+    VectorFeature, VectorLayerMethods,
     base::BaseVectorLayer,
     open::{
         ColumnCacheReader, ColumnCacheWriter, Extent, OpenVectorFeature, decode_shape,
@@ -58,8 +58,8 @@ impl VectorLayerMethods for OpenVectorLayer {
     fn is_empty(&self) -> bool {
         self.features.is_empty()
     }
-    fn feature(&mut self, i: usize) -> Option<&mut dyn crate::VectorFeatureMethods> {
-        self.features.get_mut(i).map(|f| f as &mut dyn crate::VectorFeatureMethods)
+    fn feature(&mut self, i: usize) -> Option<VectorFeature<'_>> {
+        self.features.get_mut(i).map(Into::into)
     }
 }
 impl ProtoRead for OpenVectorLayer {

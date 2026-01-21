@@ -159,12 +159,15 @@ pub mod mapbox;
 pub mod open;
 /// Utilities/functions that are useful across all specifications
 pub mod util;
+/// The vector feature struct that covers both "open" and "mapbox" specifications
+pub mod vector_feature;
 /// The vector tile struct that covers both "open" and "mapbox" specifications
 pub mod vector_tile;
 
 pub use geometry::*;
 pub use open::*;
 pub use util::*;
+pub use vector_feature::*;
 pub use vector_tile::*;
 
 #[cfg(any(target_arch = "wasm32", feature = "wasm"))]

@@ -5,9 +5,9 @@ mod tests {
     use open_vector_tile::{
         Point, Point3D, VectorGeometry, VectorLine3DWithOffset, VectorLineWithOffset,
         base::{
-            BaseVectorFeature, BaseVectorLines3DFeature, BaseVectorLinesFeature,
-            BaseVectorPoints3DFeature, BaseVectorPointsFeature, BaseVectorPolys3DFeature,
-            BaseVectorPolysFeature, TessellationWrapper, VectorFeature, decode_offset,
+            BaseVectorFeature, BaseVectorFeatureMethods, BaseVectorLines3DFeature,
+            BaseVectorLinesFeature, BaseVectorPoints3DFeature, BaseVectorPointsFeature,
+            BaseVectorPolys3DFeature, BaseVectorPolysFeature, TessellationWrapper, decode_offset,
             encode_offset,
         },
         open::{ColumnCacheWriter, FeatureType},

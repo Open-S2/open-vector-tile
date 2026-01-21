@@ -3,8 +3,8 @@ mod tests {
     extern crate alloc;
 
     use open_vector_tile::{
-        Point, Point3D, VectorGeometry, VectorLayerMethods, VectorLine3DWithOffset,
-        VectorLineWithOffset, VectorTile,
+        Point, Point3D, VectorFeatureMethods, VectorGeometry, VectorLayerMethods,
+        VectorLine3DWithOffset, VectorLineWithOffset, VectorTile,
         base::{
             BaseVectorFeature, BaseVectorLayer, BaseVectorLines3DFeature, BaseVectorLinesFeature,
             BaseVectorPoints3DFeature, BaseVectorPointsFeature, BaseVectorPolys3DFeature,
@@ -183,7 +183,7 @@ mod tests {
         assert_eq!(o_points_layer.len(), 2);
 
         {
-            let o_feature = o_points_layer.feature(0).unwrap();
+            let mut o_feature = o_points_layer.feature(0).unwrap();
             // id
             assert_eq!(o_feature.id(), None);
             // properties
@@ -222,7 +222,7 @@ mod tests {
         }
 
         {
-            let o_feature = o_points_layer.feature(1).unwrap();
+            let mut o_feature = o_points_layer.feature(1).unwrap();
             // id
             assert_eq!(o_feature.id(), Some(1));
             // properties
@@ -307,7 +307,7 @@ mod tests {
         assert!(!m_lines_layer.is_empty());
 
         {
-            let o_feature = m_lines_layer.feature(0).unwrap();
+            let mut o_feature = m_lines_layer.feature(0).unwrap();
             // id
             assert_eq!(o_feature.id(), None);
             // properties
@@ -361,7 +361,7 @@ mod tests {
             assert_eq!(o_feature.read_indices(), Vec::<u32>::new());
         }
         {
-            let o_feature = m_lines_layer.feature(1).unwrap();
+            let mut o_feature = m_lines_layer.feature(1).unwrap();
             // id
             assert_eq!(o_feature.id(), Some(1));
             // properties
@@ -451,7 +451,7 @@ mod tests {
         assert_eq!(m_polygons_layer.len(), 2);
 
         {
-            let o_feature = m_polygons_layer.feature(0).unwrap();
+            let mut o_feature = m_polygons_layer.feature(0).unwrap();
             // id
             assert_eq!(o_feature.id(), None);
             // properties
@@ -548,7 +548,7 @@ mod tests {
             );
         }
         {
-            let o_feature = m_polygons_layer.feature(1).unwrap();
+            let mut o_feature = m_polygons_layer.feature(1).unwrap();
             // id
             assert_eq!(o_feature.id(), Some(1));
             // properties
@@ -896,7 +896,7 @@ mod tests {
         assert_eq!(o_points_layer.len(), 2);
 
         {
-            let o_feature = o_points_layer.feature(0).unwrap();
+            let mut o_feature = o_points_layer.feature(0).unwrap();
             // id
             assert_eq!(o_feature.id(), None);
             // properties
@@ -944,7 +944,7 @@ mod tests {
         }
 
         {
-            let o_feature = o_points_layer.feature(1).unwrap();
+            let mut o_feature = o_points_layer.feature(1).unwrap();
             // id
             assert_eq!(o_feature.id(), Some(1));
             // properties
@@ -1015,7 +1015,7 @@ mod tests {
         assert_eq!(m_lines_layer.len(), 2);
 
         {
-            let o_feature = m_lines_layer.feature(0).unwrap();
+            let mut o_feature = m_lines_layer.feature(0).unwrap();
             // id
             assert_eq!(o_feature.id(), None);
             // properties
@@ -1069,7 +1069,7 @@ mod tests {
             assert_eq!(o_feature.read_indices(), Vec::<u32>::new());
         }
         {
-            let o_feature = m_lines_layer.feature(1).unwrap();
+            let mut o_feature = m_lines_layer.feature(1).unwrap();
             // id
             assert_eq!(o_feature.id(), Some(1));
             // properties
@@ -1159,7 +1159,7 @@ mod tests {
         assert_eq!(m_polygons_layer.len(), 2);
 
         {
-            let o_feature = m_polygons_layer.feature(0).unwrap();
+            let mut o_feature = m_polygons_layer.feature(0).unwrap();
             // id
             assert_eq!(o_feature.id(), None);
             // properties
@@ -1256,7 +1256,7 @@ mod tests {
             );
         }
         {
-            let o_feature = m_polygons_layer.feature(1).unwrap();
+            let mut o_feature = m_polygons_layer.feature(1).unwrap();
             // id
             assert_eq!(o_feature.id(), Some(1));
             // properties

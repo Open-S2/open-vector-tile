@@ -1,5 +1,5 @@
 use crate::{
-    VectorFeatureMethods, VectorLayerMethods,
+    VectorFeature, VectorLayerMethods,
     base::BaseVectorLayer,
     mapbox::{MapboxVectorFeature, write_feature},
 };
@@ -75,7 +75,7 @@ impl VectorLayerMethods for MapboxVectorLayer {
         self.feature_positions.is_empty()
     }
 
-    fn feature(&mut self, i: usize) -> Option<&mut dyn VectorFeatureMethods> {
+    fn feature(&mut self, i: usize) -> Option<VectorFeature<'_>> {
         // First check if self.features already has the feature
         if let Entry::Vacant(e) = self.features.entry(i) {
             // Read the feature
@@ -93,10 +93,10 @@ impl VectorLayerMethods for MapboxVectorLayer {
             e.insert(feature);
 
             // Now safely retrieve the inserted feature
-            Some(self.features.get_mut(&i).unwrap() as &mut dyn VectorFeatureMethods)
+            self.features.get_mut(&i).map(Into::into)
         } else {
             // Safe to unwrap since we just checked the key exists
-            Some(self.features.get_mut(&i).unwrap() as &mut dyn VectorFeatureMethods)
+            self.features.get_mut(&i).map(Into::into)
         }
     }
 }

@@ -2,10 +2,11 @@
 mod tests {
     extern crate alloc;
     use open_vector_tile::{
-        Point, VectorGeometry, VectorLayerMethods, VectorLineWithOffset, VectorTile,
+        Point, VectorFeatureMethods, VectorGeometry, VectorLayerMethods, VectorLineWithOffset,
+        VectorTile,
         base::{
-            BaseVectorFeature, BaseVectorLayer, BaseVectorLinesFeature, BaseVectorPointsFeature,
-            BaseVectorPolysFeature, BaseVectorTile, VectorFeature,
+            BaseVectorFeature, BaseVectorFeatureMethods, BaseVectorLayer, BaseVectorLinesFeature,
+            BaseVectorPointsFeature, BaseVectorPolysFeature, BaseVectorTile,
         },
         mapbox::vector_tile::{MapboxVectorTile, write_tile},
         open::{Extent, FeatureType},
@@ -177,7 +178,7 @@ mod tests {
         assert_eq!(m_points_layer.len(), 2);
 
         {
-            let m_feature = m_points_layer.feature(0).unwrap();
+            let mut m_feature = m_points_layer.feature(0).unwrap();
             // id
             assert_eq!(m_feature.id(), None);
             // properties
@@ -242,7 +243,7 @@ mod tests {
         }
 
         {
-            let m_feature = m_points_layer.feature(1).unwrap();
+            let mut m_feature = m_points_layer.feature(1).unwrap();
             // id
             assert_eq!(m_feature.id(), Some(1));
             // properties
@@ -294,7 +295,7 @@ mod tests {
         assert_eq!(m_lines_layer.len(), 2);
 
         {
-            let m_feature = m_lines_layer.feature(0).unwrap();
+            let mut m_feature = m_lines_layer.feature(0).unwrap();
             // id
             assert_eq!(m_feature.id(), None);
             // properties
@@ -342,7 +343,7 @@ mod tests {
             assert_eq!(m_feature.read_indices(), Vec::<u32>::new());
         }
         {
-            let m_feature = m_lines_layer.feature(1).unwrap();
+            let mut m_feature = m_lines_layer.feature(1).unwrap();
             // id
             assert_eq!(m_feature.id(), Some(1));
             // properties
@@ -407,7 +408,7 @@ mod tests {
         assert_eq!(m_polygons_layer.len(), 2);
 
         {
-            let m_feature = m_polygons_layer.feature(0).unwrap();
+            let mut m_feature = m_polygons_layer.feature(0).unwrap();
             // id
             assert_eq!(m_feature.id(), None);
             // properties
@@ -499,7 +500,7 @@ mod tests {
             );
         }
         {
-            let m_feature = m_polygons_layer.feature(1).unwrap();
+            let mut m_feature = m_polygons_layer.feature(1).unwrap();
             // id
             assert_eq!(m_feature.id(), Some(1));
             // properties
@@ -690,7 +691,7 @@ mod tests {
         assert_eq!(geojson_layer.len(), 1);
         assert!(!geojson_layer.is_empty());
 
-        let geojson_feature = geojson_layer.feature(0).unwrap();
+        let mut geojson_feature = geojson_layer.feature(0).unwrap();
         let geojson_geometry = geojson_feature.load_geometry();
         assert_eq!(
             geojson_geometry,
@@ -711,7 +712,7 @@ mod tests {
         assert_eq!(geojson_layer.len(), 1);
         assert!(!geojson_layer.is_empty());
 
-        let geojson_feature = geojson_layer.feature(0).unwrap();
+        let mut geojson_feature = geojson_layer.feature(0).unwrap();
         let geojson_geometry = geojson_feature.load_geometry();
         assert_eq!(
             geojson_geometry,
@@ -730,7 +731,7 @@ mod tests {
 
         let len = layer.len();
         for i in 0..len {
-            let feature = layer.feature(i).unwrap();
+            let mut feature = layer.feature(i).unwrap();
             feature.load_geometry();
         }
     }
@@ -746,7 +747,7 @@ mod tests {
 
         let len = layer.len();
         for i in 0..len {
-            let feature = layer.feature(i).unwrap();
+            let mut feature = layer.feature(i).unwrap();
             feature.load_geometry();
         }
     }
@@ -763,7 +764,7 @@ mod tests {
         assert_eq!(geojson_layer.extent(), 4_096);
         assert_eq!(geojson_layer.len(), 1);
 
-        let geojson_feature = geojson_layer.feature(0).unwrap();
+        let mut geojson_feature = geojson_layer.feature(0).unwrap();
         let geojson_geometry = geojson_feature.load_geometry();
         assert_eq!(
             geojson_geometry,
@@ -823,7 +824,7 @@ mod tests {
         assert_eq!(geojson_layer.extent(), 4_096);
         assert_eq!(geojson_layer.len(), 1);
 
-        let geojson_feature = geojson_layer.feature(0).unwrap();
+        let mut geojson_feature = geojson_layer.feature(0).unwrap();
         let geojson_geometry = geojson_feature.load_geometry();
         assert_eq!(
             geojson_geometry,
@@ -847,7 +848,7 @@ mod tests {
                         Point::new(1878, 2221),
                         Point::new(1878, 1876),
                     ],
-                },],
+                }],
             ])
         );
 

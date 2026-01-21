@@ -1,68 +1,14 @@
 use crate::{
-    VectorGeometry, VectorLines3DWithOffset, VectorLinesWithOffset, VectorPoints, VectorPoints3D,
+    VectorFeature,
     base::BaseVectorTile,
     mapbox::MapboxVectorLayer,
     open::{
-        ColumnCacheReader, ColumnCacheWriter, FeatureType, GridData, ImageData, OpenVectorLayer,
-        write_layer,
+        ColumnCacheReader, ColumnCacheWriter, GridData, ImageData, OpenVectorLayer, write_layer,
     },
 };
 use alloc::{collections::BTreeMap, rc::Rc, string::String, vec::Vec};
 use core::cell::RefCell;
 use pbf::{ProtoRead, Protobuf};
-use s2json::{BBOX, Properties};
-
-/// Methods that all vector features should have
-pub trait VectorFeatureMethods {
-    /// the id of the feature
-    fn id(&self) -> Option<u64>;
-    /// the version of the vector tile
-    fn version(&self) -> u16;
-    /// the properties
-    fn properties(&self) -> Properties;
-    /// the extent
-    fn extent(&self) -> usize;
-    /// the feature type
-    fn get_type(&self) -> FeatureType;
-    /// the bounding box
-    fn bbox(&self) -> Option<BBOX>;
-    /// whether the feature has m values
-    fn has_m_values(&self) -> bool;
-    /// whether the feature is a points type
-    fn is_points(&self) -> bool;
-    /// whether the feature is a line type
-    fn is_lines(&self) -> bool;
-    /// whether the feature is a polygon type
-    fn is_polygons(&self) -> bool;
-    /// whether the feature is a points 3D type
-    fn is_points_3d(&self) -> bool;
-    /// whether the feature is a line 3D type
-    fn is_lines_3d(&self) -> bool;
-    /// whether the feature is a polygon 3D type
-    fn is_polygons_3d(&self) -> bool;
-    /// regardless of the type, we return a flattend point array
-    fn load_points(&mut self) -> VectorPoints;
-    /// regardless of the type, we return a flattend point3D array
-    fn load_points_3d(&mut self) -> VectorPoints3D;
-    /// an array of lines.
-    fn load_lines(&mut self) -> VectorLinesWithOffset;
-    /// an array of 3D lines.
-    fn load_lines_3d(&mut self) -> VectorLines3DWithOffset;
-    /// an array of polygons.
-    fn load_polys(&mut self) -> Vec<VectorLinesWithOffset>;
-    /// an array of 3D polygons.
-    fn load_polys_3d(&mut self) -> Vec<VectorLines3DWithOffset>;
-    /// (flattened geometry & tesslation if applicable, indices)
-    fn load_geometry_flat(&mut self) -> (Vec<f64>, Vec<u32>);
-    /// load the geometry
-    fn load_geometry(&mut self) -> VectorGeometry;
-    /// load the indices
-    fn read_indices(&mut self) -> Vec<u32>;
-    /// Add tessellation data to the geometry
-    fn add_tessellation(&mut self, geometry: &mut Vec<f64>, multiplier: f64);
-    /// Add 3D tessellation data to the geometry
-    fn add_tessellation_3d(&mut self, geometry: &mut Vec<f64>, multiplier: f64);
-}
 
 /// Methods that all vector layers should have
 pub trait VectorLayerMethods {
@@ -74,7 +20,7 @@ pub trait VectorLayerMethods {
     /// are supported for the open spec)
     fn extent(&self) -> usize;
     /// grab a feature from the layer
-    fn feature(&mut self, i: usize) -> Option<&mut dyn VectorFeatureMethods>;
+    fn feature(&mut self, i: usize) -> Option<VectorFeature<'_>>;
     /// length (layer count)
     fn len(&self) -> usize;
     /// empty (layer count is 0)
@@ -111,10 +57,10 @@ impl VectorLayerMethods for VectorLayer {
         }
     }
 
-    fn feature(&mut self, i: usize) -> Option<&mut dyn VectorFeatureMethods> {
+    fn feature(&mut self, i: usize) -> Option<VectorFeature<'_>> {
         match self {
-            VectorLayer::Mapbox(layer) => layer.feature(i),
-            VectorLayer::Open(layer) => layer.feature(i),
+            VectorLayer::Mapbox(layer) => layer.feature(i).map(Into::into),
+            VectorLayer::Open(layer) => layer.feature(i).map(Into::into),
         }
     }
 
