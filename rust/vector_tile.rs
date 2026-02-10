@@ -59,8 +59,8 @@ impl VectorLayerMethods for VectorLayer {
 
     fn feature(&mut self, i: usize) -> Option<VectorFeature<'_>> {
         match self {
-            VectorLayer::Mapbox(layer) => layer.feature(i).map(Into::into),
-            VectorLayer::Open(layer) => layer.feature(i).map(Into::into),
+            VectorLayer::Mapbox(layer) => layer.feature(i),
+            VectorLayer::Open(layer) => layer.feature(i),
         }
     }
 
