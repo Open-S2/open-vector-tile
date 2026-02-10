@@ -4,7 +4,7 @@ A specification for encoding tiled vector data.
 
 ## Implementations
 
-* [open-vector-tile](https://github.com/Open-S2/open-vector-tile) (Rust and Typescript)
+- [open-vector-tile](https://github.com/Open-S2/open-vector-tile) (Rust and Typescript)
 
 ## Versioning
 
@@ -20,7 +20,7 @@ If you are interested in contributing please refer to the [CONTRIBUTING.md](CONT
 
 As this is a modified version of Mapbox's vector tile spec, you can see [the original authors here](https://github.com/mapbox/vector-tile-spec)
 
-* Craig O'Connor
+- Craig O'Connor
 
 ## License
 

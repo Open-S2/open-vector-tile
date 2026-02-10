@@ -10,18 +10,18 @@ this document are to be interpreted as described in [RFC 2119](https://www.ietf.
 1. [File format](#2-file-format)
 1. [Projection and Bounds](#3-projection-and-bounds)
 1. [Internal Structure](#4-internal-structure)
-    1. [Tile](#41-tile)
-    1. [Column Cache](#42-column-cache)
-    1. [Vector Layer](#43-vector-layer)
-    1. [Shapes](#44-shapes)
-    1. [Feature](#45-feature)
-    1. [Grid Layer](#46-grid-layer)
-    1. [Image Layer](#47-image-layer)
+   1. [Tile](#41-tile)
+   1. [Column Cache](#42-column-cache)
+   1. [Vector Layer](#43-vector-layer)
+   1. [Shapes](#44-shapes)
+   1. [Feature](#45-feature)
+   1. [Grid Layer](#46-grid-layer)
+   1. [Image Layer](#47-image-layer)
 1. [Utility Functions](#5-utility-functions)
-    1. [ZigZag](#51-zigzag)
-    1. [Weave Functions](#52-weave-functions)
-    1. [Weave Functions 3D](#53-weave-functions-3d)
-    1. [Encode Offset](#54-encode-offset)
+   1. [ZigZag](#51-zigzag)
+   1. [Weave Functions](#52-weave-functions)
+   1. [Weave Functions 3D](#53-weave-functions-3d)
+   1. [Encode Offset](#54-encode-offset)
 1. [Security Considerations](#6-security-considerations)
 
 ## 1. Purpose
@@ -196,7 +196,9 @@ Example:
 ```md
 0000 0011 (3)
 0000 0101 (5)
--------------
+
+---
+
 0000 0000 0010 0111 (39)
 ```
 
@@ -208,9 +210,9 @@ const input = [
   { x: 11, y: 33 },
   { x: 22, y: 44 },
   { x: 23, y: 42 },
-]
-const output = weaveAndDeltaEncodeArray(input)
-console.log(output) // [7412, 4925, 828, 14]
+];
+const output = weaveAndDeltaEncodeArray(input);
+console.log(output); // [7412, 4925, 828, 14]
 ```
 
 ### 4.2.8. Column Cache - Points3D
@@ -259,7 +261,9 @@ Example:
 0000 0011 (3)
 0000 0101 (5)
 0000 0110 (6)
--------------
+
+---
+
 0000 0000 0000 0001 1010 1011 (427)
 ```
 
@@ -271,9 +275,9 @@ const input = [
   { x: 11, y: 33, z: 2 },
   { x: 22, y: 44, z: 3 },
   { x: 23, y: 42, z: 4 },
-]
-const output = weaveAndDeltaEncode3DArray(input)
-console.log(output) // [362216, 274681, 12536, 58]
+];
+const output = weaveAndDeltaEncode3DArray(input);
+console.log(output); // [362216, 274681, 12536, 58]
 ```
 
 ### 4.2.9. Column Cache - Indices
@@ -406,7 +410,7 @@ A layer SHOULD contain at least one feature.
 
 A layer MUST contain an `extent` that describes the width and height of the tile in integer coordinates. The geometries within the Vector Tile MAY extend past the bounds of the tile's area as defined by the `extent`. Geometries that extend past the tile's area as defined by `extent` are often used as a buffer for rendering features that overlap multiple adjacent tiles.
 
-For example, if a tile has an `extent` of 4096, coordinate units within the tile refer to 1/4096th of its square dimensions. A coordinate of 0 is on the top or left edge of the tile, and a coordinate of 4096 is on the bottom or right edge. Coordinates from 1 through 4095 inclusive are fully within the extent of the tile, and coordinates less than 0 or greater than 4096 are fully outside the extent of the tile.  A point at `(1,10)` or `(4095,10)` is within the extent of the tile. A point at `(0,10)` or `(4096,10)` is on the edge of the extent. A point at `(-1,10)` or `(4097,10)` is outside the extent of the tile.
+For example, if a tile has an `extent` of 4096, coordinate units within the tile refer to 1/4096th of its square dimensions. A coordinate of 0 is on the top or left edge of the tile, and a coordinate of 4096 is on the bottom or right edge. Coordinates from 1 through 4095 inclusive are fully within the extent of the tile, and coordinates less than 0 or greater than 4096 are fully outside the extent of the tile. A point at `(1,10)` or `(4095,10)` is within the extent of the tile. A point at `(0,10)` or `(4096,10)` is on the edge of the extent. A point at `(-1,10)` or `(4097,10)` is outside the extent of the tile.
 
 An `extent` value MUST be one of the following: `16_384`, `8_192`, `4_096`, `2_048`, `1_024`, or `512`.
 
@@ -958,7 +962,7 @@ The extent of the layer is described in section 4.3.4.
 
 The size of the layer represents the square length and width of the grid in pixels.
 
-#### 4.6.3. Min * Max
+#### 4.6.3. Min \* Max
 
 The `min` is the lowest grid value in the grid and the `max` is the highest grid value in the grid.
 
@@ -1025,16 +1029,16 @@ The raw image data. This means if using the browser, the data must be parsed via
 
 ```typescript
 const parsePNG = (arrayBuffer: ArrayBuffer): HTMLImageElement => {
-    const blob = new Blob([arrayBuffer], { type: "image/png" });
-    const url = URL.createObjectURL(blob);
+  const blob = new Blob([arrayBuffer], { type: 'image/png' });
+  const url = URL.createObjectURL(blob);
 
-    const img = new Image();
-    img.src = url;
+  const img = new Image();
+  img.src = url;
 
-    // Clean up after the image is loaded
-    img.onload = () => URL.revokeObjectURL(url);
+  // Clean up after the image is loaded
+  img.onload = () => URL.revokeObjectURL(url);
 
-    return img;
+  return img;
 };
 ```
 

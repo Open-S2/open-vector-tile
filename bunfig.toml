@@ -11,6 +11,6 @@ root = "./tests"
 coverage = true
 
 # new
-coverageReporter = ["text", "lcov"]  # default ["text"]
+coverageReporter = ["text", "lcov"] # default ["text"]
 # coverageReporter = ["lcov"]  # default ["text"]
-coverageDir = "./coverage"  # default "coverage"
+coverageDir = "./coverage" # default "coverage"

@@ -44,16 +44,16 @@ Interestingly almost every modern GIS spec has somewhat agreed that almost all v
 
 My personal argument is that one of the biggest reasons to update the vector spec is to add more features. So what ideas could we add to make it more feature rich? I propose the following:
 
-* Upgrade the codebase to match modern standards: proper module treeshake with Typescript support/safety.
-* Store Pre-Tessellated & Indexed polygon geometries to quickly ship data to the renderer. Yes, this has a slightly higher storage cost but much better performance from decoding to rendering.
-* Support for 3D geometries. While I don't personally see many use cases for this, I think it's important to support it for corner cases as the code and complexity cost stays relatively low. However, the addition should stay minimalistic and true 3D support should be left to other specifications.
-* Support for M-Values for each geometry point (used by multi-points, lines, and polygons).
-* Column encoding of data to make it more compact. This allows better gzip and brotli compression.
-* Support nested objects in properties and m-values. Allow more complex objects in properties and m-values.
-* All features should support first class citizen `BBOX` (bounding box) data like IDs. This is a massive improvement for understanding data that exceeds the tile itself. Want to know how big a polygon or line is that stretches outside the tile? Want to zoom out to see a collection of points that exist across tiles? Now you can. Much like IDs, by having this concept exist it incentivizes the tools in the production lines that create tiles to support it.
-* Lines `offsets` support to know the distance it's traveled. This is useful for correctly rendering dashed lines across tiles for instance. Currently, everytime a dashed line crosses a tile, it just resets the offset to 0 and the dashes don't line up.
-* More convenience functions to make it easier to access and utilze the data for processing. What if you want to convert a collection of lines into a set of points. What if you want polygons to be lines with offsets. These tasks should be managed by the module itself, not the renderer. That way the renderer can focus on it's own job without code bloat or accidental misuse.
-* Feature Properties & M-Values are stored as "Shapes" which reuses objects only needing to do lookups on values. Something interesting about storing vector data is that for each layer, the shape of the data is consistent and the same across all features of the same type. We can capitalize on this and improve compression by specifying the shape of the data prior to storage. An example of how this works is the [Open Map Tiles Schema](https://openmaptiles.org/schema/). This is the norm in vector data, the properties are predefined in their shape. Meanwhile m-values operate in a similar way, that all m-values for a specific gemoetry set have the same shape.
+- Upgrade the codebase to match modern standards: proper module treeshake with Typescript support/safety.
+- Store Pre-Tessellated & Indexed polygon geometries to quickly ship data to the renderer. Yes, this has a slightly higher storage cost but much better performance from decoding to rendering.
+- Support for 3D geometries. While I don't personally see many use cases for this, I think it's important to support it for corner cases as the code and complexity cost stays relatively low. However, the addition should stay minimalistic and true 3D support should be left to other specifications.
+- Support for M-Values for each geometry point (used by multi-points, lines, and polygons).
+- Column encoding of data to make it more compact. This allows better gzip and brotli compression.
+- Support nested objects in properties and m-values. Allow more complex objects in properties and m-values.
+- All features should support first class citizen `BBOX` (bounding box) data like IDs. This is a massive improvement for understanding data that exceeds the tile itself. Want to know how big a polygon or line is that stretches outside the tile? Want to zoom out to see a collection of points that exist across tiles? Now you can. Much like IDs, by having this concept exist it incentivizes the tools in the production lines that create tiles to support it.
+- Lines `offsets` support to know the distance it's traveled. This is useful for correctly rendering dashed lines across tiles for instance. Currently, everytime a dashed line crosses a tile, it just resets the offset to 0 and the dashes don't line up.
+- More convenience functions to make it easier to access and utilze the data for processing. What if you want to convert a collection of lines into a set of points. What if you want polygons to be lines with offsets. These tasks should be managed by the module itself, not the renderer. That way the renderer can focus on it's own job without code bloat or accidental misuse.
+- Feature Properties & M-Values are stored as "Shapes" which reuses objects only needing to do lookups on values. Something interesting about storing vector data is that for each layer, the shape of the data is consistent and the same across all features of the same type. We can capitalize on this and improve compression by specifying the shape of the data prior to storage. An example of how this works is the [Open Map Tiles Schema](https://openmaptiles.org/schema/). This is the norm in vector data, the properties are predefined in their shape. Meanwhile m-values operate in a similar way, that all m-values for a specific gemoetry set have the same shape.
 
 To summerize, tiles themselves only tell a partial story about map, so some mechanics should be added to help better understand the story outside the tile bounds. Other features should be added to allow more customization and flexibility in data.
 
@@ -293,11 +293,11 @@ I am a firm believer that projects should avoid dependencies as much as possible
 
 As of writing I will explain the current dependencies and how they could be removed/replaced:
 
-* `@bufbuild/protobuf` - this has a weight of [`33.7 kB`](https://bundlejs.com/?q=%40bufbuild%2Fprotobuf&treeshake=%5B%7B+Message%2Cproto3+%7D%5D) in the spec. The java implementation seems to write the components utilized by hand, so I believe the JS implementation could do the same and be smaller and simpler.
-* `@types/bytebuffer` - this isn't actually a dependency, its a type definition (dev dependency)
-* `bitset` - Can be replaced by a `Uint8Array` or `DataView`.
-* `bytebuffer` - This is an outdated/redundant module that's replaced by a `DataView` which works in all local tools (nodeJS, Deno, Bun) as well as in the [browser](https://caniuse.com/?search=DataView). What's more is it singlehandedly acts as [`52.5kB`](https://bundlejs.com/?q=bytebuffer&treeshake=%5B*%5D) of the cost of the spec.
-* `@mapbox/point-geometry` not shown as of yet, but used as a dependency. I'm not sure why this is necessary. Its a JS module (not TS), If you check the repository it's a simple class object that has a `x` and `y` properties with added functions. I don't see where the functions are used, or why the Point class couldn't be created locally.
+- `@bufbuild/protobuf` - this has a weight of [`33.7 kB`](https://bundlejs.com/?q=%40bufbuild%2Fprotobuf&treeshake=%5B%7B+Message%2Cproto3+%7D%5D) in the spec. The java implementation seems to write the components utilized by hand, so I believe the JS implementation could do the same and be smaller and simpler.
+- `@types/bytebuffer` - this isn't actually a dependency, its a type definition (dev dependency)
+- `bitset` - Can be replaced by a `Uint8Array` or `DataView`.
+- `bytebuffer` - This is an outdated/redundant module that's replaced by a `DataView` which works in all local tools (nodeJS, Deno, Bun) as well as in the [browser](https://caniuse.com/?search=DataView). What's more is it singlehandedly acts as [`52.5kB`](https://bundlejs.com/?q=bytebuffer&treeshake=%5B*%5D) of the cost of the spec.
+- `@mapbox/point-geometry` not shown as of yet, but used as a dependency. I'm not sure why this is necessary. Its a JS module (not TS), If you check the repository it's a simple class object that has a `x` and `y` properties with added functions. I don't see where the functions are used, or why the Point class couldn't be created locally.
 
 I know this focuses on JS primarily, but I think the same ideology should be applied to all languages. Specifications (I argue) should be written to be simple and self-contained if possible. This topic sound almost nit-picky, but I disagree. I think an easy to read codebase goes a long way in peoples perception of your work and it's adoptability.
 

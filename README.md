@@ -38,19 +38,19 @@ The Open Vector Tile specification is a Tile format for storing GIS data. The `V
 
 This also serves as a modified TypeScript implementation of the [Mapbox Vector Tile](https://github.com/mapbox/vector-tile-js) library. So it is backwards compatible but offers a lot of new features and improvements including (but not limited to):
 
-* 🔗 lightweight zero dependency builds.
-* 🌴 Proper module treeshake.
-* 🦺 Complete TypeScript support / safety.
-* 🗜 Pre-Tessellated & Indexed geometries to quickly ship data to the renderer.
-* 🧊 Support for 3D geometries.
-* ♏ Support for M-Values for each geometry point (used by lines and polygons).
-* ♻️ Feature Properties & M-Values are stored as "Shapes" which reuses objects only needing to do lookups on values.
-* 🏛 Column encoding of data to make it more compact. Better gzip and brotli compression.
-* 🪺 Support nested objects in properties and m-values.
-* 📦 All features support first class citizen `BBOX` data like IDs.
-* 🫥 Lines and Polygons support `offsets` to know the distance it's traveled (useful for correctly rendering dashed lines across tiles).
-* 📷 Supports storing multiple images in the tile.
-* 🧇 Supports multiple of any gridded data such as `elevation`, `temperature`, `precipitation`, etc.
+- 🔗 lightweight zero dependency builds.
+- 🌴 Proper module treeshake.
+- 🦺 Complete TypeScript support / safety.
+- 🗜 Pre-Tessellated & Indexed geometries to quickly ship data to the renderer.
+- 🧊 Support for 3D geometries.
+- ♏ Support for M-Values for each geometry point (used by lines and polygons).
+- ♻️ Feature Properties & M-Values are stored as "Shapes" which reuses objects only needing to do lookups on values.
+- 🏛 Column encoding of data to make it more compact. Better gzip and brotli compression.
+- 🪺 Support nested objects in properties and m-values.
+- 📦 All features support first class citizen `BBOX` data like IDs.
+- 🫥 Lines and Polygons support `offsets` to know the distance it's traveled (useful for correctly rendering dashed lines across tiles).
+- 📷 Supports storing multiple images in the tile.
+- 🧇 Supports multiple of any gridded data such as `elevation`, `temperature`, `precipitation`, etc.
 
 ## Inspirations
 
@@ -151,7 +151,7 @@ const data = elevation.grid(); // number[]
 ### Writing
 
 ```ts
-import { writeOVTile, writeMVTile } from 'open-vector-tile'
+import { writeOVTile, writeMVTile } from 'open-vector-tile';
 
 // Full support for 3D geometries, m-values, complex properties with nested objects, images, grids, etc.
 const encodedData = writeOVTile(
@@ -163,7 +163,7 @@ const encodedData = writeOVTile(
 // Write the older schema that's fast, light, with fewer feature sets
 writeMVTile(
   vectorData,
-  supportMabox // boolean decides if you want to support the old mapbox spec or have improved polygon support
+  supportMabox, // boolean decides if you want to support the old mapbox spec or have improved polygon support
 ); // Uint8Array
 ```
 
@@ -172,16 +172,16 @@ writeMVTile(
 ### Layer Properties
 
 ```ts
-type Extents = 512 | 1_024 | 2_048 | 4_096 | 8_192 | 16_384
+type Extents = 512 | 1_024 | 2_048 | 4_096 | 8_192 | 16_384;
 interface Layer {
-    // version control helps know what features are available
-    version: number;
-    // name of the layer
-    name: string;
-    // extent of the vector tile. MUST be one of `512`, `1024`, `2048`, `4096`, `8192`, or `16384`
-    extent: Extents;
-    // number of features in the layer
-    length: number;
+  // version control helps know what features are available
+  version: number;
+  // name of the layer
+  name: string;
+  // extent of the vector tile. MUST be one of `512`, `1024`, `2048`, `4096`, `8192`, or `16384`
+  extent: Extents;
+  // number of features in the layer
+  length: number;
 }
 ```
 
@@ -212,14 +212,14 @@ export type VectorFeature =
 #### Feature Properties
 
 ```ts
-type Extents = 512 | 1_024 | 2_048 | 4_096 | 8_192 | 16_384
+type Extents = 512 | 1_024 | 2_048 | 4_096 | 8_192 | 16_384;
 interface Feature {
-    // properties of the feature
-    properties: any;
-    // id of the feature
-    id: number;
-    // extent of the vector tile. MUST be one of `512`, `1_024`, `2_048`, `4_096`, `8_192`, or `16_384`
-    extent: Extents;
+  // properties of the feature
+  properties: any;
+  // id of the feature
+  id: number;
+  // extent of the vector tile. MUST be one of `512`, `1_024`, `2_048`, `4_096`, `8_192`, or `16_384`
+  extent: Extents;
 }
 ```
 
@@ -227,16 +227,23 @@ interface Feature {
 
 ```ts
 export type BBox = [left: number, bottom: number, right: number, top: number];
-export type BBox3D = [left: number, bottom: number, right: number, top: number, near: number, far: number];
+export type BBox3D = [
+  left: number,
+  bottom: number,
+  right: number,
+  top: number,
+  near: number,
+  far: number,
+];
 
-const bbox: BBox | BBox3D = feature.bbox()
+const bbox: BBox | BBox3D = feature.bbox();
 ```
 
 #### Pull in the geometry as a collection of points
 
 ```ts
 // supported by all types, points, lines, and polygons
-const geometry: Point[] | Point3D[] = feature.loadPoints()
+const geometry: Point[] | Point3D[] = feature.loadPoints();
 ```
 
 #### Pull in the geometry as a collection of lines
@@ -256,18 +263,18 @@ interface VectorLine3DWithOffset {
   /** the line data */
   geometry: VectorLine3D;
 }
-const geometry: VectorLineWithOffset[] | VectorLine3DWithOffset[] = feature.loadLines()
+const geometry: VectorLineWithOffset[] | VectorLine3DWithOffset[] = feature.loadLines();
 ```
 
 ### Pull in the geometry relative to the type
 
 ```ts
-const pointFeature: Point[] = (feature as OVectorPointsFeature).loadGeometry()
-const lineFeature: VectorLine[] = (feature as OVectorLinesFeature).loadGeometry()
-const polyFeature: VectorPoly[] = (feature as OVectorPolysFeature).loadGeometry()
-const point3DFeature: Point3D[] = (feature as OVectorPoints3DFeature).loadGeometry()
-const line3DFeature: VectorLine3D[] = (feature as OVectorLines3DFeature).loadGeometry()
-const poly3DFeature: VectorPoly3D[] = (feature as OVectorPolys3DFeature).loadGeometry()
+const pointFeature: Point[] = (feature as OVectorPointsFeature).loadGeometry();
+const lineFeature: VectorLine[] = (feature as OVectorLinesFeature).loadGeometry();
+const polyFeature: VectorPoly[] = (feature as OVectorPolysFeature).loadGeometry();
+const point3DFeature: Point3D[] = (feature as OVectorPoints3DFeature).loadGeometry();
+const line3DFeature: VectorLine3D[] = (feature as OVectorLines3DFeature).loadGeometry();
+const poly3DFeature: VectorPoly3D[] = (feature as OVectorPolys3DFeature).loadGeometry();
 ```
 
 ### If a Polygon type, Pull in the raw geometry with indices and tessellation data
@@ -275,7 +282,7 @@ const poly3DFeature: VectorPoly3D[] = (feature as OVectorPolys3DFeature).loadGeo
 ```ts
 // works for any polygon or polygon3D type.
 // NOTE: If the indices is empty, then the geometry was never pre-earcut and you need to fallback to `loadGeometry` instead.
-const geometry: [geometry: number[], indices: number[]] = feature.loadGeometryFlat()
+const geometry: [geometry: number[], indices: number[]] = feature.loadGeometryFlat();
 ```
 
 ### Creating and Validating your Shapes

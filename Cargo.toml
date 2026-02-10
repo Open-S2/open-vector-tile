@@ -14,14 +14,7 @@ keywords = ["open", "vector", "tile", "gis", "low-cost-code"]
 license = "MIT"
 # Include only specific files and directories
 # include = ["Cargo.toml", "Cargo.lock", "README.md", "LICENSE"]
-exclude = [
-    "/assets",
-    "/benchmarks",
-    "/docs",
-    "/tests",
-    "/tools",
-    "/src",
-]
+exclude = ["/assets", "/benchmarks", "/docs", "/tests", "/tools", "/src"]
 
 [features]
 default = []
