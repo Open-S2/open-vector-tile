@@ -26,7 +26,7 @@
     "fmt": "bunx oxfmt src test tools benchmarks --check",
     "fmt:fix": "bunx oxfmt -- --write",
     "format": "bunx oxfmt:fix && bun run lint:fix",
-    "build": "rm -rf dist && mkdir dist && bun build:rust && rm -f -- tsconfig.tsbuildinfo && tsc",
+    "build": "rm -rf dist && mkdir dist && rm -f -- tsconfig.tsbuildinfo && bunx tsc -p tsconfig.build.json",
     "build:rust": "bun build:rust:cargo && bun build:rust:optimize && bun build:rust:strip && bun build:rust:ts",
     "build:rust:cargo": "RUSTFLAGS=\"-Z location-detail=none -Z fmt-debug=none -Z wasm-c-abi=spec\" cargo build --target wasm32-unknown-unknown --features wasm --release",
     "build:rust:optimize": "wasm-opt -Oz --enable-bulk-memory --vacuum -o target/wasm32-unknown-unknown/release/optimized.wasm target/wasm32-unknown-unknown/release/open_vector_tile.wasm",
