@@ -1,9 +1,10 @@
 import { OColumnName } from './columnCache.js';
-import { OVectorFeature, readFeature, writeOVFeature } from './vectorFeature.js';
 import { PbfReader, Pbf as Protobuf } from 'pbf-ts';
 import { decodeShape, encodeShape } from './shape.js';
+import { readFeature, writeOVFeature } from './vectorFeature.js';
 
 import type { BaseVectorLayer } from '../base/index.js';
+import type { OVectorFeature } from './vectorFeature.js';
 import type { Shape } from './shape.js';
 import type { ColumnCacheReader, ColumnCacheWriter } from './columnCache.js';
 
