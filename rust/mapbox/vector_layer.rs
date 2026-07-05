@@ -132,13 +132,13 @@ pub fn write_layer(layer: &BaseVectorLayer, mapbox_support: bool) -> Vec<u8> {
         pbf.write_bytes_field(2, &write_feature(feature, &mut keys, &mut values, mapbox_support));
     }
     let mut keys: Vec<(String, usize)> = keys.into_iter().collect();
-    keys.sort_by(|a, b| a.1.cmp(&b.1));
+    keys.sort_by_key(|a| a.1);
     // keys and values
     for (key, _) in keys.iter() {
         pbf.write_string_field(3, key);
     }
     let mut values: Vec<(PrimitiveValue, usize)> = values.into_iter().collect();
-    values.sort_by(|a, b| a.1.cmp(&b.1));
+    values.sort_by_key(|a| a.1);
     for (value, _) in values.iter() {
         pbf.write_message(4, value);
     }

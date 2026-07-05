@@ -330,16 +330,16 @@ impl ProtoWrite for ColumnCacheWriter {
         // sort_column(&mut signed);
         // sort_column(&mut float);
         // sort_column(&mut double);
-        strings.sort_by(|a, b| a.1.borrow().index.cmp(&b.1.borrow().index));
-        unsigned.sort_by(|a, b| a.1.borrow().index.cmp(&b.1.borrow().index));
-        signed.sort_by(|a, b| a.1.borrow().index.cmp(&b.1.borrow().index));
-        float.sort_by(|a, b| a.1.borrow().index.cmp(&b.1.borrow().index));
-        double.sort_by(|a, b| a.1.borrow().index.cmp(&b.1.borrow().index));
-        points.sort_by(|a, b| a.1.borrow().index.cmp(&b.1.borrow().index));
-        points_3d.sort_by(|a, b| a.1.borrow().index.cmp(&b.1.borrow().index));
-        indices.sort_by(|a, b| a.1.borrow().index.cmp(&b.1.borrow().index));
-        shapes.sort_by(|a, b| a.1.borrow().index.cmp(&b.1.borrow().index));
-        bbox.sort_by(|a, b| a.1.borrow().index.cmp(&b.1.borrow().index));
+        strings.sort_by_key(|a| a.1.borrow().index);
+        unsigned.sort_by_key(|a| a.1.borrow().index);
+        signed.sort_by_key(|a| a.1.borrow().index);
+        float.sort_by_key(|a| a.1.borrow().index);
+        double.sort_by_key(|a| a.1.borrow().index);
+        points.sort_by_key(|a| a.1.borrow().index);
+        points_3d.sort_by_key(|a| a.1.borrow().index);
+        indices.sort_by_key(|a| a.1.borrow().index);
+        shapes.sort_by_key(|a| a.1.borrow().index);
+        bbox.sort_by_key(|a| a.1.borrow().index);
 
         // store
         // strings
