@@ -7,8 +7,8 @@ import {
   BaseVectorPointsFeature,
   BaseVectorPolys3DFeature,
   BaseVectorPolysFeature,
-} from '../../src/base';
-import { ColumnCacheReader, ColumnCacheWriter } from '../../src/open/columnCache';
+} from '../../src/base/index.js';
+import { ColumnCacheReader, ColumnCacheWriter } from '../../src/open/columnCache.js';
 import {
   OVectorFeatureBase,
   OVectorLines3DFeature,
@@ -19,10 +19,10 @@ import {
   OVectorPolysFeature,
   readFeature,
   writeOVFeature,
-} from '../../src/open/vectorFeature';
+} from '../../src/open/vectorFeature.js';
 import { describe, expect, it } from 'bun:test';
 
-import type { Shape } from '../../src/open/shape';
+import type { Shape } from '../../src/open/shape.js';
 
 describe('OVectorFeatureBase', () => {
   const pbf = new Pbf();

@@ -1,4 +1,4 @@
-import { BaseVectorLayer, BaseVectorPointsFeature } from '../../src/base';
+import { BaseVectorLayer, BaseVectorPointsFeature } from '../../src/base/index.js';
 import { describe, expect, it } from 'bun:test';
 
 describe('BaseVectorLayer', () => {

@@ -1,7 +1,7 @@
 import Ajv from 'ajv';
 import { Pbf } from 'pbf-ts';
-import { ShapeSchema } from '../../src';
-import { ColumnCacheReader, ColumnCacheWriter } from '../../src/open/columnCache';
+import { ShapeSchema } from '../../src/index.js';
+import { ColumnCacheReader, ColumnCacheWriter } from '../../src/open/columnCache.js';
 import {
   createShapeFromData,
   decodeShape,
@@ -10,11 +10,11 @@ import {
   encodeValue,
   updateShapeFromData,
   validateTypes,
-} from '../../src/open/shape';
+} from '../../src/open/shape.js';
 import { describe, expect, it } from 'bun:test';
 
 import type { Properties } from 's2json-spec';
-import type { Shape } from '../../src/open/shape';
+import type { Shape } from '../../src/open/shape.js';
 
 describe('encodeShape and decodeShape', () => {
   it('encodes + decodes simple shape', () => {
@@ -206,6 +206,7 @@ describe('test validateTypes failures', () => {
 });
 
 describe('validate Shapes', () => {
+  // @ts-expect-error - this is just for testing purposes
   const ajv = new Ajv();
   const validate = ajv.compile(ShapeSchema);
 

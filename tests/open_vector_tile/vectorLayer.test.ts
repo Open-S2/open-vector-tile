@@ -1,7 +1,12 @@
-import { BaseVectorLayer } from '../../src/base';
+import { BaseVectorLayer } from '../../src/base/index.js';
 import { Pbf as Protobuf } from 'pbf-ts';
-import { ColumnCacheReader, ColumnCacheWriter } from '../../src/open/columnCache';
-import { OVectorLayer, decodeExtent, encodeExtent, writeOVLayer } from '../../src/open/vectorLayer';
+import { ColumnCacheReader, ColumnCacheWriter } from '../../src/open/columnCache.js';
+import {
+  OVectorLayer,
+  decodeExtent,
+  encodeExtent,
+  writeOVLayer,
+} from '../../src/open/vectorLayer.js';
 import { describe, expect, it } from 'bun:test';
 
 describe('encodeExtent and decodeExtent', () => {

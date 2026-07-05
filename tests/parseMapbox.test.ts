@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import MapboxProtobuf from 'pbf';
+import { PbfReader as MapboxProtobuf } from 'pbf';
 import { VectorTile as MapboxVectorTile } from '@mapbox/vector-tile';
 import { Pbf as Protobuf } from 'pbf-ts';
-import { VectorTile } from '../src';
-import { MapboxVectorFeature, MapboxVectorLayer } from '../src/mapbox';
+import { VectorTile } from '../src/index.js';
+import { MapboxVectorFeature, MapboxVectorLayer } from '../src/mapbox/index.js';
 import { describe, expect, it, test } from 'bun:test';
 
-import type { VectorGeometry } from '../src/vectorTile.spec';
+import type { VectorGeometry } from '../src/vectorTile.spec.js';
 
 describe('parsing vector tiles', async (): Promise<void> => {
   const data = await Bun.file(`${__dirname}/fixtures/14-8801-5371.vector.pbf`).arrayBuffer();
@@ -280,7 +280,7 @@ describe('parsing multi polygons are the same', async () => {
       if (i === 1) continue;
       const mFeature = mWater.feature(i);
       const mGeometry = mFeature.loadGeometry();
-      const mFlatGeometry = [];
+      const mFlatGeometry: unknown[] = [];
       mergePolygons(mFlatGeometry, mGeometry);
 
       const s2Feature = (s2Water as MapboxVectorLayer).feature(i);
@@ -302,7 +302,7 @@ function mergePolygons(out: any[], input: any[]): any[] {
     if (!Array.isArray(arr)) {
       out.push({ x: arr.x, y: arr.y });
     } else {
-      const outArr = [];
+      const outArr: unknown[] = [];
       mergePolygons(outArr, arr);
       out.push(outArr);
     }

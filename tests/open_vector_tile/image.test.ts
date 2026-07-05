@@ -1,8 +1,8 @@
 import sharp from 'sharp';
-import { ImageType, VectorTile, fromImageType, toImageType, writeOVTile } from '../../src';
+import { ImageType, VectorTile, fromImageType, toImageType, writeOVTile } from '../../src/index.js';
 import { expect, test } from 'bun:test';
 
-import type { ImageDataInput, ImageTypeString } from '../../src/open';
+import type { ImageDataInput, ImageTypeString } from '../../src/open/index.js';
 
 test('Elevation Tile', async () => {
   const sharpInput = sharp(`${__dirname}/terrarium_ex.webp`);

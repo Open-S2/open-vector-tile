@@ -22,7 +22,7 @@ import {
   weaveAndDeltaEncodeArray,
   zagzig,
   zigzag,
-} from '../src/util';
+} from '../src/util.js';
 import { describe, expect, test } from 'bun:test';
 
 describe('quantizeLonLat and dequantizeLonLat', () => {

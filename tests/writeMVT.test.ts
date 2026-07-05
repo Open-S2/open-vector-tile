@@ -1,5 +1,5 @@
 import { Pbf } from 'pbf-ts';
-import { VectorTile } from '../src';
+import { VectorTile } from '../src/index.js';
 import {
   BaseVectorLayer,
   BaseVectorLine,
@@ -7,11 +7,11 @@ import {
   BaseVectorPointsFeature,
   BaseVectorPolysFeature,
   BaseVectorTile,
-} from '../src/base';
-import { MapboxVectorFeature, MapboxVectorLayer, writeMVTile } from '../src/mapbox';
+} from '../src/base/index.js';
+import { MapboxVectorFeature, MapboxVectorLayer, writeMVTile } from '../src/mapbox/index.js';
 import { describe, expect, it, test } from 'bun:test';
 
-import MapboxProtobuf from 'pbf';
+import { PbfReader as MapboxProtobuf } from 'pbf';
 import { VectorTile as MapboxVectorTile } from '@mapbox/vector-tile';
 
 describe('serialize and parse vector tile points', () => {
@@ -215,36 +215,27 @@ describe('serialize and parse vector tile lines', () => {
     expect(line1.properties).toEqual({ name: 2.2 });
     expect(line2.properties).toEqual({ name: true });
 
+    // @ts-expect-error - we don't care about mapbox types
     expect(line1.loadGeometry()).toEqual([
       [
-        // @ts-expect-error - we don't care about mapbox types
         { x: 3664, y: 3664 },
-        // @ts-expect-error - we don't care about mapbox types
         { x: 4053, y: 4053 },
-        // @ts-expect-error - we don't care about mapbox types
         { x: 2135, y: 2135 },
-        // @ts-expect-error - we don't care about mapbox types
         { x: 1879, y: 1879 },
       ],
     ]);
 
+    // @ts-expect-error - we don't care about mapbox types
     expect(line2.loadGeometry()).toEqual([
       [
-        // @ts-expect-error - we don't care about mapbox types
         { x: 2679, y: 2679 },
-        // @ts-expect-error - we don't care about mapbox types
         { x: 3283, y: 3283 },
-        // @ts-expect-error - we don't care about mapbox types
         { x: 2819, y: 2819 },
-        // @ts-expect-error - we don't care about mapbox types
         { x: 3383, y: 3383 },
       ],
       [
-        // @ts-expect-error - we don't care about mapbox types
         { x: 3613, y: 3613 },
-        // @ts-expect-error - we don't care about mapbox types
         { x: 3882, y: 3882 },
-        // @ts-expect-error - we don't care about mapbox types
         { x: 3469, y: 3469 },
       ],
     ]);
@@ -446,31 +437,21 @@ describe('serialize and parse vector tile polygons', () => {
     expect(poly1Props).toEqual({ a: -100, b: 500 });
     expect(poly2Props).toEqual({ name: 'c' });
 
+    // @ts-expect-error - we don't care about mapbox types
     expect(poly1.loadGeometry()).toEqual([
       [
-        // @ts-expect-error - we don't care about mapbox types
         { x: 2565, y: 2565 },
-        // @ts-expect-error - we don't care about mapbox types
         { x: 2565, y: 2565 },
-        // @ts-expect-error - we don't care about mapbox types
         { x: 3889, y: 3889 },
-        // @ts-expect-error - we don't care about mapbox types
         { x: 3889, y: 3889 },
-        // @ts-expect-error - we don't care about mapbox types
         { x: 2565, y: 2565 },
       ],
       [
-        // @ts-expect-error - we don't care about mapbox types
         { x: 3025, y: 3025 },
-        // @ts-expect-error - we don't care about mapbox types
         { x: 3025, y: 3025 },
-        // @ts-expect-error - we don't care about mapbox types
         { x: 2766, y: 2766 },
-        // @ts-expect-error - we don't care about mapbox types
         { x: 2766, y: 2766 },
-        // @ts-expect-error - we don't care about mapbox types
         { x: 3025, y: 3025 },
-        // @ts-expect-error - we don't care about mapbox types
         { x: 3025, y: 3025 },
       ],
     ]);

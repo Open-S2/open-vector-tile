@@ -1,9 +1,9 @@
-import { BaseVectorTile } from '../../src/base';
-import { VectorTile } from '../../src';
+import { BaseVectorTile } from '../../src/base/index.js';
+import { VectorTile } from '../../src/index.js';
 import { describe, expect, it } from 'bun:test';
 
-import type { BaseVectorFeature } from '../../src/base';
-import type { S2JSONTile } from '../../src';
+import type { BaseVectorFeature } from '../../src/base/index.js';
+import type { S2JSONTile } from '../../src/index.js';
 
 describe('BaseVectorTile', () => {
   const layer = new BaseVectorTile();

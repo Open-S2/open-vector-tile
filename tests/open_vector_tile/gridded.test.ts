@@ -4,10 +4,10 @@ import {
   convertMapboxElevationData,
   convertTerrariumElevationData,
   writeOVTile,
-} from '../../src';
+} from '../../src/index.js';
 import { expect, test } from 'bun:test';
 
-import type { GridInput } from '../../src/open';
+import type { GridInput } from '../../src/open/index.js';
 
 test('Elevation Tile', async () => {
   const data = await convertImageToHeightMap(__dirname + '/terrarium_ex.webp');

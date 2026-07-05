@@ -10,8 +10,8 @@ import {
   VectorFeatureBase,
   decodeOffset,
   encodeOffset,
-} from '../../src/base';
-import { ColumnCacheReader, ColumnCacheWriter, OColumnName } from '../../src/open/columnCache';
+} from '../../src/base/index.js';
+import { ColumnCacheReader, ColumnCacheWriter, OColumnName } from '../../src/open/columnCache.js';
 import { describe, expect, it } from 'bun:test';
 
 describe('encodeOffset and decodeOffset', () => {
